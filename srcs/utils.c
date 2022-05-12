@@ -29,3 +29,25 @@ void		*ft_memset(void *b, int c, size_t len)
 		*pt++ = (unsigned char)c;
 	return (b);
 }
+
+void		*ft_memcpy(void *dst, const void *src, size_t n)
+{
+	char	*pt_src;
+	char	*pt_dst;
+
+	pt_src = (char *)src;
+	pt_dst = (char *)dst;
+	while (n--)
+		*pt_dst++ = *pt_src++;
+	return (dst);
+}
+
+size_t		ft_strlen_special(char *str, size_t max)
+{
+	size_t i;
+
+	i = 0;
+	while (i < max && str[i] >= ' ' && str[i] <= '~')
+		i++;
+	return (i);
+}

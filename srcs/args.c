@@ -73,45 +73,33 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 		return (0);
 	}
 	ft_memset(&ssl->options, 0, sizeof(t_options));
-	for (int i = 1; i < argc; i++)
+	int i = 0;
+	while (i < NB_CMDS && ft_strcmp(argv[1], commands[i]))
+		i++;
+	if (i == NB_CMDS)
 	{
-		if (*argv[i] != '-')
-		{
-			if (!ssl->cmd)
-			{
-				int j = 0;
-				while (j < NB_CMDS && ft_strcmp(argv[i], commands[j]))
-					j++;
-				if (j == NB_CMDS)
-				{
-					dprintf(STDERR_FILENO, "%s: Error: '%s' is an invalid command.\n\n", PRG_NAME, argv[i]);
-					show_usage(STDERR_FILENO);
-					return (ERR_BADCMD);
-				}
-				else
-					ssl->cmd = j + 1;
-			}
-			else // files
-			{
-				if (!add_list(&ssl->files, argv[i]))
-				{
-					dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-					return (ERR_MALLOC);
-				}
-			}
-		}
-		else if (*argv[i] == '-')
-		{
-			ret = handle_options(argc, argv, &i, ssl);
-			if (ret)
-				return (ret);
-		}
-	}
-	if (!ssl->cmd)
-	{
-		dprintf(STDERR_FILENO, "%s: missing command.\n\n", PRG_NAME);
+		dprintf(STDERR_FILENO, "%s: Error: '%s' is an invalid command.\n\n", PRG_NAME, argv[1]);
 		show_usage(STDERR_FILENO);
 		return (ERR_BADCMD);
+	}
+	else
+		ssl->cmd = argv[1];
+	i = 2;
+	while (i < argc && *argv[i] == '-')
+	{
+		ret = handle_options(argc, argv, &i, ssl);
+		if (ret)
+			return (ret);
+		i++;
+	}
+	while (i < argc)
+	{
+		if (!add_list(&ssl->files, argv[i]))
+		{
+			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+			return (ERR_MALLOC);
+		}
+		i++;
 	}
 	return (0);
 }

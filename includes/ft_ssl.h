@@ -1,8 +1,11 @@
 #ifndef FT_SSL_H
 # define FT_SSL_H
 
+# include <errno.h>
+# include <fcntl.h>
 # include <stdio.h>
 # include <stdlib.h>
+# include <string.h>
 # include <unistd.h>
 
 # define PRG_NAME "ft_ssl"
@@ -19,8 +22,8 @@
 # define ERR_MALLOC			6
 # define ERR_BADCMD			7
 
-# define CMD_MD5			1
-# define CMD_SHA256			2
+# define CMD_MD5			"md5"
+# define CMD_SHA256			"sha256"
 
 typedef struct		s_options
 {
@@ -38,7 +41,7 @@ typedef struct		s_lst
 
 typedef struct		s_ssl
 {
-	int				cmd;
+	char			*cmd;
 	t_lst			*strings;
 	t_lst			*files;
 	t_options		options;
@@ -59,7 +62,9 @@ int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
 size_t		ft_strlen(const char *s);
+size_t		ft_strlen_special(char *str, size_t max);
 int			ft_strcmp(const char *s1, const char *s2);
 void		*ft_memset(void *b, int c, size_t len);
+void		*ft_memcpy(void *dst, const void *src, size_t n);
 
 #endif
