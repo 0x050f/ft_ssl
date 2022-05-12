@@ -14,7 +14,11 @@ DIR_SRCS		=	./srcs/
 DIR_OBJS		=	./compiled_srcs/
 
 # FILES #
-SRCS			=	ft_ssl.c
+SRCS			=	ft_ssl.c \
+					args.c \
+					lst.c \
+					logs.c \
+					utils.c
 
 INCLUDES		=	ft_ssl.h
 
