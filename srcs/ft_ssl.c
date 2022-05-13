@@ -1,5 +1,18 @@
 #include "ft_ssl.h"
 
+char		*launch_hash(t_ssl *ssl, char *query, size_t size)
+{
+	char *cmds[NB_CMDS] = CMD_HASHES;
+	char *(*functions[NB_CMDS])(char *, size_t) = {&md5, &sha256, &sha512, &sha384};
+
+	for (int i = 0; i < NB_CMDS; i++)
+	{
+		if (!ft_strcmp(ssl->cmd, cmds[i]))
+			return (functions[i](query, size));
+	}
+	return (NULL);
+}
+
 char		*read_query(int fd, size_t *size)
 {
 	char	*query;
@@ -55,14 +68,7 @@ void		process_files(t_ssl *ssl)
 			close(fd);
 			return ;
 		}
-		if (!ft_strcmp(ssl->cmd, CMD_MD5))
-			result = md5(query, size);
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
-			result = sha256(query, size);
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
-			result = sha512(query, size);
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
-			result = sha384(query, size);
+		result = launch_hash(ssl, query, size);
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
@@ -92,14 +98,7 @@ void		process_strings(t_ssl *ssl)
 	tmp = ssl->strings;
 	while (tmp)
 	{
-		if (!ft_strcmp(ssl->cmd, CMD_MD5))
-			result = md5(tmp->content, ft_strlen(tmp->content));
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
-			result = sha256(tmp->content, ft_strlen(tmp->content));
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
-			result = sha512(tmp->content, ft_strlen(tmp->content));
-		else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
-			result = sha384(tmp->content, ft_strlen(tmp->content));
+		result = launch_hash(ssl, tmp->content, ft_strlen(tmp->content));
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
@@ -127,14 +126,7 @@ void		process_stdin(t_ssl *ssl)
 
 	if (!(query = read_query(STDIN_FILENO, &size)))
 		return ;
-	if (!ft_strcmp(ssl->cmd, CMD_MD5))
-		result = md5(query, size);
-	else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
-		result = sha256(query, size);
-	else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
-		result = sha512(query, size);
-	else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
-		result = sha384(query, size);
+	result = launch_hash(ssl, query, size);
 	if (!result)
 		return ;
 	if (ssl->options.p && !ssl->options.q)

@@ -11,9 +11,6 @@
 
 # define PRG_NAME "ft_ssl"
 
-# define NB_FLAGS 4
-# define NB_CMDS 4
-
 # define ERR_NB_ARGS		1
 # define ERR_INV_OPT		2
 # define ERR_INV_ARG		3
@@ -23,10 +20,9 @@
 # define ERR_MALLOC			6
 # define ERR_BADCMD			7
 
-# define CMD_MD5			"md5"
-# define CMD_SHA256			"sha256"
-# define CMD_SHA512			"sha512"
-# define CMD_SHA384			"sha384"
+# define NB_FLAGS 4
+# define NB_CMDS 4
+# define CMD_HASHES			{"md5", "sha256", "sha512", "sha384"}
 
 typedef struct		s_options
 {
