@@ -23,6 +23,7 @@
 # define NB_FLAGS 4
 # define NB_CMDS 4
 # define CMD_HASHES			{"md5", "sha256", "sha512", "sha384"}
+# define CMD_FUNC			{&md5, &sha256, &sha512, &sha384}
 
 typedef struct		s_options
 {

@@ -3,7 +3,7 @@
 char		*launch_hash(t_ssl *ssl, char *query, size_t size)
 {
 	char *cmds[NB_CMDS] = CMD_HASHES;
-	char *(*functions[NB_CMDS])(char *, size_t) = {&md5, &sha256, &sha512, &sha384};
+	char *(*functions[NB_CMDS])(char *, size_t) = CMD_FUNC;
 
 	for (int i = 0; i < NB_CMDS; i++)
 	{
