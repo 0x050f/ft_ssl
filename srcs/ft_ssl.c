@@ -53,6 +53,8 @@ void		process_files(t_ssl *ssl)
 		}
 		if (!ft_strcmp(ssl->cmd, CMD_MD5))
 			result = md5(query, size);
+		if (!result)
+			return ;
 		if (!ssl->options.q && !ssl->options.r)
 			printf("MD5(%s) = ", tmp->content);
 		printf("%s", result);
@@ -76,6 +78,8 @@ void		process_strings(t_ssl *ssl)
 	{
 		if (!ft_strcmp(ssl->cmd, CMD_MD5))
 			result = md5(tmp->content, ft_strlen(tmp->content));
+		if (!result)
+			return ;
 		if (!ssl->options.q && !ssl->options.r)
 			printf("MD5(\"%s\") = ", tmp->content);
 		printf("%s", result);
@@ -97,6 +101,8 @@ void		process_stdin(t_ssl *ssl)
 		return ;
 	if (!ft_strcmp(ssl->cmd, CMD_MD5))
 		result = md5(query, size);
+	if (!result)
+		return ;
 	if (ssl->options.p && !ssl->options.q)
 		printf("(\"%.*s\")= %s\n", ft_strlen_special(query, size), query, result);
 	else if (!ssl->options.p && !ssl->options.q)
