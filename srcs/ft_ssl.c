@@ -71,7 +71,7 @@ void		process_files(t_ssl *ssl)
 
 			strcpy(uppercase, ssl->cmd);
 			ft_toupper(uppercase);
-			printf("%s(%s) = ", uppercase, tmp->content);
+			printf("%s (%s) = ", uppercase, tmp->content);
 		}
 		printf("%s", result);
 		if (!ssl->options.q && ssl->options.r)
@@ -108,7 +108,7 @@ void		process_strings(t_ssl *ssl)
 
 			strcpy(uppercase, ssl->cmd);
 			ft_toupper(uppercase);
-			printf("%s(\"%s\") = ", uppercase, tmp->content);
+			printf("%s (\"%s\") = ", uppercase, tmp->content);
 		}
 		printf("%s", result);
 		if (!ssl->options.q && ssl->options.r)
