@@ -1,5 +1,4 @@
 #include "ft_ssl.h"
-#include "md5.h"
 
 // https://en.wikipedia.org/wiki/MD5
 char			*md5(char *str, size_t size)

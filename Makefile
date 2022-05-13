@@ -19,10 +19,10 @@ SRCS			=	ft_ssl.c \
 					lst.c \
 					logs.c \
 					utils.c \
-					md5.c
+					md5.c \
+					sha256.c
 
-INCLUDES		=	ft_ssl.h \
-					md5.h
+INCLUDES		=	ft_ssl.h
 
 # COMPILED_SOURCES #
 OBJS 		=	$(SRCS:%.c=$(DIR_OBJS)%.o)

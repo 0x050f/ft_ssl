@@ -48,6 +48,12 @@ typedef struct		s_ssl
 	t_options		options;
 }					t_ssl;
 
+/* sha256.c */
+char		*sha256(char *str, size_t size);
+
+/* md5.c */
+char		*md5(char *str, size_t size);
+
 /* lst.c */
 t_lst		*add_list(t_lst **lst, void *content);
 void		clear_list(t_lst *lst);
@@ -65,7 +71,9 @@ int			args_error(int error, char *str, int range1, int range2);
 size_t		ft_strlen(const char *s);
 size_t		ft_strlen_special(char *str, size_t max);
 int			ft_strcmp(const char *s1, const char *s2);
+size_t		ft_strcpy(char *dst, const char *src);
 void		*ft_memset(void *b, int c, size_t len);
 void		*ft_memcpy(void *dst, const void *src, size_t n);
+void		ft_toupper(char *str);
 
 #endif

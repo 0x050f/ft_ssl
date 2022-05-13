@@ -1,5 +1,4 @@
 #include "ft_ssl.h"
-#include "md5.h"
 
 char		*read_query(int fd, size_t *size)
 {
@@ -9,7 +8,12 @@ char		*read_query(int fd, size_t *size)
 	char	buffer[4096];
 
 	*size = 0;
-	query = NULL;
+	query = malloc(0);
+	if (!query)
+	{
+		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+		return (NULL);
+	}
 	while ((ret = read(fd, buffer, 4096)))
 	{
 		tmp = malloc(sizeof(char) * *size + ret);
@@ -53,10 +57,18 @@ void		process_files(t_ssl *ssl)
 		}
 		if (!ft_strcmp(ssl->cmd, CMD_MD5))
 			result = md5(query, size);
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
+			result = sha256(query, size);
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
-			printf("MD5(%s) = ", tmp->content);
+		{
+			char uppercase[12];
+
+			strcpy(uppercase, ssl->cmd);
+			ft_toupper(uppercase);
+			printf("%s(%s) = ", uppercase, tmp->content);
+		}
 		printf("%s", result);
 		if (!ssl->options.q && ssl->options.r)
 			printf(" %s", tmp->content);
@@ -78,10 +90,18 @@ void		process_strings(t_ssl *ssl)
 	{
 		if (!ft_strcmp(ssl->cmd, CMD_MD5))
 			result = md5(tmp->content, ft_strlen(tmp->content));
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
+			result = sha256(tmp->content, ft_strlen(tmp->content));
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
-			printf("MD5(\"%s\") = ", tmp->content);
+		{
+			char uppercase[12];
+
+			strcpy(uppercase, ssl->cmd);
+			ft_toupper(uppercase);
+			printf("%s(\"%s\") = ", uppercase, tmp->content);
+		}
 		printf("%s", result);
 		if (!ssl->options.q && ssl->options.r)
 			printf(" \"%s\"", tmp->content);
@@ -101,6 +121,8 @@ void		process_stdin(t_ssl *ssl)
 		return ;
 	if (!ft_strcmp(ssl->cmd, CMD_MD5))
 		result = md5(query, size);
+	else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
+		result = sha256(query, size);
 	if (!result)
 		return ;
 	if (ssl->options.p && !ssl->options.q)
