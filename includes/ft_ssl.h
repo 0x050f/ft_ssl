@@ -12,7 +12,7 @@
 # define PRG_NAME "ft_ssl"
 
 # define NB_FLAGS 4
-# define NB_CMDS 2
+# define NB_CMDS 4
 
 # define ERR_NB_ARGS		1
 # define ERR_INV_OPT		2
@@ -25,6 +25,8 @@
 
 # define CMD_MD5			"md5"
 # define CMD_SHA256			"sha256"
+# define CMD_SHA512			"sha512"
+# define CMD_SHA384			"sha384"
 
 typedef struct		s_options
 {
@@ -47,6 +49,12 @@ typedef struct		s_ssl
 	t_lst			*files;
 	t_options		options;
 }					t_ssl;
+
+/* sha384.c */
+char		*sha384(char *str, size_t size);
+
+/* sha512.c */
+char		*sha512(char *str, size_t size);
 
 /* sha256.c */
 char		*sha256(char *str, size_t size);

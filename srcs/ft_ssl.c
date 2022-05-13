@@ -59,6 +59,10 @@ void		process_files(t_ssl *ssl)
 			result = md5(query, size);
 		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
 			result = sha256(query, size);
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
+			result = sha512(query, size);
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
+			result = sha384(query, size);
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
@@ -92,6 +96,10 @@ void		process_strings(t_ssl *ssl)
 			result = md5(tmp->content, ft_strlen(tmp->content));
 		else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
 			result = sha256(tmp->content, ft_strlen(tmp->content));
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
+			result = sha512(tmp->content, ft_strlen(tmp->content));
+		else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
+			result = sha384(tmp->content, ft_strlen(tmp->content));
 		if (!result)
 			return ;
 		if (!ssl->options.q && !ssl->options.r)
@@ -123,6 +131,10 @@ void		process_stdin(t_ssl *ssl)
 		result = md5(query, size);
 	else if (!ft_strcmp(ssl->cmd, CMD_SHA256))
 		result = sha256(query, size);
+	else if (!ft_strcmp(ssl->cmd, CMD_SHA512))
+		result = sha512(query, size);
+	else if (!ft_strcmp(ssl->cmd, CMD_SHA384))
+		result = sha384(query, size);
 	if (!result)
 		return ;
 	if (ssl->options.p && !ssl->options.q)

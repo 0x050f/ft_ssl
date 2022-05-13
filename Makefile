@@ -20,7 +20,9 @@ SRCS			=	ft_ssl.c \
 					logs.c \
 					utils.c \
 					md5.c \
-					sha256.c
+					sha256.c \
+					sha512.c \
+					sha384.c
 
 INCLUDES		=	ft_ssl.h
 

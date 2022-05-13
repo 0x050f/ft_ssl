@@ -2,7 +2,7 @@
 
 void		show_commands(int fd)
 {
-	char	*commands[NB_CMDS] = {"md5", "sha256"};
+	char	*commands[NB_CMDS] = {"md5", "sha256", "sha512"};
 	for (size_t i = 0; i < NB_CMDS; i++)
 		dprintf(fd, "  %s\n", commands[i]);
 }
