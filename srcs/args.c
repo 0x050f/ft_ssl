@@ -63,7 +63,7 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl)
 
 int			check_args(int argc, char *argv[], t_ssl *ssl)
 {
-	char	*commands[NB_CMDS] = {"md5", "sha256", "sha512", "sha384"};
+	char	*commands[NB_CMDS] = CMD_HASHES;
 	int		ret;
 
 	ft_memset(ssl, 0, sizeof(t_ssl));

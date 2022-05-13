@@ -107,7 +107,7 @@ char		*sha384(char *str, size_t size)
 		h_array[7] += h;
 	}
 	free(msg);
-	char *hash = malloc(sizeof(char) * 129);
+	char *hash = malloc(sizeof(char) * 97);
 	if (!hash)
 	{
 		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
@@ -115,6 +115,6 @@ char		*sha384(char *str, size_t size)
 	}
 	for (int i = 0; i < 6; i++)
 		sprintf(hash + 16 * i, "%016lx", h_array[i]);
-	hash[128] = '\0';
+	hash[96] = '\0';
 	return (hash);
 }
