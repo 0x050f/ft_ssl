@@ -102,6 +102,6 @@ char			*md5(char *str, size_t size)
 		sprintf(hash + 16 + i * 2, "%02x", ((uint8_t *)&c0)[i]);
 	for (int i = 0; i < 4; i++)
 		sprintf(hash + 24 + i * 2, "%02x", ((uint8_t *)&d0)[i]);
-	hash[33] = '\0';
+	hash[32] = '\0';
 	return (hash);
 }
