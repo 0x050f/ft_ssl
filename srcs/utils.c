@@ -111,3 +111,31 @@ void		ft_toupper(char *str)
 		i++;
 	}
 }
+
+int			ishexa(char *str)
+{
+	size_t i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (!((str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F') || (str[i] >= '0' && str[i] <= '9')))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+int			isprintable(char *str)
+{
+	size_t i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] < 32 || str[i] > 126)
+			return (0);
+		i++;
+	}
+	return (1);
+}

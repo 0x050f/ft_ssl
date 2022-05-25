@@ -14,41 +14,42 @@ char		*search_option(char *to_search, char ***options, int nb_options)
 	return (options[i][0]);
 }
 
+char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
+{
+	char	*str;
+
+	if (argv[*i][j + 1])
+		str = &argv[*i][j + 1];
+	else if (argc  - 1 < *i + 1)
+	{
+		args_error(ERR_REQ_ARG, arg, 0, 0);
+		return (NULL);
+	}
+	else
+	{
+		*i += 1;
+		str = argv[*i];
+	}
+	return (str);
+}
+
 int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char *option)
 {
-	char *str;
-
 	if (!strcmp(option, "-d"))
 		ssl->options.d = 1;
 	else if (!strcmp(option, "-e"))
 		ssl->options.e = 1;
 	else if (!strcmp(option, "-i"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "d", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->input = str;
+		if (!(ssl->input = get_string_arg(argc, argv, i, j, "d")))
+			return (3);
 		ssl->options.i = 1;
 		return (1);
 	}
 	else if (!strcmp(option, "-o"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "o", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->output = str;
+		if (!(ssl->output = get_string_arg(argc, argv, i, j, "o")))
+			return (3);
 		ssl->options.o = 1;
 		return (1);
 	}
@@ -56,61 +57,37 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 		ssl->options.a = 1;
 	else if (!strcmp(option, "-k"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "k", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->key = str;
+		if (!(ssl->key = get_string_arg(argc, argv, i, j, "a")))
+			return (3);
+		if ((ft_strlen(ssl->key) % 2) || !ishexa(ssl->key))
+			return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
 		ssl->options.k = 1;
 		return (1);
 	}
 	else if (!strcmp(option, "-p"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "p", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->key = str;
+		if (!(ssl->password = get_string_arg(argc, argv, i, j, "p")))
+			return (3);
+		if (!isprintable(ssl->password))
+			return (args_error(ERR_PRINT_ARG, "p", 0, 0) + 1);
 		ssl->options.p = 1;
 		return (1);
 	}
 	else if (!strcmp(option, "-s"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "s", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->salt = str;
+		if (!(ssl->salt = get_string_arg(argc, argv, i, j, "s")))
+			return (3);
+		if ((ft_strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
+			return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
 		ssl->options.s = 1;
 		return (1);
 	}
 	else if (!strcmp(option, "-v"))
 	{
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "s", 0, 0) + 1);
-		else
-		{
-			*i += 1;
-			str = argv[*i];
-		}
-		ssl->iv = str;
+		if (!(ssl->iv = get_string_arg(argc, argv, i, j, "v")))
+			return (3);
+		if ((ft_strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
+			return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
 		ssl->options.v = 1;
 		return (1);
 	}
@@ -258,7 +235,7 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	else
 	{
 		i = search_command(argv[1], cipher_cmds, NB_CIPHER_CMDS);
-		if (i != NB_CIPHER_CMDS && !ft_strcmp(argv[1], "base64"))
+		if (i != NB_CIPHER_CMDS)
 		{
 			int			nb_options;
 			char		*options[][3] = CIPHER_OPTIONS;

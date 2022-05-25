@@ -46,11 +46,15 @@ int			args_error(int error, char *str, int range1, int range2)
 	dprintf(STDERR_FILENO, "%s: ", PRG_NAME);
 	if (error == ERR_INV_OPT)
 		dprintf(STDERR_FILENO, "invalid option -- '%s'\n", str);
-	else if (error == ERR_INV_ARG || error == ERR_OOR_ARG)
+	else if (error == ERR_INV_ARG || error == ERR_OOR_ARG || error == ERR_HEX_ARG || error == ERR_PRINT_ARG)
 	{
 		dprintf(STDERR_FILENO, "invalid argument: '%s'", str);
 		if (error == ERR_OOR_ARG)
 			dprintf(STDERR_FILENO, ": out of range: %d <= value <= %d", range1, range2);
+		else if (error == ERR_HEX_ARG)
+			dprintf(STDERR_FILENO, ": must be in lowercase hexadecimal ([0-9a-f] and len %% 2 == 0)");
+		else if (error == ERR_PRINT_ARG)
+			dprintf(STDERR_FILENO, ": must be printable (' ' <= x <= '~')");
 		dprintf(STDERR_FILENO, "\n");
 	}
 	else if (error == ERR_REQ_ARG)
