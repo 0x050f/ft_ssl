@@ -41,23 +41,23 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 	{
 		if (!strcmp(option, options[k][0]))
 		{
-			if (!strchr(ssl->options, options[k][0][1]))
-				strcat(ssl->options, &options[k][0][1]);
+			if (!strchr(ssl->options, *option))
+				strcat(ssl->options, option);
 			if (!strcmp(option, "-i"))
 			{
-				if (!(ssl->input = get_string_arg(argc, argv, i, j, "d")))
+				if (!(ssl->input = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				return (1);
 			}
 			else if (!strcmp(option, "-o"))
 			{
-				if (!(ssl->output = get_string_arg(argc, argv, i, j, "o")))
+				if (!(ssl->output = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				return (1);
 			}
 			else if (!strcmp(option, "-k"))
 			{
-				if (!(ssl->key = get_string_arg(argc, argv, i, j, "a")))
+				if (!(ssl->key = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				if ((ft_strlen(ssl->key) % 2) || !ishexa(ssl->key))
 					return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
@@ -65,7 +65,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			}
 			else if (!strcmp(option, "-p"))
 			{
-				if (!(ssl->password = get_string_arg(argc, argv, i, j, "p")))
+				if (!(ssl->password = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				if (!isprintable(ssl->password))
 					return (args_error(ERR_PRINT_ARG, "p", 0, 0) + 1);
@@ -73,7 +73,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			}
 			else if (!strcmp(option, "-s"))
 			{
-				if (!(ssl->salt = get_string_arg(argc, argv, i, j, "s")))
+				if (!(ssl->salt = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				if ((ft_strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
 					return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
@@ -81,7 +81,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			}
 			else if (!strcmp(option, "-v"))
 			{
-				if (!(ssl->iv = get_string_arg(argc, argv, i, j, "v")))
+				if (!(ssl->iv = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				if ((ft_strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
 					return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
@@ -105,7 +105,7 @@ int			handle_hash_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char
 			if (!strcmp(option, "-s"))
 			{
 				char *str;
-				if (!(str = get_string_arg(argc, argv, i, j, "s")))
+				if (!(str = get_string_arg(argc, argv, i, j, option)))
 					return (3);
 				if (!add_list(&ssl->strings, str))
 				{
