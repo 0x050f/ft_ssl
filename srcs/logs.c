@@ -1,32 +1,45 @@
 #include "ft_ssl.h"
 
-void		show_commands(int fd)
+void		show_commands(int fd, char *cmds[], int nb_cmds)
 {
-	char	*commands[NB_CMDS] = CMD_HASHES;
-	for (size_t i = 0; i < NB_CMDS; i++)
-		dprintf(fd, "  %s\n", commands[i]);
+	for (int i = 0; i < nb_cmds; i++)
+		dprintf(fd, "    %s\n", cmds[i]);
 }
 
-void		show_options(int fd)
+void		show_options(int fd, char *options[][3], int nb_options)
 {
-	char *options[NB_FLAGS][2] =
+	int		padding = 18;
+
+	for (int i = 0; i < nb_options; i++)
 	{
-		{"-p", "pipe STDIN to STDOUT and append the checksum to STDOUT"},
-		{"-q", "quiet mode"},
-		{"-r", "reverse the format of the output"},
-		{"-s <string>", "print the sum of the given string"},
-	};
-	for (size_t i = 0; i < NB_FLAGS; i++)
-		dprintf(fd, "  %-18s %s\n", options[i][0], options[i][1]);
+		if (options[i][1])
+			dprintf(fd, "    %s %-*s %s\n", options[i][0], (int)(padding - (ft_strlen(options[i][0]) + 1)), options[i][1], options[i][2]);
+		else
+			dprintf(fd, "    %-*s %s\n", padding, options[i][0], options[i][2]);
+	}
 }
 
 void		show_usage(int fd)
 {
+	char	*hash_commands[NB_HASH_CMDS] = CMD_HASH;
+	char	*hash_options[NB_HASH_OPTIONS][3] = HASH_OPTIONS;
+	char	*cipher_commands[NB_CIPHER_CMDS] = CMD_CIPHER;
+	char	*cipher_options[NB_CIPHER_OPTIONS][3] = CIPHER_OPTIONS;
+	char	*cipher_des_options[NB_CIPHER_DES_OPTIONS][3] = CIPHER_DES_OPTIONS;
+
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
 	dprintf(fd, "Commands:\n");
-	show_commands(fd);
+	dprintf(fd, "  Message Digest Commands:\n");
+	show_commands(fd, hash_commands, NB_HASH_CMDS);
+	dprintf(fd, "  Cipher Commands:\n");
+	show_commands(fd, cipher_commands, NB_CIPHER_CMDS);
 	dprintf(fd, "Options:\n");
-	show_options(fd);
+	dprintf(fd, "  Hash Options:\n");
+	show_options(fd, hash_options, NB_HASH_OPTIONS);
+	dprintf(fd, "  Cipher Options:\n");
+	show_options(fd, cipher_options, NB_CIPHER_OPTIONS);
+	dprintf(fd, "    des only:\n");
+	show_options(fd, cipher_des_options, NB_CIPHER_DES_OPTIONS);
 }
 
 int			args_error(int error, char *str, int range1, int range2)

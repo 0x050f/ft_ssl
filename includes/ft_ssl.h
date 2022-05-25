@@ -9,21 +9,40 @@
 # include <string.h>
 # include <unistd.h>
 
+# include "hash.h"
+# include "error.h"
+
 # define PRG_NAME "ft_ssl"
 
-# define ERR_NB_ARGS		1
-# define ERR_INV_OPT		2
-# define ERR_INV_ARG		3
-# define ERR_OOR_ARG		4 /* OUT OF RANGE */
-# define ERR_REQ_ARG		5
+# define NB_HASH_OPTIONS	4
+# define HASH_OPTIONS		{ \
+		{"-p", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT"}, \
+		{"-q", NULL, "quiet mode"}, \
+		{"-r", NULL, "reverse the format of the output"}, \
+		{"-s", "<string>", "print the sum of the given string"} \
+}
+# define NB_HASH_CMDS		5
+# define CMD_HASH			{"md5", "sha256", "sha224", "sha512", "sha384"}
+# define FUNC_HASH			{&md5, &sha256, &sha224, &sha512, &sha384}
 
-# define ERR_MALLOC			6
-# define ERR_BADCMD			7
-
-# define NB_FLAGS 4
-# define NB_CMDS 5
-# define CMD_HASHES			{"md5", "sha256", "sha224", "sha512", "sha384"}
-# define CMD_FUNC			{&md5, &sha256, &sha224, &sha512, &sha384}
+# define NB_CIPHER_OPTIONS	4
+# define CIPHER_OPTIONS		{ \
+		{"-d", NULL, "decode/decrypt mode"}, \
+		{"-e", NULL, "encode/encrypt mode (default)"}, \
+		{"-i", "<file>", "input file for message"}, \
+		{"-o", "<output>", "output file for message"} \
+}
+# define NB_CIPHER_DES_OPTIONS	5
+# define CIPHER_DES_OPTIONS	{ \
+		{"-a", NULL, "decode/encode the input/output in base64, depending on the encrypt mode"}, \
+		{"-k", "<key>", "key in hex"}, \
+		{"-p", "<password>", "password in ascii"}, \
+		{"-s", "<salt>", "salt in hex"}, \
+		{"-v", "<iv>", "initialization vector in hex"} \
+}
+# define NB_CIPHER_CMDS		4
+# define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
+# define FUNC_CIPHER		{&base64, &des-cbc, &des-ecb, &des-cbc}
 
 typedef struct		s_options
 {
@@ -47,21 +66,6 @@ typedef struct		s_ssl
 	t_options		options;
 }					t_ssl;
 
-/* sha384.c */
-char		*sha384(char *str, size_t size);
-
-/* sha512.c */
-char		*sha512(char *str, size_t size);
-
-/* sha224.c */
-char		*sha224(char *str, size_t size);
-
-/* sha256.c */
-char		*sha256(char *str, size_t size);
-
-/* md5.c */
-char		*md5(char *str, size_t size);
-
 /* lst.c */
 t_lst		*add_list(t_lst **lst, void *content);
 void		clear_list(t_lst *lst);
@@ -70,14 +74,13 @@ void		clear_list(t_lst *lst);
 int			check_args(int argc, char *argv[], t_ssl *ssl);
 
 /* logs.c */
-void		show_commands(int fd);
-void		show_options(int fd);
 void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
 size_t		ft_strlen(const char *s);
 size_t		ft_strlen_special(char *str, size_t max);
+int			ft_strncmp(const char *s1, const char *s2, size_t n);
 int			ft_strcmp(const char *s1, const char *s2);
 size_t		ft_strcpy(char *dst, const char *src);
 void		*ft_memset(void *b, int c, size_t len);

@@ -1,33 +1,34 @@
 #include "ft_ssl.h"
 
-int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl)
+int			handle_hash_options(int argc, char *argv[], int *i, t_ssl *ssl)
 {
 	int		j;
 	int		k;
-	char	options[NB_FLAGS] = {'p', 'q', 'r', 's'};
+	char	*options[NB_HASH_OPTIONS][3] = HASH_OPTIONS;
 
 	k = 0;
 	j = 1;
 	while (argv[*i][j])
 	{
 		k = 0;
-		while (k < NB_FLAGS)
+		while (k < NB_HASH_OPTIONS)
 		{
-			if (argv[*i][j] == options[k])
+			printf("%s\n", options[k][0] + 1);
+			if (!strncmp(argv[*i], (options[k][0] + 1), strlen((options[k][0] + 1))))
 				break ;
 			k++;
 		}
-		if (k == NB_FLAGS)
+		if (k == NB_HASH_OPTIONS)
 			break ;
 		else
 		{
-			if (options[k] == 'p')
+			if (!strcmp(options[k][0], "-p"))
 				ssl->options.p = 1;
-			else if (options[k] == 'q')
+			else if (!strcmp(options[k][0], "-q"))
 				ssl->options.q = 1;
-			else if (options[k] == 'r')
+			else if (!strcmp(options[k][0], "-r"))
 				ssl->options.r = 1;
-			else if (options[k] == 's')
+			else if (!strcmp(options[k][0], "-s"))
 			{
 				char *str;
 
@@ -51,7 +52,7 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl)
 		}
 		j++;
 	}
-	if (k == NB_FLAGS)
+	if (k == NB_HASH_OPTIONS)
 	{
 		char option[2] = {0, 0};
 		option[0] = argv[*i][j];
@@ -63,7 +64,7 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl)
 
 int			check_args(int argc, char *argv[], t_ssl *ssl)
 {
-	char	*commands[NB_CMDS] = CMD_HASHES;
+	char	*commands[NB_HASH_CMDS] = CMD_HASH;
 	int		ret;
 
 	ft_memset(ssl, 0, sizeof(t_ssl));
@@ -74,9 +75,9 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	}
 	ft_memset(&ssl->options, 0, sizeof(t_options));
 	int i = 0;
-	while (i < NB_CMDS && ft_strcmp(argv[1], commands[i]))
+	while (i < NB_HASH_CMDS && ft_strcmp(argv[1], commands[i]))
 		i++;
-	if (i == NB_CMDS)
+	if (i == NB_HASH_CMDS)
 	{
 		dprintf(STDERR_FILENO, "%s: Error: '%s' is an invalid command.\n\n", PRG_NAME, argv[1]);
 		show_usage(STDERR_FILENO);
@@ -87,7 +88,7 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	i = 2;
 	while (i < argc && *argv[i] == '-')
 	{
-		ret = handle_options(argc, argv, &i, ssl);
+		ret = handle_hash_options(argc, argv, &i, ssl);
 		if (ret)
 			return (ret);
 		i++;
