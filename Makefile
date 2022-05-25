@@ -19,11 +19,11 @@ SRCS			=	ft_ssl.c \
 					lst.c \
 					logs.c \
 					utils.c \
-					md5.c \
-					sha256.c \
-					sha224.c \
-					sha512.c \
-					sha384.c
+					hash/md5.c \
+					hash/sha256.c \
+					hash/sha224.c \
+					hash/sha512.c \
+					hash/sha384.c
 
 INCLUDES		=	ft_ssl.h
 
@@ -50,6 +50,7 @@ $(NAME):		$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 $(OBJS):		| $(DIR_OBJS)
 
 $(DIR_OBJS)%.o: $(DIR_SRCS)%.c
+				@mkdir -p $(dir $@)
 				@printf "\033[2K\r $(_YELLOW)Compiling $< $(_END)⌛ "
 				@gcc $(CC_FLAGS) -I $(DIR_HEADERS) -c $< -o $@
 
@@ -58,12 +59,16 @@ $(DIR_OBJS):
 
 # MANDATORY PART #
 clean:
+ifneq (,$(wildcard $(DIR_OBJS)))
 				@rm -rf $(DIR_OBJS)
 				@printf "\033[2K\r$(_RED) '"$(DIR_OBJS)"' has been deleted. $(_END)🗑️\n"
+endif
 
 fclean:			clean
+ifneq (,$(wildcard $(NAME)))
 				@rm -rf $(NAME)
 				@printf "\033[2K\r$(_RED) '"$(NAME)"' has been deleted. $(_END)🗑️\n"
+endif
 
 re:				fclean
 				@$(MAKE) --no-print-directory
