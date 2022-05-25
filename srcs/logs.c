@@ -22,10 +22,9 @@ void		show_options(int fd, char *options[][3], int nb_options)
 void		show_usage(int fd)
 {
 	char	*hash_commands[NB_HASH_CMDS] = CMD_HASH;
-	char	*hash_options[NB_HASH_OPTIONS][3] = HASH_OPTIONS;
+	char	*hash_options[][3] = HASH_OPTIONS;
 	char	*cipher_commands[NB_CIPHER_CMDS] = CMD_CIPHER;
-	char	*cipher_options[NB_CIPHER_OPTIONS][3] = CIPHER_OPTIONS;
-	char	*cipher_des_options[NB_CIPHER_DES_OPTIONS][3] = CIPHER_DES_OPTIONS;
+	char	*cipher_options[][3] = CIPHER_OPTIONS;
 
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
 	dprintf(fd, "Commands:\n");
@@ -39,7 +38,7 @@ void		show_usage(int fd)
 	dprintf(fd, "  Cipher Options:\n");
 	show_options(fd, cipher_options, NB_CIPHER_OPTIONS);
 	dprintf(fd, "    des only:\n");
-	show_options(fd, cipher_des_options, NB_CIPHER_DES_OPTIONS);
+	show_options(fd, &cipher_options[NB_CIPHER_OPTIONS], NB_CIPHER_DES_OPTIONS - NB_CIPHER_OPTIONS);
 }
 
 int			args_error(int error, char *str, int range1, int range2)

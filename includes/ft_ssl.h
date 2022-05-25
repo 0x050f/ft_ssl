@@ -26,14 +26,12 @@
 # define FUNC_HASH			{&md5, &sha256, &sha224, &sha512, &sha384}
 
 # define NB_CIPHER_OPTIONS	4
-# define CIPHER_OPTIONS		{ \
+# define NB_CIPHER_DES_OPTIONS	9
+# define CIPHER_OPTIONS	{ \
 		{"-d", NULL, "decode/decrypt mode"}, \
 		{"-e", NULL, "encode/encrypt mode (default)"}, \
 		{"-i", "<file>", "input file for message"}, \
-		{"-o", "<output>", "output file for message"} \
-}
-# define NB_CIPHER_DES_OPTIONS	5
-# define CIPHER_DES_OPTIONS	{ \
+		{"-o", "<output>", "output file for message"}, \
 		{"-a", NULL, "decode/encode the input/output in base64, depending on the encrypt mode"}, \
 		{"-k", "<key>", "key in hex"}, \
 		{"-p", "<password>", "password in ascii"}, \
@@ -46,10 +44,17 @@
 
 typedef struct		s_options
 {
+	int				a;
+	int				d;
+	int				e;
+	int				i;
+	int				k;
+	int				o;
 	int				p;
 	int				q;
 	int				r;
 	int				s;
+	int				v;
 }					t_options;
 
 typedef struct		s_lst
@@ -63,8 +68,21 @@ typedef struct		s_ssl
 	char			*cmd;
 	t_lst			*strings;
 	t_lst			*files;
+	char			*input;
+	char			*output;
+	char			*key;
+	char			*password;
+	char			*salt;
+	char			*iv;
 	t_options		options;
 }					t_ssl;
+
+typedef struct		s_cmd_options
+{
+	int				((*handler)(int, char **, int *, int, t_ssl *, char *));
+	int				nb_options;
+	char			***options;
+}					t_cmd_options;
 
 /* lst.c */
 t_lst		*add_list(t_lst **lst, void *content);
@@ -79,6 +97,7 @@ int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
 size_t		ft_strlen(const char *s);
+char		*ft_strdup(const char *s1);
 size_t		ft_strlen_special(char *str, size_t max);
 int			ft_strncmp(const char *s1, const char *s2, size_t n);
 int			ft_strcmp(const char *s1, const char *s2);

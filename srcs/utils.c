@@ -10,6 +10,23 @@ size_t		ft_strlen(const char *s)
 	return (ptr - s);
 }
 
+char	*ft_strdup(const char *s1)
+{
+	int		i;
+	char	*pt;
+
+	i = 0;
+	while (s1[i])
+		i++;
+	if (!(pt = malloc((i + 1) * sizeof(char))))
+		return (0);
+	i = -1;
+	while (s1[++i])
+		pt[i] = s1[i];
+	pt[i] = '\0';
+	return (pt);
+}
+
 int			ft_strncmp(const char *s1, const char *s2, size_t n)
 {
 	int i;
