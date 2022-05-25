@@ -71,7 +71,7 @@ void		process_files(t_ssl *ssl)
 		result = launch_hash(ssl, query, size);
 		if (!result)
 			return ;
-		if (!ssl->options.q && !ssl->options.r)
+		if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
 		{
 			char uppercase[12];
 
@@ -80,7 +80,7 @@ void		process_files(t_ssl *ssl)
 			printf("%s (%s) = ", uppercase, tmp->content);
 		}
 		printf("%s", result);
-		if (!ssl->options.q && ssl->options.r)
+		if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
 			printf(" %s", tmp->content);
 		printf("\n");
 		free(query);
@@ -101,7 +101,7 @@ void		process_strings(t_ssl *ssl)
 		result = launch_hash(ssl, tmp->content, ft_strlen(tmp->content));
 		if (!result)
 			return ;
-		if (!ssl->options.q && !ssl->options.r)
+		if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
 		{
 			char uppercase[12];
 
@@ -110,7 +110,7 @@ void		process_strings(t_ssl *ssl)
 			printf("%s (\"%s\") = ", uppercase, tmp->content);
 		}
 		printf("%s", result);
-		if (!ssl->options.q && ssl->options.r)
+		if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
 			printf(" \"%s\"", tmp->content);
 		printf("\n");
 		free(result);
@@ -129,13 +129,13 @@ void		process_stdin(t_ssl *ssl)
 	result = launch_hash(ssl, query, size);
 	if (!result)
 		return ;
-	if (ssl->options.p && !ssl->options.q)
+	if (strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
 		printf("(\"%.*s\")= %s\n", ft_strlen_special(query, size), query, result);
-	else if (!ssl->options.p && !ssl->options.q)
+	else if (!strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
 		printf("(stdin)= %s\n", result);
-	else if (ssl->options.q)
+	else if (strchr(ssl->options, 'q'))
 	{
-		if (ssl->options.p)
+		if (strchr(ssl->options, 'p'))
 			printf("%.*s\n", ft_strlen_special(query, size), query, result);
 		printf("%s\n", result);
 	}
@@ -155,7 +155,7 @@ int			main(int argc, char *argv[])
 	}
 	if (ssl.cmd)
 	{
-		if ((!ssl.strings && !ssl.files) || ssl.options.p)
+		if ((!ssl.strings && !ssl.files) || strchr(ssl.options, 'p'))
 			process_stdin(&ssl);
 		process_strings(&ssl);
 		process_files(&ssl);

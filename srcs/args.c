@@ -35,93 +35,86 @@ char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
 
 int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char *option)
 {
-	if (!strcmp(option, "-d"))
-		ssl->options.d = 1;
-	else if (!strcmp(option, "-e"))
-		ssl->options.e = 1;
-	else if (!strcmp(option, "-i"))
+	char *options[][3] = CIPHER_OPTIONS;
+
+	for (int k = 0; k < NB_CIPHER_DES_OPTIONS; k++)
 	{
-		if (!(ssl->input = get_string_arg(argc, argv, i, j, "d")))
-			return (3);
-		ssl->options.i = 1;
-		return (1);
-	}
-	else if (!strcmp(option, "-o"))
-	{
-		if (!(ssl->output = get_string_arg(argc, argv, i, j, "o")))
-			return (3);
-		ssl->options.o = 1;
-		return (1);
-	}
-	else if (!strcmp(option, "-a"))
-		ssl->options.a = 1;
-	else if (!strcmp(option, "-k"))
-	{
-		if (!(ssl->key = get_string_arg(argc, argv, i, j, "a")))
-			return (3);
-		if ((ft_strlen(ssl->key) % 2) || !ishexa(ssl->key))
-			return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
-		ssl->options.k = 1;
-		return (1);
-	}
-	else if (!strcmp(option, "-p"))
-	{
-		if (!(ssl->password = get_string_arg(argc, argv, i, j, "p")))
-			return (3);
-		if (!isprintable(ssl->password))
-			return (args_error(ERR_PRINT_ARG, "p", 0, 0) + 1);
-		ssl->options.p = 1;
-		return (1);
-	}
-	else if (!strcmp(option, "-s"))
-	{
-		if (!(ssl->salt = get_string_arg(argc, argv, i, j, "s")))
-			return (3);
-		if ((ft_strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
-			return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
-		ssl->options.s = 1;
-		return (1);
-	}
-	else if (!strcmp(option, "-v"))
-	{
-		if (!(ssl->iv = get_string_arg(argc, argv, i, j, "v")))
-			return (3);
-		if ((ft_strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
-			return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
-		ssl->options.v = 1;
-		return (1);
+		if (!strcmp(option, options[k][0]))
+		{
+			if (!strchr(ssl->options, options[k][0][1]))
+				strcat(ssl->options, &options[k][0][1]);
+			if (!strcmp(option, "-i"))
+			{
+				if (!(ssl->input = get_string_arg(argc, argv, i, j, "d")))
+					return (3);
+				return (1);
+			}
+			else if (!strcmp(option, "-o"))
+			{
+				if (!(ssl->output = get_string_arg(argc, argv, i, j, "o")))
+					return (3);
+				return (1);
+			}
+			else if (!strcmp(option, "-k"))
+			{
+				if (!(ssl->key = get_string_arg(argc, argv, i, j, "a")))
+					return (3);
+				if ((ft_strlen(ssl->key) % 2) || !ishexa(ssl->key))
+					return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
+				return (1);
+			}
+			else if (!strcmp(option, "-p"))
+			{
+				if (!(ssl->password = get_string_arg(argc, argv, i, j, "p")))
+					return (3);
+				if (!isprintable(ssl->password))
+					return (args_error(ERR_PRINT_ARG, "p", 0, 0) + 1);
+				return (1);
+			}
+			else if (!strcmp(option, "-s"))
+			{
+				if (!(ssl->salt = get_string_arg(argc, argv, i, j, "s")))
+					return (3);
+				if ((ft_strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
+					return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
+				return (1);
+			}
+			else if (!strcmp(option, "-v"))
+			{
+				if (!(ssl->iv = get_string_arg(argc, argv, i, j, "v")))
+					return (3);
+				if ((ft_strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
+					return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
+				return (1);
+			}
+		}
 	}
 	return (0);
 }
 
 int			handle_hash_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char *option)
 {
-	if (!strcmp(option, "-p"))
-		ssl->options.p = 1;
-	else if (!strcmp(option, "-q"))
-		ssl->options.q = 1;
-	else if (!strcmp(option, "-r"))
-		ssl->options.r = 1;
-	else if (!strcmp(option, "-s"))
-	{
-		char *str;
+	char *options[][3] = HASH_OPTIONS;
 
-		if (argv[*i][j + 1])
-			str = &argv[*i][j + 1];
-		else if (argc  - 1 < *i + 1)
-			return (args_error(ERR_REQ_ARG, "s", 0, 0) + 1);
-		else
+	for (int k = 0; k < NB_HASH_OPTIONS; k++)
+	{
+		if (!strcmp(option, options[k][0]))
 		{
-			*i += 1;
-			str = argv[*i];
+			if (!strchr(ssl->options, options[k][0][1]))
+				strcat(ssl->options, &options[k][0][1]);
+			if (!strcmp(option, "-s"))
+			{
+				char *str;
+				if (!(str = get_string_arg(argc, argv, i, j, "s")))
+					return (3);
+				if (!add_list(&ssl->strings, str))
+				{
+					dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+					return (ERR_MALLOC + 1);
+				}
+				return (1);
+			}
 		}
-		if (!add_list(&ssl->strings, str))
-		{
-			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-			return (ERR_MALLOC + 1);
-		}
-		ssl->options.s = 1;
-		return (1);
 	}
 	return (0);
 }
@@ -223,7 +216,6 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 		show_usage(STDOUT_FILENO);
 		return (0);
 	}
-	ft_memset(&ssl->options, 0, sizeof(t_options));
 	int i = search_command(argv[1], hash_cmds, NB_HASH_CMDS);
 	if (i != NB_HASH_CMDS)
 	{

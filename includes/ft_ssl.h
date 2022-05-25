@@ -42,21 +42,6 @@
 # define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
 # define FUNC_CIPHER		{&base64, &des-cbc, &des-ecb, &des-cbc}
 
-typedef struct		s_options
-{
-	int				a;
-	int				d;
-	int				e;
-	int				i;
-	int				k;
-	int				o;
-	int				p;
-	int				q;
-	int				r;
-	int				s;
-	int				v;
-}					t_options;
-
 typedef struct		s_lst
 {
 	void			*content;
@@ -66,15 +51,18 @@ typedef struct		s_lst
 typedef struct		s_ssl
 {
 	char			*cmd;
+	/* HASH */
 	t_lst			*strings;
 	t_lst			*files;
+	/* CIPHER */
 	char			*input;
 	char			*output;
 	char			*key;
 	char			*password;
 	char			*salt;
 	char			*iv;
-	t_options		options;
+	/* OPTIONS */
+	char			options[32];
 }					t_ssl;
 
 typedef struct		s_cmd_options
