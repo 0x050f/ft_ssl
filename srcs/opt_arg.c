@@ -32,6 +32,29 @@ t_opt_arg		*append_opt_arg(t_opt_arg **opt_args, char arg, void *content)
 	}
 }
 
+t_opt_arg	*get_last_arg(t_opt_arg *opt_args, char arg)
+{
+	t_opt_arg *tmp;
+	t_opt_arg *res = NULL;
+
+	tmp = opt_args;
+	while (tmp)
+	{
+		if (tmp->arg == arg)
+			res = tmp;
+		tmp = tmp->next;
+	}
+	return (res);
+}
+
+void		*get_last_content(t_opt_arg *opt_args, char arg)
+{
+	t_opt_arg	*opt = get_last_arg(opt_args, arg);
+	if (!opt)
+		return (NULL);
+	return (opt->content);
+}
+
 void		clear_opt_arg(t_opt_arg *opt_args)
 {
 	t_opt_arg *tmp;

@@ -11,6 +11,13 @@
 
 # define PRG_NAME "ft_ssl"
 
+#ifdef DEBUG
+	#define DPRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, \
+		__FILE__, __LINE__, __func__, ##args)
+#else
+	#define DPRINT(fmt, args...)
+#endif
+
 /*
 	OPTIONS:
 	{name, argument, desc, check}
@@ -78,6 +85,8 @@ typedef struct		s_cmd_options
 /* opt_arg.c */
 t_opt_arg	*append_opt_arg(t_opt_arg **opt_args, char arg, void *content);
 void		clear_opt_arg(t_opt_arg *opt_args);
+t_opt_arg	*get_last_arg(t_opt_arg *opt_args, char arg);
+void		*get_last_content(t_opt_arg *opt_args, char arg);
 
 /* args.c */
 int			check_args(int argc, char *argv[], t_ssl *ssl);

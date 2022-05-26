@@ -35,11 +35,17 @@ char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
 
 int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **option)
 {
-	if (!strchr(ssl->options, option[0][1])) // append the option
-		strcat(ssl->options, &option[0][1]);
+	char	*str;
+
+	if (!(str = strchr(ssl->options, option[0][1]))) // append the option
+		ssl->options[strlen(ssl->options)] = option[0][1];
+	else
+	{
+		memmove(str, str + 1, strlen(str + 1));
+		ssl->options[strlen(ssl->options) - 1] = option[0][1];
+	}
 	if (option[1]) // has an argument
 	{
-		char *str;
 		if (!(str = get_string_arg(argc, argv, i, j, &option[0][1])))
 			return (ERR_REQ_ARG);
 		if (option[3] && !strcmp(option[3], "HEX") && ((strlen(str) % 2) || !ishexa(str))) // should be hexa
@@ -130,7 +136,7 @@ void		free_options(char ***options, int nb_options)
 {
 	for (int i = 0; i < nb_options; i++)
 	{
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < NB_COLUMNS_OPTIONS; j++)
 			free(options[i][j]);
 		free(options[i]);
 	}
