@@ -9,9 +9,6 @@
 # include <string.h>
 # include <unistd.h>
 
-# include "hash.h"
-# include "error.h"
-
 # define PRG_NAME "ft_ssl"
 
 /*
@@ -50,6 +47,9 @@
 # define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
 # define FUNC_CIPHER		{&base64, &des-cbc, &des-ecb, &des-cbc}
 
+# define MODE_HASH			1
+# define MODE_CIPHER		2
+
 typedef struct		s_opt_arg
 {
 	char			arg;
@@ -60,6 +60,7 @@ typedef struct		s_opt_arg
 typedef struct		s_ssl
 {
 	char			*cmd;
+	int				mode;
 	t_opt_arg		*opt_args;
 	char			options[32];
 }					t_ssl;
@@ -69,6 +70,9 @@ typedef struct		s_cmd_options
 	int				nb_options;
 	char			***options;
 }					t_cmd_options;
+
+# include "hash.h"
+# include "error.h"
 
 /* opt_arg.c */
 t_opt_arg	*append_opt_arg(t_opt_arg **opt_args, char arg, void *content);

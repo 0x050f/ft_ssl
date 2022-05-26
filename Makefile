@@ -15,6 +15,7 @@ SRCS			=	ft_ssl.c \
 					args.c \
 					logs.c \
 					utils.c \
+					hash/process.c \
 					hash/md5.c \
 					hash/sha256.c \
 					hash/sha224.c \

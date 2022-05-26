@@ -2,6 +2,7 @@
 # define HASH_H
 
 /* Hash functions are located in the hash/ directory */
+void		process_hash(t_ssl *ssl);
 
 /* sha384.c */
 char		*sha384(char *str, size_t size);

@@ -163,6 +163,7 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	{
 		char		*options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
 
+		ssl->mode = MODE_HASH;
 		if (setup_cmd_options(&cmd_options, NB_HASH_OPTIONS, options))
 			return (ERR_MALLOC);
 	}
@@ -174,6 +175,7 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 			int			nb_options;
 			char		*options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
 
+			ssl->mode = MODE_CIPHER;
 			if (!strcmp(argv[1], "base64"))
 				nb_options = NB_CIPHER_OPTIONS;
 			else
