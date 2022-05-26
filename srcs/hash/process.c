@@ -13,39 +13,6 @@ char		*launch_hash(t_ssl *ssl, char *query, size_t size)
 	return (NULL);
 }
 
-char		*read_query(int fd, size_t *size)
-{
-	char	*query;
-	char	*tmp;
-	size_t	ret;
-	char	buffer[4096];
-
-	*size = 0;
-	query = malloc(0);
-	if (!query)
-	{
-		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-		return (NULL);
-	}
-	while ((ret = read(fd, buffer, 4096)))
-	{
-		tmp = malloc(sizeof(char) * *size + ret);
-		if (!tmp)
-		{
-			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-			free(query);
-			return (NULL);
-		}
-		if (query)
-			memcpy(tmp, query, *size);
-		memcpy(tmp + *size, buffer, ret);
-		free(query);
-		*size += ret;
-		query = tmp;
-	}
-	return (query);
-}
-
 void		process_hash_files(t_ssl *ssl)
 {
 	t_opt_arg	*tmp;
@@ -72,7 +39,10 @@ void		process_hash_files(t_ssl *ssl)
 			}
 			result = launch_hash(ssl, query, size);
 			if (!result)
+			{
+				free(query);
 				return ;
+			}
 			if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
 			{
 				char uppercase[12];
@@ -134,7 +104,10 @@ void		process_hash_stdin(t_ssl *ssl)
 		return ;
 	result = launch_hash(ssl, query, size);
 	if (!result)
+	{
+		free(query);
 		return ;
+	}
 	if (strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
 		printf("(\"%.*s\")= %s\n", ft_strlen_special(query, size), query, result);
 	else if (!strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))

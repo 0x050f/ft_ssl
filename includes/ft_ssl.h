@@ -100,5 +100,6 @@ size_t		ft_strlen_special(char *str, size_t max);
 void		ft_toupper(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);
+char		*read_query(int fd, size_t *size);
 
 #endif

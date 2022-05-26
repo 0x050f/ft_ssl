@@ -50,3 +50,36 @@ int			isprintable(char *str)
 	}
 	return (1);
 }
+
+char		*read_query(int fd, size_t *size)
+{
+	char	*query;
+	char	*tmp;
+	size_t	ret;
+	char	buffer[4096];
+
+	*size = 0;
+	query = malloc(0);
+	if (!query)
+	{
+		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+		return (NULL);
+	}
+	while ((ret = read(fd, buffer, 4096)))
+	{
+		tmp = malloc(sizeof(char) * *size + ret);
+		if (!tmp)
+		{
+			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+			free(query);
+			return (NULL);
+		}
+		if (query)
+			memcpy(tmp, query, *size);
+		memcpy(tmp + *size, buffer, ret);
+		free(query);
+		*size += ret;
+		query = tmp;
+	}
+	return (query);
+}

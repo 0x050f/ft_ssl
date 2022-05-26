@@ -5,7 +5,7 @@
 // https://en.wikipedia.org/wiki/SHA-2
 char		*sha384(char *str, size_t size)
 {
-	DPRINT("sha384(\"%s\", %zu)\n", str, size);
+	DPRINT("sha384(\"%.*s\", %zu)\n", size, str, size);
 	uint64_t padding_zeroes;
 	// setup msg
 	//             v 0x80     v size
