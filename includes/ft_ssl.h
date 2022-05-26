@@ -45,7 +45,7 @@
 }
 # define NB_CIPHER_CMDS		4
 # define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
-# define FUNC_CIPHER		{&base64, &des-cbc, &des-ecb, &des-cbc}
+# define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
 # define MODE_HASH			1
 # define MODE_CIPHER		2
@@ -72,6 +72,7 @@ typedef struct		s_cmd_options
 }					t_cmd_options;
 
 # include "hash.h"
+# include "cipher.h"
 # include "error.h"
 
 /* opt_arg.c */

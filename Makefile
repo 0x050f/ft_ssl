@@ -20,7 +20,11 @@ SRCS			=	ft_ssl.c \
 					hash/sha256.c \
 					hash/sha224.c \
 					hash/sha512.c \
-					hash/sha384.c
+					hash/sha384.c \
+					cipher/process.c \
+					cipher/base64.c \
+					cipher/des-ecb.c \
+					cipher/des-cbc.c
 
 INCLUDES		=	ft_ssl.h
 

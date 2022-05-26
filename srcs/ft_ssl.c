@@ -14,7 +14,7 @@ int			main(int argc, char *argv[])
 		if (ssl.mode == MODE_HASH)
 			process_hash(&ssl);
 		else if (ssl.mode == MODE_CIPHER)
-			printf("CIPHER MODE\n");
+			process_cipher(&ssl);
 	}
 	clear_opt_arg(ssl.opt_args);
 	return (EXIT_SUCCESS);
