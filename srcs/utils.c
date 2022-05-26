@@ -1,5 +1,13 @@
 #include "ft_ssl.h"
 
+int			ceil(float num)
+{
+	int inum = (int)num;
+	if (num == (float)inum)
+		return (inum);
+	return (inum + 1);
+}
+
 size_t		ft_strlen_special(char *str, size_t max)
 {
 	size_t i;

@@ -28,6 +28,8 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 		free(query);
 		return ;
 	}
+	write(STDOUT_FILENO, result, result_size);
+	write(STDOUT_FILENO, "\n", 1);
 	free(query);
 	free(result);
 }
