@@ -1,6 +1,6 @@
 #include "ft_ssl.h"
 
-char		*search_option(char *to_search, char ***options, int nb_options)
+char		**search_option(char *to_search, char ***options, int nb_options)
 {
 	int i;
 
@@ -11,7 +11,7 @@ char		*search_option(char *to_search, char ***options, int nb_options)
 	}
 	if (i == nb_options)
 		return (NULL);
-	return (options[i][0]);
+	return (options[i]);
 }
 
 char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
@@ -33,88 +33,25 @@ char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
 	return (str);
 }
 
-int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char *option)
+int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **option)
 {
-	char *options[][3] = CIPHER_OPTIONS;
-
-	for (int k = 0; k < NB_CIPHER_DES_OPTIONS; k++)
+	if (!strchr(ssl->options, option[0][1])) // append the option
+		strcat(ssl->options, &option[0][1]);
+	if (option[1]) // has an argument
 	{
-		if (!strcmp(option, options[k][0]))
+		char *str;
+		if (!(str = get_string_arg(argc, argv, i, j, &option[0][1])))
+			return (ERR_REQ_ARG);
+		if (option[3] && !strcmp(option[3], "HEX") && ((strlen(str) % 2) || !ishexa(str))) // should be hexa
+			return (args_error(ERR_HEX_ARG, &option[0][1], 0, 0) + 1);
+		else if (option[3] && !strcmp(option[3], "PRINT") && !isprintable(str)) // should be printable
+			return (args_error(ERR_PRINT_ARG, &option[0][1], 0, 0) + 1);
+		if (!append_opt_arg(&ssl->opt_args, option[0][1], str))
 		{
-			if (!strchr(ssl->options, *option))
-				strcat(ssl->options, option);
-			if (!strcmp(option, "-i"))
-			{
-				if (!(ssl->input = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				return (1);
-			}
-			else if (!strcmp(option, "-o"))
-			{
-				if (!(ssl->output = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				return (1);
-			}
-			else if (!strcmp(option, "-k"))
-			{
-				if (!(ssl->key = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				if ((strlen(ssl->key) % 2) || !ishexa(ssl->key))
-					return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
-				return (1);
-			}
-			else if (!strcmp(option, "-p"))
-			{
-				if (!(ssl->password = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				if (!isprintable(ssl->password))
-					return (args_error(ERR_PRINT_ARG, "p", 0, 0) + 1);
-				return (1);
-			}
-			else if (!strcmp(option, "-s"))
-			{
-				if (!(ssl->salt = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				if ((strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
-					return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
-				return (1);
-			}
-			else if (!strcmp(option, "-v"))
-			{
-				if (!(ssl->iv = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				if ((strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
-					return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
-				return (1);
-			}
+			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+			return (ERR_MALLOC);
 		}
-	}
-	return (0);
-}
-
-int			handle_hash_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char *option)
-{
-	char *options[][3] = HASH_OPTIONS;
-
-	for (int k = 0; k < NB_HASH_OPTIONS; k++)
-	{
-		if (!strcmp(option, options[k][0]))
-		{
-			if (!strchr(ssl->options, options[k][0][1]))
-				strcat(ssl->options, &options[k][0][1]);
-			if (!strcmp(option, "-s"))
-			{
-				char *str;
-				if (!(str = get_string_arg(argc, argv, i, j, option)))
-					return (3);
-				if (!add_list(&ssl->strings, str))
-				{
-					dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-					return (ERR_MALLOC + 1);
-				}
-				return (1);
-			}
-		}
+		return (1);
 	}
 	return (0);
 }
@@ -127,11 +64,17 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl, t_cmd_options *
 	j = 1;
 	while (argv[*i][j])
 	{
-		char *option = search_option(&argv[*i][j], cmd_options->options, cmd_options->nb_options);
+		char **option = search_option(&argv[*i][j], cmd_options->options, cmd_options->nb_options);
 		if (!option)
 			goto error;
-		else if ((ret = (*cmd_options->handler)(argc, argv, i, j, ssl, option)))
-			return (ret - 1);
+		else 
+		{
+			ret = append_option(argc, argv, i, j, ssl, option);
+			if (ret > 1)
+				return (ret);
+			else if (ret == 1)
+				return (0);
+		}
 		j++;
 	}
 	return (0);
@@ -143,21 +86,20 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl, t_cmd_options *
 		return (2);
 }
 
-int			setup_cmd_options(t_cmd_options *cmd_options, int ((*handler)(int, char **, int *, int, t_ssl *, char *)), int nb_options, char *options[][3])
+int			setup_cmd_options(t_cmd_options *cmd_options, int nb_options, char *options[][NB_COLUMNS_OPTIONS])
 {
 	int i;
 
-	cmd_options->handler = handler;
 	cmd_options->nb_options = nb_options;
 	cmd_options->options = malloc(sizeof(char **) * nb_options);
 	if (!cmd_options->options)
 		goto error;
 	for (i = 0; i < nb_options; i++)
 	{
-		cmd_options->options[i] = malloc(sizeof(char *) * 3);
+		cmd_options->options[i] = malloc(sizeof(char *) * NB_COLUMNS_OPTIONS);
 		if (!cmd_options->options[i])
 			goto free_everything;
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < NB_COLUMNS_OPTIONS; j++)
 		{
 			if (options[i][j] && !(cmd_options->options[i][j] = strdup(options[i][j])))
 			{
@@ -174,7 +116,7 @@ int			setup_cmd_options(t_cmd_options *cmd_options, int ((*handler)(int, char **
 	free_everything:
 		for (int j = 0; j < i - 1; j++)
 		{
-			for (int k = 0; k < 3; k++)
+			for (int k = 0; k < NB_COLUMNS_OPTIONS; k++)
 				free(cmd_options->options[j][k]);
 			free(cmd_options->options[j]);
 		}
@@ -219,9 +161,9 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	int i = search_command(argv[1], hash_cmds, NB_HASH_CMDS);
 	if (i != NB_HASH_CMDS)
 	{
-		char		*options[][3] = HASH_OPTIONS;
+		char		*options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
 
-		if (setup_cmd_options(&cmd_options, &handle_hash_option, NB_HASH_OPTIONS, options))
+		if (setup_cmd_options(&cmd_options, NB_HASH_OPTIONS, options))
 			return (ERR_MALLOC);
 	}
 	else
@@ -230,13 +172,13 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 		if (i != NB_CIPHER_CMDS)
 		{
 			int			nb_options;
-			char		*options[][3] = CIPHER_OPTIONS;
+			char		*options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
 
 			if (!strcmp(argv[1], "base64"))
 				nb_options = NB_CIPHER_OPTIONS;
 			else
 				nb_options = NB_CIPHER_DES_OPTIONS;
-			if (setup_cmd_options(&cmd_options, &handle_cipher_option, nb_options, options))
+			if (setup_cmd_options(&cmd_options, nb_options, options))
 				return (ERR_MALLOC);
 		}
 		else
@@ -260,7 +202,9 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	}
 	while (i < argc)
 	{
-		if (!add_list(&ssl->files, argv[i]))
+		if (!strchr(ssl->options, 'f')) // append the option
+			strcat(ssl->options, "f");
+		if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) // add files (HASH)
 		{
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 			free_options(cmd_options.options, cmd_options.nb_options);

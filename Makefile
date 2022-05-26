@@ -11,8 +11,8 @@ DIR_SRCS		=	./srcs/
 DIR_OBJS		=	./compiled_srcs/
 
 SRCS			=	ft_ssl.c \
+					opt_arg.c \
 					args.c \
-					lst.c \
 					logs.c \
 					utils.c \
 					hash/md5.c \

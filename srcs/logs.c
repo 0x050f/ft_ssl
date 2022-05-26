@@ -6,7 +6,7 @@ void		show_commands(int fd, char *cmds[], int nb_cmds)
 		dprintf(fd, "    %s\n", cmds[i]);
 }
 
-void		show_options(int fd, char *options[][3], int nb_options)
+void		show_options(int fd, char *options[][4], int nb_options)
 {
 	int		padding = 18;
 
@@ -22,9 +22,9 @@ void		show_options(int fd, char *options[][3], int nb_options)
 void		show_usage(int fd)
 {
 	char	*hash_commands[NB_HASH_CMDS] = CMD_HASH;
-	char	*hash_options[][3] = HASH_OPTIONS;
+	char	*hash_options[][4] = HASH_OPTIONS;
 	char	*cipher_commands[NB_CIPHER_CMDS] = CMD_CIPHER;
-	char	*cipher_options[][3] = CIPHER_OPTIONS;
+	char	*cipher_options[][4] = CIPHER_OPTIONS;
 
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
 	dprintf(fd, "Commands:\n");

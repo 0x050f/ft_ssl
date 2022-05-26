@@ -14,12 +14,20 @@
 
 # define PRG_NAME "ft_ssl"
 
+/*
+	OPTIONS:
+	{name, argument, desc, check}
+	'f' option set for file
+*/
+
+# define NB_COLUMNS_OPTIONS	4
+
 # define NB_HASH_OPTIONS	4
 # define HASH_OPTIONS		{ \
-		{"-p", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT"}, \
-		{"-q", NULL, "quiet mode"}, \
-		{"-r", NULL, "reverse the format of the output"}, \
-		{"-s", "<string>", "print the sum of the given string"} \
+		{"-p", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT", NULL}, \
+		{"-q", NULL, "quiet mode", NULL}, \
+		{"-r", NULL, "reverse the format of the output", NULL}, \
+		{"-s", "<string>", "print the sum of the given string", NULL} \
 }
 # define NB_HASH_CMDS		5
 # define CMD_HASH			{"md5", "sha256", "sha224", "sha512", "sha384"}
@@ -28,53 +36,43 @@
 # define NB_CIPHER_OPTIONS	4
 # define NB_CIPHER_DES_OPTIONS	9
 # define CIPHER_OPTIONS	{ \
-		{"-d", NULL, "decode/decrypt mode"}, \
-		{"-e", NULL, "encode/encrypt mode (default)"}, \
-		{"-i", "<file>", "input file for message"}, \
-		{"-o", "<output>", "output file for message"}, \
-		{"-a", NULL, "decode/encode the input/output in base64, depending on the encrypt mode"}, \
-		{"-k", "<key>", "key in hex"}, \
-		{"-p", "<password>", "password in ascii"}, \
-		{"-s", "<salt>", "salt in hex"}, \
-		{"-v", "<iv>", "initialization vector in hex"} \
+		{"-d", NULL, "decode/decrypt mode", NULL}, \
+		{"-e", NULL, "encode/encrypt mode (default)", NULL}, \
+		{"-i", "<file>", "input file for message", NULL}, \
+		{"-o", "<output>", "output file for message", NULL}, \
+		{"-a", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
+		{"-k", "<key>", "key in hex", "HEX"}, \
+		{"-p", "<password>", "password in ascii", "PRINT"}, \
+		{"-s", "<salt>", "salt in hex", "HEX"}, \
+		{"-v", "<iv>", "initialization vector in hex", "HEX"} \
 }
 # define NB_CIPHER_CMDS		4
 # define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
 # define FUNC_CIPHER		{&base64, &des-cbc, &des-ecb, &des-cbc}
 
-typedef struct		s_lst
+typedef struct		s_opt_arg
 {
+	char			arg;
 	void			*content;
 	void			*next;
-}					t_lst;
+}					t_opt_arg;
 
 typedef struct		s_ssl
 {
 	char			*cmd;
-	/* HASH */
-	t_lst			*strings;
-	t_lst			*files;
-	/* CIPHER */
-	char			*input;
-	char			*output;
-	char			*key;
-	char			*password;
-	char			*salt;
-	char			*iv;
-	/* OPTIONS */
+	t_opt_arg		*opt_args;
 	char			options[32];
 }					t_ssl;
 
 typedef struct		s_cmd_options
 {
-	int				((*handler)(int, char **, int *, int, t_ssl *, char *));
 	int				nb_options;
 	char			***options;
 }					t_cmd_options;
 
-/* lst.c */
-t_lst		*add_list(t_lst **lst, void *content);
-void		clear_list(t_lst *lst);
+/* opt_arg.c */
+t_opt_arg	*append_opt_arg(t_opt_arg **opt_args, char arg, void *content);
+void		clear_opt_arg(t_opt_arg *opt_args);
 
 /* args.c */
 int			check_args(int argc, char *argv[], t_ssl *ssl);

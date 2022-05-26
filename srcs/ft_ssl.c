@@ -48,72 +48,78 @@ char		*read_query(int fd, size_t *size)
 
 void		process_files(t_ssl *ssl)
 {
-	t_lst	*tmp;
-	size_t	size;
-	char	*query;
-	char	*result;
+	t_opt_arg	*tmp;
+	size_t		size;
+	char		*query;
+	char		*result;
 
-	tmp = ssl->files;
+	tmp = ssl->opt_args;
 	while (tmp)
 	{
-		int fd = open(tmp->content, O_RDONLY);
-		if (fd < 0)
+		if (tmp->arg == 'f')
 		{
-			dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, ssl->cmd, (char *)tmp->content, strerror(errno));
-			tmp = tmp->next;
-			continue;
-		}
-		if (!(query = read_query(fd, &size)))
-		{
-			close(fd);
-			return ;
-		}
-		result = launch_hash(ssl, query, size);
-		if (!result)
-			return ;
-		if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
-		{
-			char uppercase[12];
+			int fd = open(tmp->content, O_RDONLY);
+			if (fd < 0)
+			{
+				dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, ssl->cmd, (char *)tmp->content, strerror(errno));
+				tmp = tmp->next;
+				continue;
+			}
+			if (!(query = read_query(fd, &size)))
+			{
+				close(fd);
+				return ;
+			}
+			result = launch_hash(ssl, query, size);
+			if (!result)
+				return ;
+			if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
+			{
+				char uppercase[12];
 
-			strcpy(uppercase, ssl->cmd);
-			ft_toupper(uppercase);
-			printf("%s (%s) = ", uppercase, tmp->content);
+				strcpy(uppercase, ssl->cmd);
+				ft_toupper(uppercase);
+				printf("%s(%s)= ", uppercase, tmp->content);
+			}
+			printf("%s", result);
+			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
+				printf(" %s", tmp->content);
+			printf("\n");
+			free(query);
+			free(result);
+			close(fd);
 		}
-		printf("%s", result);
-		if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
-			printf(" %s", tmp->content);
-		printf("\n");
-		free(query);
-		free(result);
-		close(fd);
 		tmp = tmp->next;
 	}
 }
 
 void		process_strings(t_ssl *ssl)
 {
-	t_lst	*tmp;
-	char	*result;
+	t_opt_arg	*tmp;
+	char		*result;
 
-	tmp = ssl->strings;
+	tmp = ssl->opt_args;
 	while (tmp)
 	{
-		result = launch_hash(ssl, tmp->content, strlen(tmp->content));
-		if (!result)
-			return ;
-		if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
+		if (tmp->arg == 's')
 		{
-			char uppercase[12];
+			result = launch_hash(ssl, tmp->content, strlen(tmp->content));
+			if (!result)
+				return ;
+			if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
+			{
+				char uppercase[12];
 
-			strcpy(uppercase, ssl->cmd);
-			ft_toupper(uppercase);
-			printf("%s (\"%s\") = ", uppercase, tmp->content);
+				strcpy(uppercase, ssl->cmd);
+				ft_toupper(uppercase);
+				printf("%s(\"%s\")= ", uppercase, tmp->content);
+			}
+			printf("%s", result);
+			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
+				printf(" \"%s\"", tmp->content);
+			printf("\n");
+			free(result);
 		}
-		printf("%s", result);
-		if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
-			printf(" \"%s\"", tmp->content);
-		printf("\n");
-		free(result);
 		tmp = tmp->next;
 	}
 }
@@ -149,18 +155,16 @@ int			main(int argc, char *argv[])
 
 	if (check_args(argc, argv, &ssl))
 	{
-		clear_list(ssl.strings);
-		clear_list(ssl.files);
+		clear_opt_arg(ssl.opt_args);
 		return (EXIT_FAILURE);
 	}
 	if (ssl.cmd)
 	{
-		if ((!ssl.strings && !ssl.files) || strchr(ssl.options, 'p'))
+		if ((!strchr(ssl.options, 's') && !strchr(ssl.options, 'f')) || strchr(ssl.options, 'p'))
 			process_stdin(&ssl);
 		process_strings(&ssl);
 		process_files(&ssl);
 	}
-	clear_list(ssl.strings);
-	clear_list(ssl.files);
+	clear_opt_arg(ssl.opt_args);
 	return (EXIT_SUCCESS);
 }
