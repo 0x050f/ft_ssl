@@ -13,7 +13,7 @@ void		show_options(int fd, char *options[][3], int nb_options)
 	for (int i = 0; i < nb_options; i++)
 	{
 		if (options[i][1])
-			dprintf(fd, "    %s %-*s %s\n", options[i][0], (int)(padding - (ft_strlen(options[i][0]) + 1)), options[i][1], options[i][2]);
+			dprintf(fd, "    %s %-*s %s\n", options[i][0], (int)(padding - (strlen(options[i][0]) + 1)), options[i][1], options[i][2]);
 		else
 			dprintf(fd, "    %-*s %s\n", padding, options[i][0], options[i][2]);
 	}

@@ -15,9 +15,9 @@ char			*md5(char *str, size_t size)
 	unsigned char *msg = malloc(sizeof(char) * new_size);
 	if (!msg)
 		return (NULL);
-	ft_memcpy(msg, str, size);
+	memcpy(msg, str, size);
 	msg[size] = 0x80; // 0b10000000
-	ft_memset(msg + size + 1, 0, padding_zeroes);
+	memset(msg + size + 1, 0, padding_zeroes);
 	*(size_t *)(&msg[new_size - 8]) = size*8;
 
 	// setup constant

@@ -7,7 +7,7 @@ char		*launch_hash(t_ssl *ssl, char *query, size_t size)
 
 	for (int i = 0; i < NB_HASH_CMDS; i++)
 	{
-		if (!ft_strcmp(ssl->cmd, cmds[i]))
+		if (!strcmp(ssl->cmd, cmds[i]))
 			return (functions[i](query, size));
 	}
 	return (NULL);
@@ -37,8 +37,8 @@ char		*read_query(int fd, size_t *size)
 			return (NULL);
 		}
 		if (query)
-			ft_memcpy(tmp, query, *size);
-		ft_memcpy(tmp + *size, buffer, ret);
+			memcpy(tmp, query, *size);
+		memcpy(tmp + *size, buffer, ret);
 		free(query);
 		*size += ret;
 		query = tmp;
@@ -98,7 +98,7 @@ void		process_strings(t_ssl *ssl)
 	tmp = ssl->strings;
 	while (tmp)
 	{
-		result = launch_hash(ssl, tmp->content, ft_strlen(tmp->content));
+		result = launch_hash(ssl, tmp->content, strlen(tmp->content));
 		if (!result)
 			return ;
 		if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))

@@ -84,14 +84,7 @@ void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
-size_t		ft_strlen(const char *s);
-char		*ft_strdup(const char *s1);
 size_t		ft_strlen_special(char *str, size_t max);
-int			ft_strncmp(const char *s1, const char *s2, size_t n);
-int			ft_strcmp(const char *s1, const char *s2);
-size_t		ft_strcpy(char *dst, const char *src);
-void		*ft_memset(void *b, int c, size_t len);
-void		*ft_memcpy(void *dst, const void *src, size_t n);
 void		ft_toupper(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);

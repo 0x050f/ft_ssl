@@ -59,7 +59,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			{
 				if (!(ssl->key = get_string_arg(argc, argv, i, j, option)))
 					return (3);
-				if ((ft_strlen(ssl->key) % 2) || !ishexa(ssl->key))
+				if ((strlen(ssl->key) % 2) || !ishexa(ssl->key))
 					return (args_error(ERR_HEX_ARG, "k", 0, 0) + 1);
 				return (1);
 			}
@@ -75,7 +75,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			{
 				if (!(ssl->salt = get_string_arg(argc, argv, i, j, option)))
 					return (3);
-				if ((ft_strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
+				if ((strlen(ssl->salt) % 2) || !ishexa(ssl->salt))
 					return (args_error(ERR_HEX_ARG, "s", 0, 0) + 1);
 				return (1);
 			}
@@ -83,7 +83,7 @@ int			handle_cipher_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, ch
 			{
 				if (!(ssl->iv = get_string_arg(argc, argv, i, j, option)))
 					return (3);
-				if ((ft_strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
+				if ((strlen(ssl->iv) % 2) || !ishexa(ssl->iv))
 					return (args_error(ERR_HEX_ARG, "v", 0, 0) + 1);
 				return (1);
 			}
@@ -159,7 +159,7 @@ int			setup_cmd_options(t_cmd_options *cmd_options, int ((*handler)(int, char **
 			goto free_everything;
 		for (int j = 0; j < 3; j++)
 		{
-			if (options[i][j] && !(cmd_options->options[i][j] = ft_strdup(options[i][j])))
+			if (options[i][j] && !(cmd_options->options[i][j] = strdup(options[i][j])))
 			{
 				while (--j > 0)
 					free(cmd_options->options[i][j]);
@@ -198,7 +198,7 @@ void		free_options(char ***options, int nb_options)
 int			search_command(char *cmd, char *cmds[], int nb_cmds)
 {
 	int i = 0;
-	while (i < nb_cmds && ft_strcmp(cmd, cmds[i]))
+	while (i < nb_cmds && strcmp(cmd, cmds[i]))
 		i++;
 	return (i);
 }
@@ -232,7 +232,7 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 			int			nb_options;
 			char		*options[][3] = CIPHER_OPTIONS;
 
-			if (!ft_strcmp(argv[1], "base64"))
+			if (!strcmp(argv[1], "base64"))
 				nb_options = NB_CIPHER_OPTIONS;
 			else
 				nb_options = NB_CIPHER_DES_OPTIONS;

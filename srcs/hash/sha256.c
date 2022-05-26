@@ -17,9 +17,9 @@ char		*sha256(char *str, size_t size)
 	uint8_t *msg = malloc(sizeof(char) * new_size);
 	if (!msg)
 		return (NULL);
-	ft_memcpy(msg, str, size);
+	memcpy(msg, str, size);
 	msg[size] = 0x80; // 0b10000000
-	ft_memset(msg + size + 1, 0, padding_zeroes);
+	memset(msg + size + 1, 0, padding_zeroes);
 	uint64_t	bit_length = size * 8;
 	for (uint64_t i = 0; i < 8; i++) // as big-endian
 		msg[new_size - (i + 1)] = bit_length >> 8 * i;
