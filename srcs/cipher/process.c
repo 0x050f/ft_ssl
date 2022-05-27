@@ -3,12 +3,12 @@
 char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_options *options)
 {
 	char *cmds[NB_CIPHER_CMDS] = CMD_CIPHER;
-	char *(*functions[NB_CIPHER_CMDS])(char *, size_t, size_t *, t_options *) = FUNC_CIPHER;
+	char *(*functions[NB_CIPHER_CMDS])(unsigned char *, size_t, size_t *, t_options *) = FUNC_CIPHER;
 
 	for (int i = 0; i < NB_CIPHER_CMDS; i++)
 	{
 		if (!strcmp(cmd, cmds[i]))
-			return (functions[i](query, size, res_len, options));
+			return (functions[i]((unsigned char *)query, size, res_len, options));
 	}
 	return (NULL);
 }
