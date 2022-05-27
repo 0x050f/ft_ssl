@@ -96,7 +96,6 @@ void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
-int			floor(float num);
 int			ceil(float num);
 size_t		ft_strlen_special(char *str, size_t max);
 void		ft_toupper(char *str);

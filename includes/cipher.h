@@ -20,12 +20,12 @@ typedef struct		s_options
 void			process_cipher(t_ssl *ssl);
 
 /* base64.c */
-char			*base64(char *str, size_t size, size_t *res_len, t_options *options);
+char			*base64(unsigned char *str, size_t size, size_t *res_len, t_options *options);
 
 /* des-ecb.c */
-char			*des_ecb(char *str, size_t size, size_t *res_len, t_options *options);
+char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options);
 
 /* des-cbc.c */
-char			*des_cbc(char *str, size_t size, size_t *res_len, t_options *options);
+char			*des_cbc(unsigned char *str, size_t size, size_t *res_len, t_options *options);
 
 #endif

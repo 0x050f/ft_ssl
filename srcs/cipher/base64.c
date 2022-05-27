@@ -1,6 +1,6 @@
 #include "ft_ssl.h"
 
-char			*base64_decode(char *str, size_t size, size_t *res_len)
+char			*base64_decode(unsigned char *str, size_t size, size_t *res_len)
 {
 	char base[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -34,7 +34,7 @@ char			*base64_decode(char *str, size_t size, size_t *res_len)
 	return (cipher);
 }
 
-char			*base64_encode(char *str, size_t size, size_t *res_len)
+char			*base64_encode(unsigned char *str, size_t size, size_t *res_len)
 {
 	char base[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -68,7 +68,7 @@ char			*base64_encode(char *str, size_t size, size_t *res_len)
 	return (cipher);
 }
 
-char			*base64(char *str, size_t size, size_t *res_len, t_options *options)
+char			*base64(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	DPRINT("base64(\"%.*s\", %zu)\n", size, str, size);
 	char *cipher;

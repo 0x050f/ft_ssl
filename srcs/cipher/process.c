@@ -13,6 +13,45 @@ char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_opt
 	return (NULL);
 }
 
+void		process_cipher_file(char *cmd, t_options *options)
+{
+	size_t		size;
+	char		*query;
+	char		*result;
+	size_t		result_size;
+
+	int fd = open(options->infile, O_RDONLY);
+	if (fd < 0)
+	{
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, strerror(errno));
+		return ;
+	}
+	if (!(query = read_query(fd, &size)))
+	{
+		close(fd);
+		return ;
+	}
+	result = launch_cipher(cmd, query, size, &result_size, options);
+	if (!result)
+	{
+		free(query);
+		return ;
+	}
+	char *tmp = result;
+	while (result_size > 64)
+	{
+		write(STDOUT_FILENO, tmp, 64);
+		write(STDOUT_FILENO, "\n", 1);
+		tmp += 64;
+		result_size -= 64;
+	}
+	write(STDOUT_FILENO, tmp, result_size);
+	write(STDOUT_FILENO, "\n", 1);
+	free(query);
+	free(result);
+	close(fd);
+}
+
 void		process_cipher_stdin(char *cmd, t_options *options)
 {
 	size_t	size;
@@ -28,7 +67,15 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 		free(query);
 		return ;
 	}
-	write(STDOUT_FILENO, result, result_size);
+	char *tmp = result;
+	while (result_size > 64)
+	{
+		write(STDOUT_FILENO, tmp, 64);
+		write(STDOUT_FILENO, "\n", 1);
+		tmp += 64;
+		result_size -= 64;
+	}
+	write(STDOUT_FILENO, tmp, result_size);
 	write(STDOUT_FILENO, "\n", 1);
 	free(query);
 	free(result);
@@ -59,6 +106,8 @@ void	process_cipher(t_ssl *ssl)
 	fill_options(&options, ssl);
 	if (!strchr(ssl->options, 'i'))
 		process_cipher_stdin(ssl->cmd, &options);
+	else
+		process_cipher_file(ssl->cmd, &options);
 //	char *str = launch_cipher(ssl, "bonjour", strlen("bonjour"), &result_len, options);
 //	printf("%s\n", str);
 //	free(str);
