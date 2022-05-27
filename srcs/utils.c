@@ -1,5 +1,10 @@
 #include "ft_ssl.h"
 
+int			floor(float num)
+{
+	return (num);
+}
+
 int			ceil(float num)
 {
 	int inum = (int)num;

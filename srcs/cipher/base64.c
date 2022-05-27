@@ -4,11 +4,6 @@ char			*base64_decode(char *str, size_t size, size_t *res_len)
 {
 	char base[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-	(void)str;
-	(void)size;
-	(void)res_len;
-//	char *cipher = malloc(sizeof(char) * *res_len);
-
 	size_t padding = 0;
 	for (size_t i = 0; i < size; i++)
 	{
@@ -21,24 +16,22 @@ char			*base64_decode(char *str, size_t size, size_t *res_len)
 	}
 	if (padding > 2)
 		return (NULL);
-	uint8_t index1 = (void *)memchr(base, str[0], 64) - (void *)base;
-	uint8_t index2 = (void *)memchr(base, str[1], 64) - (void *)base;
-	uint8_t c = (index1 << 2) | (index2 >> 4);
-	printf("first char : %c\n", c);
-	index1 = (void *)memchr(base, str[1], 64) - (void *)base;
-	index2 = (void *)memchr(base, str[2], 64) - (void *)base;
-	c = (index1 << 4) | (index2 >> 2);
-	printf("second char : %c\n", c);
-	index1 = (void *)memchr(base, str[2], 64) - (void *)base;
-	index2 = (void *)memchr(base, str[3], 64) - (void *)base;
-	c = (index1 << 6) | (index2 >> 4);
-	printf("third char : %c\n", c);
-//	for (size_t i = 0; i < size; i++)
-//	{
-//		uint8_t left
-//	}
-	return (NULL);
-//	return (cipher);
+	*res_len = (size * 6 / 8) - padding;
+	char *cipher = malloc(sizeof(char) * *res_len);
+	if (!cipher)
+		return (NULL);
+	size_t j = 0;
+	for (size_t i = 0; i < *res_len; i++)
+	{
+		uint8_t index1 = (void *)memchr(base, str[j], 64) - (void *)base;
+		uint8_t index2 = (void *)memchr(base, str[j + 1], 64) - (void *)base;
+		uint8_t c = (index1 << (2 * ((i % 3) + 1))) | (index2 >> (4 - ((i % 3) * 2)));
+		cipher[i] = c;
+		if (!((i + 1) % 3))
+			j++;
+		j++;
+	}
+	return (cipher);
 }
 
 char			*base64_encode(char *str, size_t size, size_t *res_len)
