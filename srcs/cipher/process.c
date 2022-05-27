@@ -13,6 +13,32 @@ char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_opt
 	return (NULL);
 }
 
+void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options *options)
+{
+	int fd = STDOUT_FILENO;
+	if (options->outfile)
+	{
+		fd = open(options->outfile, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+		if (fd < 0)
+		{
+			dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->outfile, strerror(errno));
+			return ;
+		}
+	}
+	char *tmp = result;
+	while (result_size > 64)
+	{
+		write(fd, tmp, 64);
+		write(fd, "\n", 1);
+		tmp += 64;
+		result_size -= 64;
+	}
+	write(fd, tmp, result_size);
+	write(fd, "\n", 1);
+	if (options->outfile)
+		close(fd);
+}
+
 void		process_cipher_file(char *cmd, t_options *options)
 {
 	size_t		size;
@@ -37,16 +63,7 @@ void		process_cipher_file(char *cmd, t_options *options)
 		free(query);
 		return ;
 	}
-	char *tmp = result;
-	while (result_size > 64)
-	{
-		write(STDOUT_FILENO, tmp, 64);
-		write(STDOUT_FILENO, "\n", 1);
-		tmp += 64;
-		result_size -= 64;
-	}
-	write(STDOUT_FILENO, tmp, result_size);
-	write(STDOUT_FILENO, "\n", 1);
+	print_cipher_result(result, result_size, cmd, options);
 	free(query);
 	free(result);
 	close(fd);
@@ -67,16 +84,7 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 		free(query);
 		return ;
 	}
-	char *tmp = result;
-	while (result_size > 64)
-	{
-		write(STDOUT_FILENO, tmp, 64);
-		write(STDOUT_FILENO, "\n", 1);
-		tmp += 64;
-		result_size -= 64;
-	}
-	write(STDOUT_FILENO, tmp, result_size);
-	write(STDOUT_FILENO, "\n", 1);
+	print_cipher_result(result, result_size, cmd, options);
 	free(query);
 	free(result);
 }
