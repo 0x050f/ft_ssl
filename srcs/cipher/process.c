@@ -15,6 +15,8 @@ char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_opt
 
 void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options *options)
 {
+	if (!result_size)
+		return ;
 	int fd = STDOUT_FILENO;
 	if (options->outfile)
 	{

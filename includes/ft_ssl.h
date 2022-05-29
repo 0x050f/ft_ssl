@@ -18,6 +18,18 @@
 	#define DPRINT(fmt, args...)
 #endif
 
+#define PRINT_BITS(x, y) uint8_t *bytes = (uint8_t *)&x; for(int i = (y / 8) - 1; i >= 0; i--){printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(bytes[i]));}printf("\n");
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
+
 /*
 	OPTIONS:
 	{name, argument, desc, check}
