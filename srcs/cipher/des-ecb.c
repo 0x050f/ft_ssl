@@ -91,6 +91,14 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	(void)size;
 	(void)res_len;
 	(void)options;
+	size_t padding = 0;
+	if (size % 8)
+		padding = (8 - (size % 8));
+	unsigned char *plaintext = malloc(sizeof(char) * (size + padding));
+	memcpy(plaintext, str, size);
+	memset(plaintext + size, padding, padding);
+	if (!plaintext)
+		return (NULL);
 	/* key and block are both 64 bits */
 	uint64_t key = 60;
 	(void)key;
@@ -162,6 +170,8 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	/* [final_permutation] */
 	block = permutation(block, 64, FP, 64);
 	PRINT_BITS(block, 64);
+
+	free(plaintext);
 	return (0);
 }
 
