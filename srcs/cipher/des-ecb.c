@@ -4,8 +4,12 @@ uint64_t		permutation(uint64_t block, uint8_t *table, size_t size)
 {
 	uint64_t	result = 0;
 
-	for (size_t i = 0; i < size; i++)
-		result += (1 << (size - table[i])) & block;
+	for (uint64_t i = 0; i < size; i++)
+	{
+		uint64_t bit = (((uint64_t)1 << (size - table[i])) & block);
+		if (bit)
+			result += ((uint64_t)1 << (size - (i + 1)));
+	}
 	return (result);
 }
 
@@ -67,9 +71,11 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 					35, 3, 43, 11, 51, 19, 59, 27,
 					34, 2, 42, 10, 50, 18, 58, 26,
 					33, 1, 41, 9 , 49, 17, 57, 25};
-	uint64_t block = 0;
+	uint64_t block = 42;
+	PRINT_BITS(block, 64);
 	/* TODO: [init_permutation] */
-	permutation(block, IP, 64);
+	block = permutation(block, IP, 64);
+	PRINT_BITS(block, 64);
 	uint64_t to_xor = block;
 	(void)to_xor;
 	uint64_t to_feistel = block;
@@ -94,9 +100,8 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	(void)str;
 	(void)size;
 
+	des_ecb_encrypt(str, size, res_len, options);
 	*res_len = 0;
-	uint64_t ahah = 42;
-	PRINT_BITS(ahah, 64);
 	char *cipher = strdup("lol");
 	return (cipher);
 }

@@ -18,9 +18,9 @@
 	#define DPRINT(fmt, args...)
 #endif
 
-#define PRINT_BITS(x, y) uint8_t *bytes = (uint8_t *)&x; for(int i = (y / 8) - 1; i >= 0; i--){printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(bytes[i]));}printf("\n");
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
+# define PRINT_BITS(x, y) uint8_t *BYTES(x,__LINE__) = (uint8_t *)&x; for(int i = (y / 8) - 1; i >= 0; i--){printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(BYTES(x,__LINE__)[i]));}printf("\n");
+# define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+# define BYTE_TO_BINARY(byte)  \
   (byte & 0x80 ? '1' : '0'), \
   (byte & 0x40 ? '1' : '0'), \
   (byte & 0x20 ? '1' : '0'), \
@@ -28,7 +28,10 @@
   (byte & 0x08 ? '1' : '0'), \
   (byte & 0x04 ? '1' : '0'), \
   (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0') 
+  (byte & 0x01 ? '1' : '0')
+# define BYTES(X,Y) COMBINE(X,Y)
+# define COMBINE(X,Y) X##Y  // helper macro
+
 
 /*
 	OPTIONS:
