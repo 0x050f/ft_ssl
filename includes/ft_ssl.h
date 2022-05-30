@@ -32,7 +32,6 @@
 # define BYTES(X,Y) COMBINE(X,Y)
 # define COMBINE(X,Y) X##Y  // helper macro
 
-
 /*
 	OPTIONS:
 	{name, argument, desc, check}
