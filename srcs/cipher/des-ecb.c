@@ -92,7 +92,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	(void)res_len;
 	(void)options;
 	/* key and block are both 64 bits */
-	uint64_t key = 42;
+	uint64_t key = 60;
 	(void)key;
 
 	/*
@@ -146,9 +146,14 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	(void)subkey_left;
 	(void)subkey_right;
 	size_t nb_round = 16;
+	uint8_t round_rotations_subkey[] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 	/* TODO: key schedule */
 	for (size_t i = 0; i < nb_round; i++)
 	{
+		subkey_left = (subkey_left << round_rotations_subkey[i]) | (subkey_left >> (28 - round_rotations_subkey[i]));
+		subkey_right = (subkey_right << round_rotations_subkey[i]) | (subkey_right >> (28 - round_rotations_subkey[i]));
+		subkey = ((uint64_t)subkey_left << 28) | subkey_right;
+		permutation(subkey, 48, PC2, 48);
 		uint64_t tmp = to_feistel;
 		subkey = key;
 		to_feistel = to_xor ^ feistel_function(to_feistel, subkey);
