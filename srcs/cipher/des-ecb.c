@@ -73,16 +73,14 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 					2, 8, 24, 14, 32, 27, 3, 9,
 					19, 13, 30, 6, 22, 11, 4, 25};
 
-	/* TODO: [expansion permutation] */
+	/* [expansion permutation] */
 	uint64_t expanded = permutation(half_block, E, 48);
 	PRINT_BITS(expanded, 48);
 	uint64_t result = half_block ^ key; /* 48 bits xor */
-	(void)result;
-	/* TODO: substitution */
 	/* Substitution (Each 6 bits converted to a 4 bits num) */
-	substitution(result);
-	/* TODO: [P permutation] */
-	half_block = permutation(expanded, P, 32);
+	half_block = substitution(result);
+	/* [P permutation] */
+	half_block = permutation(half_block, P, 32);
 	PRINT_BITS(half_block, 32);
 	return (0);
 }
@@ -117,6 +115,23 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 					35, 3, 43, 11, 51, 19, 59, 27,
 					34, 2, 42, 10, 50, 18, 58, 26,
 					33, 1, 41, 9 , 49, 17, 57, 25};
+	/* PC1 Left/Right */
+	uint8_t PC1[2][28] = {{57, 49, 41, 33, 25, 17, 9,
+					1, 58, 50, 42, 34, 26, 18,
+					10, 2, 59, 51, 43, 35, 27,
+					19, 11, 3, 60, 52, 44, 36},
+					{63, 55, 47, 39, 31, 23, 15,
+					7, 62, 54, 46, 38, 30, 22,
+					14, 6, 61, 53, 45, 37, 29,
+					21, 13, 5, 28, 20, 12, 4}};
+	uint8_t PC2[48] = {14, 17, 11, 24, 1, 5,
+					3, 28, 15, 6, 21, 10,
+					23, 19, 12, 4, 26, 8,
+					16, 7, 27, 20, 13, 2,
+					41, 52, 31, 37, 47, 55,
+					30, 40, 51, 45, 33, 48,
+					44, 49, 39, 56, 34, 53,
+					46, 42, 50, 36, 29, 32};
 	uint64_t block = 42;
 	PRINT_BITS(block, 64);
 	/* [init_permutation] */
@@ -127,6 +142,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t to_feistel = block;
 	(void)to_feistel;
 	size_t nb_round = 16;
+	/* TODO: key schedule */
 	for (size_t i = 0; i < nb_round; i++)
 	{
 		uint64_t tmp = to_feistel;
