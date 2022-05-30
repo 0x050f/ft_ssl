@@ -1,14 +1,14 @@
 #include "ft_ssl.h"
 
-uint64_t		permutation(uint64_t block, uint8_t *table, size_t size)
+uint64_t		permutation(uint64_t block, size_t size_input, uint8_t *table, size_t size_output)
 {
 	uint64_t	result = 0;
 
-	for (uint64_t i = 0; i < size; i++)
+	for (uint64_t i = 0; i < size_output; i++)
 	{
-		uint64_t bit = (((uint64_t)1 << (size - table[i])) & block);
+		uint64_t bit = (((uint64_t)1 << (size_input - table[i])) & block);
 		if (bit)
-			result += ((uint64_t)1 << (size - (i + 1)));
+			result |= ((uint64_t)1 << (size_output - (i + 1)));
 	}
 	return (result);
 }
@@ -74,13 +74,13 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 					19, 13, 30, 6, 22, 11, 4, 25};
 
 	/* [expansion permutation] */
-	uint64_t expanded = permutation(half_block, E, 48);
+	uint64_t expanded = permutation(half_block, 32, E, 48);
 	PRINT_BITS(expanded, 48);
 	uint64_t result = half_block ^ key; /* 48 bits xor */
 	/* Substitution (Each 6 bits converted to a 4 bits num) */
 	half_block = substitution(result);
 	/* [P permutation] */
-	half_block = permutation(half_block, P, 32);
+	half_block = permutation(half_block, 32, P, 32);
 	PRINT_BITS(half_block, 32);
 	return (0);
 }
@@ -92,7 +92,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	(void)res_len;
 	(void)options;
 	/* key and block are both 64 bits */
-	uint64_t key = 0;
+	uint64_t key = 42;
 	(void)key;
 
 	/*
@@ -132,25 +132,30 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 					30, 40, 51, 45, 33, 48,
 					44, 49, 39, 56, 34, 53,
 					46, 42, 50, 36, 29, 32};
+	(void)PC2;
 	uint64_t block = 42;
 	PRINT_BITS(block, 64);
 	/* [init_permutation] */
-	block = permutation(block, IP, 64);
+	block = permutation(block, 64, IP, 64);
 	PRINT_BITS(block, 64);
 	uint64_t to_xor = block;
-	(void)to_xor;
 	uint64_t to_feistel = block;
-	(void)to_feistel;
+	uint64_t subkey = key;
+	uint32_t subkey_left = permutation(subkey, 64, PC1[0], 28);
+	uint32_t subkey_right = permutation(subkey, 64, PC1[1], 28);
+	(void)subkey_left;
+	(void)subkey_right;
 	size_t nb_round = 16;
 	/* TODO: key schedule */
 	for (size_t i = 0; i < nb_round; i++)
 	{
 		uint64_t tmp = to_feistel;
-		to_feistel = to_xor ^ feistel_function(to_feistel, key);
+		subkey = key;
+		to_feistel = to_xor ^ feistel_function(to_feistel, subkey);
 		to_xor = tmp;
 	}
 	/* [final_permutation] */
-	block = permutation(block, FP, 64);
+	block = permutation(block, 64, FP, 64);
 	PRINT_BITS(block, 64);
 	return (0);
 }
