@@ -78,12 +78,18 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 
 	/* [expansion permutation] -> OK */
 	uint64_t expanded = permutation(half_block, 32, E, 48);
+	printf("E: %lx\n", expanded);
+	PRINT_BITS(expanded, 64);
 	uint64_t result = expanded ^ key; /* 48 bits xor */
+	printf("K + E(): %lx\n", result);
+	PRINT_BITS(result, 64);
 	/* Substitution (Each 6 bits converted to a 4 bits num) */
 	half_block = substitution(result);
+	printf("S: %lx\n", half_block);
+	PRINT_BITS(half_block, 32);
 	/* [P permutation] -> OK */
 	half_block = permutation(half_block, 32, P, 32);
-	return (0);
+	return (half_block);
 }
 
 char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
@@ -158,12 +164,10 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 
 		/* [init_permutation] -> OK */
 		block = permutation(block, 64, IP, 64);
+		printf("IP: %lx\n", block);
+		PRINT_BITS(block, 64);
 		uint32_t to_xor = (block >> 32);
-		printf("L: %lx\n", to_xor);
-		PRINT_BITS(to_xor, 32);
 		uint32_t to_feistel = block;
-		printf("R: %lx\n", to_feistel);
-		PRINT_BITS(to_feistel, 32);
 		uint64_t subkey = key;
 		uint32_t subkey_left = permutation(subkey, 64, PC1[0], 28);
 		uint32_t subkey_right = permutation(subkey, 64, PC1[1], 28);
@@ -172,6 +176,10 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		/* TODO: key schedule */
 		for (size_t i = 0; i < NB_ROUND; i++)
 		{
+			printf("L%d: %lx\n", i, to_xor);
+			PRINT_BITS(to_xor, 32);
+			printf("R%d: %lx\n", i, to_feistel);
+			PRINT_BITS(to_feistel, 32);
 			printf("C%d: %lx\n", i, subkey_left);
 			PRINT_BITS(subkey_left, 32);
 			printf("D%d: %lx\n", i, subkey_right);
