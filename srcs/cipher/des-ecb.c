@@ -118,7 +118,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	else
 		key = hex2int64(options->key);
 	/* key and block are both 64 bits */
-	for (size_t i = 0; *res_len; i += 8)
+	for (size_t i = 0; i < *res_len; i += 8)
 	{
 		/*
 			initial permutation and final permutation:
