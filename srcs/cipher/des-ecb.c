@@ -181,7 +181,11 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			subkey_right = ((subkey_right << round_rotations_subkey[i]) | (subkey_right >> (28 - round_rotations_subkey[i])));
 			subkey_right &= 0b0001111111111111111111111111111; /* keep in on 28 bits */
 			subkey = ((uint64_t)subkey_left << 28) | subkey_right;
-			permutation(subkey, 48, PC2, 48);
+			printf("C%dD%d: %lx\n", i + 1, i + 1, subkey);
+			PRINT_BITS(subkey, 64);
+			subkey = permutation(subkey, 56, PC2, 48);
+			printf("K%d: %lx\n", i + 1, subkey);
+			PRINT_BITS(subkey, 64);
 			uint32_t tmp = to_feistel;
 //			subkey = key;
 			to_feistel = to_xor ^ feistel_function(to_feistel, subkey);
