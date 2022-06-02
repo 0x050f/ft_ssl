@@ -8,6 +8,24 @@ int			ceil(float num)
 	return (inum + 1);
 }
 
+
+uint64_t	hex2int64(const char *hex)
+{
+	uint64_t		val = 0;
+	while ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F'))
+	{
+		char byte = *hex++; 
+		if (byte >= '0' && byte <= '9')
+			byte = byte - '0';
+		else if (byte >= 'a' && byte <='f')
+			byte = byte - 'a' + 10;
+		else if (byte >= 'A' && byte <='F')
+			byte = byte - 'A' + 10;
+		val = (val << 4) | (byte & 0xf);
+	}
+	return (val);
+}
+
 /* backward memcpy */
 void		*b_memcpy(void *dest, const void *src, size_t n)
 {

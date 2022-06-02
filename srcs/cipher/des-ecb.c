@@ -102,7 +102,14 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	memset(plaintext + size, padding, padding);
 	if (!plaintext)
 		return (NULL);
-	uint64_t key = 0x133457799bbcdff1;
+	uint64_t key;
+	if (!options->key)
+	{
+		/* ask for password */
+		key = 0x133457799bbcdff1;
+	}
+	else
+		key = hex2int64(options->key);
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size + padding; i += 8)
 	{
