@@ -8,6 +8,17 @@ int			ceil(float num)
 	return (inum + 1);
 }
 
+/* backward memcpy */
+void		*b_memcpy(void *dest, const void *src, size_t n)
+{
+	size_t i;
+
+	i = 0;
+	while (n && dest && src)
+		((unsigned char *)dest)[i++] = ((unsigned char *)src)[--n];
+	return (dest);
+}
+
 size_t		ft_strlen_special(char *str, size_t max)
 {
 	size_t i;
