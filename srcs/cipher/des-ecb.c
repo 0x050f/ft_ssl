@@ -78,15 +78,9 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 
 	/* [expansion permutation] -> OK */
 	uint64_t expanded = permutation(half_block, 32, E, 48);
-	printf("E: %lx\n", expanded);
-	PRINT_BITS(expanded, 64);
 	uint64_t result = expanded ^ key; /* 48 bits xor */
-	printf("K + E(): %lx\n", result);
-	PRINT_BITS(result, 64);
 	/* Substitution (Each 6 bits converted to a 4 bits num) */
 	half_block = substitution(result);
-	printf("S: %lx\n", half_block);
-	PRINT_BITS(half_block, 32);
 	/* [P permutation] -> OK */
 	half_block = permutation(half_block, 32, P, 32);
 	return (half_block);
@@ -95,20 +89,20 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	(void)options;
-	*res_len = 0;
 
 	size_t padding = 0;
 	if (size % 8)
 		padding = (8 - (size % 8));
-	unsigned char *plaintext = malloc(sizeof(char) * (size + padding));
+	else
+		padding = 8;
+	*res_len = size + padding;
+	unsigned char *plaintext = malloc(sizeof(char) * *res_len);
+	char *ciphertext = malloc(sizeof(char) * *res_len);
 	memcpy(plaintext, str, size);
-//	memset(plaintext + size, padding, padding);
-	memset(plaintext + size, 0, padding);
+	memset(plaintext + size, padding, padding);
 	if (!plaintext)
 		return (NULL);
 	uint64_t key = 0x133457799bbcdff1;
-	printf("key: %lx\n", key);
-	PRINT_BITS(key, 64);
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size + padding; i += 8)
 	{
@@ -152,20 +146,9 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 
 		uint64_t block;
 		b_memcpy(&block, plaintext + i, 8);
-		printf("M: %lx\n", block);
-		PRINT_BITS(block, 64);
-		uint32_t left = (block >> 32);
-		printf("L: %lx\n", left);
-		PRINT_BITS(left, 32);
-		uint32_t right = block;
-		printf("R: %lx\n", right);
-		PRINT_BITS(right, 32);
-		printf("==================\n");
 
 		/* [init_permutation] -> OK */
 		block = permutation(block, 64, IP, 64);
-		printf("IP: %lx\n", block);
-		PRINT_BITS(block, 64);
 		uint32_t to_xor = (block >> 32);
 		uint32_t to_feistel = block;
 		uint64_t subkey = key;
@@ -174,47 +157,26 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		// PERMUTATION KEY OK
 		uint8_t round_rotations_subkey[NB_ROUND] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 		/* TODO: key schedule */
-		for (size_t i = 0; i < NB_ROUND; i++)
+		for (size_t j = 0; j < NB_ROUND; j++)
 		{
-			printf("L%d: %lx\n", i, to_xor);
-			PRINT_BITS(to_xor, 32);
-			printf("R%d: %lx\n", i, to_feistel);
-			PRINT_BITS(to_feistel, 32);
-			printf("C%d: %lx\n", i, subkey_left);
-			PRINT_BITS(subkey_left, 32);
-			printf("D%d: %lx\n", i, subkey_right);
-			PRINT_BITS(subkey_right, 32);
-			subkey_left = ((subkey_left << round_rotations_subkey[i]) | (subkey_left >> (28 - round_rotations_subkey[i])));
+			subkey_left = ((subkey_left << round_rotations_subkey[j]) | (subkey_left >> (28 - round_rotations_subkey[j])));
 			subkey_left &= 0b0001111111111111111111111111111; /* keep in on 28 bits */
-			subkey_right = ((subkey_right << round_rotations_subkey[i]) | (subkey_right >> (28 - round_rotations_subkey[i])));
+			subkey_right = ((subkey_right << round_rotations_subkey[j]) | (subkey_right >> (28 - round_rotations_subkey[j])));
 			subkey_right &= 0b0001111111111111111111111111111; /* keep in on 28 bits */
 			subkey = ((uint64_t)subkey_left << 28) | subkey_right;
-			printf("C%dD%d: %lx\n", i + 1, i + 1, subkey);
-			PRINT_BITS(subkey, 64);
 			subkey = permutation(subkey, 56, PC2, 48);
-			printf("K%d: %lx\n", i + 1, subkey);
-			PRINT_BITS(subkey, 64);
 			uint32_t tmp = to_feistel;
-//			subkey = key;
 			to_feistel = to_xor ^ feistel_function(to_feistel, subkey);
 			to_xor = tmp;
 		}
-		printf("C16: %lx\n", subkey_left);
-		PRINT_BITS(subkey_left, 32);
-		printf("D16: %lx\n", subkey_right);
-		PRINT_BITS(subkey_right, 32);
 		block = ((uint64_t)to_feistel << 32) | to_xor;
-		PRINT_BITS(to_feistel, 32);
-		PRINT_BITS(to_xor, 32);
 		/* [final_permutation] -> OK*/
-		DPRINT("FP permutation:\n");
-		PRINT_BITS(block, 64);
 		block = permutation(block, 64, FP, 64);
-		PRINT_BITS(block, 64);
 		DPRINT("res block: %lx\n",block);
+		b_memcpy(ciphertext + i, &block, 8);
 	}
 	free(plaintext);
-	return (0);
+	return (ciphertext);
 }
 
 char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options)
@@ -225,8 +187,6 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	(void)str;
 	(void)size;
 
-	des_ecb_encrypt(str, size, res_len, options);
-	*res_len = 0;
-	char *cipher = strdup("lol");
+	char *cipher = des_ecb_encrypt(str, size, res_len, options);
 	return (cipher);
 }

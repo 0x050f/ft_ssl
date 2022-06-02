@@ -27,16 +27,21 @@ void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options
 			return ;
 		}
 	}
-	char *tmp = result;
-	while (result_size > 64)
+	if (!strcmp(cmd, "base64"))
 	{
-		write(fd, tmp, 64);
+		char *tmp = result;
+		while (result_size > 64)
+		{
+			write(fd, tmp, 64);
+			write(fd, "\n", 1);
+			tmp += 64;
+			result_size -= 64;
+		}
+		write(fd, tmp, result_size);
 		write(fd, "\n", 1);
-		tmp += 64;
-		result_size -= 64;
 	}
-	write(fd, tmp, result_size);
-	write(fd, "\n", 1);
+	else
+		write(fd, result, result_size);
 	if (options->outfile)
 		close(fd);
 }
