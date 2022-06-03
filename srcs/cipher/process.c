@@ -6,11 +6,17 @@
 */
 char	*pbkdf2(char *password, char *salt, size_t c, size_t dklen)
 {
+	(void)password;
+	(void)salt;
+	(void)c;
+	(void)dklen;
+	/*
 	size_t block_len = 0;
 	while (block_len < dklen)
 	{
 		uint64_t u;
 	}
+	*/
 	return (NULL);
 }
 
