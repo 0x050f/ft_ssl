@@ -1,5 +1,19 @@
 #include "ft_ssl.h"
 
+/*
+ * RFC 8018
+ * default openssl -pbkdf2:  -iter 10000 -md sha256
+*/
+char	*pbkdf2(char *password, char *salt, size_t c, size_t dklen)
+{
+	size_t block_len = 0;
+	while (block_len < dklen)
+	{
+		uint64_t u;
+	}
+	return (NULL);
+}
+
 char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_options *options)
 {
 	char *cmds[NB_CIPHER_CMDS] = CMD_CIPHER;
@@ -96,7 +110,7 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 	free(result);
 }
 
-void	fill_options(t_options *options, t_ssl *ssl)
+int			fill_options(t_options *options, t_ssl *ssl)
 {
 	options->options = ssl->options;
 	/* set options to the last arg recv */
@@ -106,9 +120,45 @@ void	fill_options(t_options *options, t_ssl *ssl)
 	options->infile = get_last_content(ssl->opt_args, 'i');
 	options->outfile = get_last_content(ssl->opt_args, 'o');
 	options->key = get_last_content(ssl->opt_args, 'k');
-	options->password = get_last_content(ssl->opt_args, 'p');
+	if (!options->key && !options->password && strcmp(ssl->cmd, "base64"))
+	{
+		char msg[256];
+
+		sprintf(msg, "enter %s encryption password: ", ssl->cmd);
+		char *tmp = getpass(msg);
+		if (!tmp)
+		{
+			dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
+			return (-1);
+		}
+		char *password = strdup(tmp);
+		if (!password)
+		{
+			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+			return (ERR_MALLOC);
+		}
+		sprintf(msg, "Verifying - enter %s encryption password: ", ssl->cmd);
+		tmp = getpass(msg);
+		if (!tmp)
+		{
+			free(password);
+			dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
+			return (-1);
+		}
+		if (strcmp(tmp, password))
+		{
+			free(password);
+			printf("Verify failure\n");
+			dprintf(STDERR_FILENO, "bad password read\n");
+			return (-2);
+		}
+		options->password = password;
+	}
+	else
+		options->password = get_last_content(ssl->opt_args, 'p');
 	options->salt = get_last_content(ssl->opt_args, 's');
 	options->iv = get_last_content(ssl->opt_args, 'v');
+	return (0);
 }
 
 void	process_cipher(t_ssl *ssl)
@@ -118,12 +168,12 @@ void	process_cipher(t_ssl *ssl)
 
 	(void)result_len;
 	memset(&options, 0, sizeof(t_options));
-	fill_options(&options, ssl);
+	int ret = fill_options(&options, ssl);
+	if (ret)
+		return ;
 	if (!strchr(ssl->options, 'i'))
 		process_cipher_stdin(ssl->cmd, &options);
 	else
 		process_cipher_file(ssl->cmd, &options);
-//	char *str = launch_cipher(ssl, "bonjour", strlen("bonjour"), &result_len, options);
-//	printf("%s\n", str);
-//	free(str);
+	free(options.password);
 }

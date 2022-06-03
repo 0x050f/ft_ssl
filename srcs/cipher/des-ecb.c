@@ -112,7 +112,9 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	*/
 	if (!options->key)
 	{
-		/* ask for password */
+		/* PKBFD */
+		pbkdf2(options->password, options->salt, 10000, 8);
+
 		key = 0x133457799bbcdff1;
 	}
 	else
