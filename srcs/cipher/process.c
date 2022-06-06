@@ -1,16 +1,104 @@
 #include "ft_ssl.h"
 
-/*
- * RFC 8018
- * default openssl -pbkdf2:  -iter 10000 -md sha256
-*/
-char	*pbkdf2(char *password, char *salt, size_t c, size_t dklen)
+#define SHA256_BLOCK_SIZE 64
+
+// TODO: error
+void	h(unsigned char *text, int text_len, unsigned char *key, int key_len, caddr_t digest)
 {
+	void		*result;
+	size_t		buflen = text_len + key_len;
+	uint8_t		*buf = malloc(buflen);
+
+	if (!buf)
+		return ;
+	memcpy(buf, text, text_len);
+	memcpy(buf + text_len, key, key_len);
+	result = sha256(buf, buflen);
+	free(buf);
+	memcpy(digest, result, SHA256_BLOCK_SIZE);
+	free(result);
+}
+
+/*
+  RFC 2104
+*/
+// TODO: error
+void	hmac_sha256(unsigned char *text, int text_len, unsigned char *key, int key_len, caddr_t digest)
+{
+	uint8_t		k[SHA256_BLOCK_SIZE];
+	uint8_t		k_ipad[SHA256_BLOCK_SIZE];
+	uint8_t		k_opad[SHA256_BLOCK_SIZE];
+	uint8_t		ihash[SHA256_BLOCK_SIZE];
+	uint8_t		ohash[SHA256_BLOCK_SIZE];
+	size_t		sz;
+
+	/* start out by storing key in pads */
+	memset(k_ipad, 0x36, SHA256_BLOCK_SIZE);
+	memset(k_opad, 0x5c, SHA256_BLOCK_SIZE);
+	if (keylen > SHA256_BLOCK_SIZE)
+	{
+		uint8_t *tmp = sha256(key, keylen);
+		if (!tmp)
+			return ;
+		memcpy(k, tmp, SHA256_BLOCK_SIZE);
+		free(tmp);
+	}
+	else
+		memcpy(k, key, keylen);
+	/* XOR key with ipad and opad values */
+	for (size_t i = 0; i < SHA256_BLOCK_SIZE; i++)
+	{
+		k_ipad[i] ^= k[i];
+		k_opad[i] ^= k[i];
+	}
+	/* HMAC */
+	h(k_ipad, SHA256_BLOCK_SIZE, data, datalen, ihash);
+	h(k_opad, SHA256_BLOCK_SIZE, ihash, SHA256_BLOCK_SIZE, ohash);
+
+	sz = (outlen > SHA256_HASH_SIZE) ? SHA256_HASH_SIZE : outlen;
+	memcpy(digest, ohash, sz);
+	printf("digest: %s\n", digest);
+}
+
+
+/*
+  RFC 8018
+  default openssl -pbkdf2:  -iter 10000 -md sha256
+  p: password
+  s: salt
+  c: iteration count
+  dklen: length of the derived key
+*/
+char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
+{
+	(void)s;
+	uint32_t t[2];
+	size_t i;
+
+	i = 0;
+	memset(&t, 0, sizeof(uint32_t) * 2);
 	size_t block_len = 0;
 	while (block_len < dklen)
 	{
-		uint64_t u;
+		// F(P, S, c, i + 1)
+		uint32_t u[c];
+		for (size_t j = 0; j < c; j++) // U_{j + 1}
+		{
+			char *hash;
+			if (!j) // PRF(P, S || INT(i + 1))
+				hash = hmac_sha256(p, strlen(password), );// ??
+			else // PRF(P, U_{j - 1})
+				hash = hmac_sha256(p, strlen(password), u[j - 1], sizeof(uint32_t));
+			u[j] = hex2int32(hash);
+			free(hash);
+		}
+		for (size_t j = 0; j < c; j++)
+			t[i] ^= u[j];
+		block_len += sizeof(uint32_t);
+		i++;
 	}
+	for (size_t i = 0; i < 2; i++)
+		printf("t[%d]: %x", i, t[i]);
 	return (NULL);
 }
 

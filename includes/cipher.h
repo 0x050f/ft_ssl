@@ -17,7 +17,7 @@ typedef struct		s_options
 }					t_options;
 
 /* Cipher functions are located in the cipher/ directory */
-char			*pbkdf2(char *password, char *salt, size_t c, size_t dklen);
+char			*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen);
 void			process_cipher(t_ssl *ssl);
 
 /* base64.c */

@@ -113,8 +113,12 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	if (!options->key)
 	{
 		/* PKBFD */
-		pbkdf2(options->password, options->salt, 10000, 8);
-
+		uint64_t salt;
+		if (options->salt)
+			salt = hex2int64(options->salt);
+		else
+			salt = 0; // TODO: random
+		pbkdf2(options->password, salt, 10000, 8);
 		key = 0x133457799bbcdff1;
 	}
 	else
