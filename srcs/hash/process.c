@@ -49,11 +49,11 @@ void		process_hash_files(t_ssl *ssl)
 
 				strcpy(uppercase, ssl->cmd);
 				ft_toupper(uppercase);
-				printf("%s(%s)= ", uppercase, tmp->content);
+				printf("%s(%s)= ", uppercase, (char *)tmp->content);
 			}
 			printf("%s", result);
 			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
-				printf(" %s", tmp->content);
+				printf(" %s", (char *)tmp->content);
 			printf("\n");
 			free(query);
 			free(result);
@@ -82,11 +82,11 @@ void		process_hash_strings(t_ssl *ssl)
 
 				strcpy(uppercase, ssl->cmd);
 				ft_toupper(uppercase);
-				printf("%s(\"%s\")= ", uppercase, tmp->content);
+				printf("%s(\"%s\")= ", uppercase, (char *)tmp->content);
 			}
 			printf("%s", result);
 			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
-				printf(" \"%s\"", tmp->content);
+				printf(" \"%s\"", (char *)tmp->content);
 			printf("\n");
 			free(result);
 		}
@@ -109,13 +109,13 @@ void		process_hash_stdin(t_ssl *ssl)
 		return ;
 	}
 	if (strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
-		printf("(\"%.*s\")= %s\n", ft_strlen_special(query, size), query, result);
+		printf("(\"%.*s\")= %s\n", (int)ft_strlen_special(query, size), query, result);
 	else if (!strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
 		printf("(stdin)= %s\n", result);
 	else if (strchr(ssl->options, 'q'))
 	{
 		if (strchr(ssl->options, 'p'))
-			printf("%.*s\n", ft_strlen_special(query, size), query, result);
+			printf("%.*s\n", (int)ft_strlen_special(query, size), query);
 		printf("%s\n", result);
 	}
 	free(query);

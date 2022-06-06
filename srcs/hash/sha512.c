@@ -115,7 +115,7 @@ char		*sha512(char *str, size_t size)
 		return (NULL);
 	}
 	for (int i = 0; i < 8; i++)
-		sprintf(hash + 16 * i, "%016lx", h_array[i]);
+		sprintf(hash + 16 * i, "%016llx", h_array[i]);
 	hash[128] = '\0';
 	return (hash);
 }

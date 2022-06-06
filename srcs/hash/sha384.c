@@ -115,7 +115,7 @@ char		*sha384(char *str, size_t size)
 		return (NULL);
 	}
 	for (int i = 0; i < 6; i++)
-		sprintf(hash + 16 * i, "%016lx", h_array[i]);
+		sprintf(hash + 16 * i, "%016llx", h_array[i]);
 	hash[96] = '\0';
 	return (hash);
 }

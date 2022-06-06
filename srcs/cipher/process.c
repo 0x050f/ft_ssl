@@ -77,6 +77,11 @@ char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
 
 	i = 0;
 	memset(&t, 0, sizeof(uint32_t) * 2);
+	(void)password;
+	(void)salt;
+	(void)c;
+	(void)dklen;
+	/*
 	size_t block_len = 0;
 	while (block_len < dklen)
 	{
@@ -99,6 +104,7 @@ char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
 	}
 	for (size_t i = 0; i < 2; i++)
 		printf("t[%d]: %x", i, t[i]);
+	*/
 	return (NULL);
 }
 
