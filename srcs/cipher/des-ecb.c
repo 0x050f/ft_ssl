@@ -122,7 +122,11 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		key = 0x133457799bbcdff1;
 	}
 	else
+	{
 		key = hex2int64(options->key);
+		/* if key was not provided with 8 bytes */
+		key = key << ((16 - strlen(options->key)) * 4);
+	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < *res_len; i += 8)
 	{
@@ -224,7 +228,11 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		key = 0x133457799bbcdff1;
 	}
 	else
+	{
 		key = hex2int64(options->key);
+		/* if key was not provided with 8 bytes */
+		key = key << ((16 - strlen(options->key)) * 4);
+	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size; i += 8)
 	{
