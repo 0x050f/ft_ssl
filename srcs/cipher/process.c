@@ -1,24 +1,22 @@
 #include "ft_ssl.h"
 
 #define SHA256_BLOCK_SIZE 64
-#define LENGTH_OUT_SHA256 32
+#define SHA256_HASH_SIZE 32
 
 // TODO: error
 // hash(text || key)
-void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
+char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
 {
-	void		*result;
 	size_t		buflen = text_len + key_len;
 	uint8_t		*buf = malloc(buflen);
 
 	if (!buf)
-		return ;
+		return (NULL);
 	memcpy(buf, text, text_len);
 	memcpy(buf + text_len, key, key_len);
-	result = sha256(buf, buflen);
+	char *ret = sha256(buf, buflen);
 	free(buf);
-	memcpy(digest, result, SHA256_BLOCK_SIZE);
-	free(result);
+	return (ret);
 }
 
 /*
@@ -26,16 +24,14 @@ void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *di
   https://en.wikipedia.org/wiki/HMAC
 */
 // TODO: error
-char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
+char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 {
-	(void)text;
-	(void)text_len;
 	uint8_t		k[SHA256_BLOCK_SIZE];
 	uint8_t		k_ipad[SHA256_BLOCK_SIZE];
 	uint8_t		k_opad[SHA256_BLOCK_SIZE];
-	uint8_t		ihash[SHA256_BLOCK_SIZE];
-	uint8_t		ohash[SHA256_BLOCK_SIZE];
-	size_t		sz;
+	uint8_t		tmp[SHA256_HASH_SIZE];
+	char		*ihash;
+	char		*ohash;
 
 	/* Compute the block_size key */
 	memset(k, 0, SHA256_BLOCK_SIZE);
@@ -60,13 +56,16 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8
 	}
 	/* HMAC */
 	// hash(o_key_pad || hash(i_key_pad || message))
-	h(k_ipad, SHA256_BLOCK_SIZE, text, text_len, ihash); // hash(k_ipad || text)
-	h(k_opad, SHA256_BLOCK_SIZE, ihash, SHA256_BLOCK_SIZE, ohash); // hash(k_opad || ihash);
-
-	sz = (LENGTH_OUT_SHA256 > SHA256_BLOCK_SIZE) ? SHA256_BLOCK_SIZE : LENGTH_OUT_SHA256;
-	memcpy(digest, ohash, sz);
-	printf("digest: %s\n", digest);
-	return (NULL);
+	ihash = h(k_ipad, SHA256_BLOCK_SIZE, text, text_len); // hash(k_ipad || text)
+	if (!ihash)
+		return (NULL);
+	 /* translate to 32 bytes non-ascii */
+	hex2bytes((char *)ihash, tmp, SHA256_BLOCK_SIZE);
+	free(ihash);
+	ohash = h(k_opad, SHA256_BLOCK_SIZE, tmp, SHA256_HASH_SIZE); // hash(k_opad || ihash);
+	if (!ohash)
+		return (NULL);
+	return (ohash);
 }
 
 
@@ -79,7 +78,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8
   c: iteration count
   dklen: length of the derived key
 */
-char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int, uint8_t *)), char *p, uint64_t s, size_t c, size_t dklen)
+char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, uint64_t s, size_t c, size_t dklen)
 {
 	(void)prf;
 	(void)s;
@@ -88,10 +87,21 @@ char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int, uint8_t *)), char *p, ui
 	size_t i;
 	(void)i;
 
-	char digest[64];
+	{
 	char key[] = "key";
 	char msg[] = "The quick brown fox jumps over the lazy dog";
-	hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key), (unsigned char *)digest);
+	char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
+	printf("digest: %.64s\n", digest);
+	free(digest);
+	}
+	{
+	char key[] = "\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b";
+	char msg[] = "Hi There";
+	char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
+	printf("digest: %.64s\n", digest);
+	free(digest);
+	}
+	exit(0);
 	i = 0;
 	memset(&t, 0, sizeof(uint32_t) * 2);
 	(void)c;

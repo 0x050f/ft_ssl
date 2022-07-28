@@ -8,6 +8,25 @@ int			ceil(float num)
 	return (inum + 1);
 }
 
+void		hex2bytes(const char *hex, uint8_t *result, size_t size)
+{
+	size_t		i = 0;
+	while (i < size * 2 && ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')))
+	{
+		char byte = *hex++; 
+		if (byte >= '0' && byte <= '9')
+			byte = byte - '0';
+		else if (byte >= 'a' && byte <='f')
+			byte = byte - 'a' + 10;
+		else if (byte >= 'A' && byte <='F')
+			byte = byte - 'A' + 10;
+		if (!(i % 2))
+			result[i / 2] = byte & 0xf;
+		else
+			result[i / 2] = (result[i / 2] << 4) | (byte & 0xf);
+		i++;
+	}
+}
 
 uint64_t	hex2int64(const char *hex)
 {

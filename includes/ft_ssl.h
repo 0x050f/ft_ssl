@@ -111,6 +111,7 @@ int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
 int			ceil(float num);
+void		hex2bytes(const char *hex, uint8_t *result, size_t size);
 uint64_t	hex2int64(const char *hex);
 uint32_t	hex2int32(const char *hex);
 void		*b_memcpy(void *dest, const void *src, size_t n);
