@@ -48,7 +48,7 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 	{
 		if (!(str = get_string_arg(argc, argv, i, j, &option[0][1])))
 			return (ERR_REQ_ARG);
-		if (option[3] && !strcmp(option[3], "HEX") && ((strlen(str) % 2) || !ishexa(str))) // should be hexa
+		if (option[3] && !strcmp(option[3], "HEX") && (!ishexa(str))) // should be hexa
 			return (args_error(ERR_HEX_ARG, &option[0][1], 0, 0) + 1);
 		else if (option[3] && !strcmp(option[3], "PRINT") && !isprintable(str)) // should be printable
 			return (args_error(ERR_PRINT_ARG, &option[0][1], 0, 0) + 1);

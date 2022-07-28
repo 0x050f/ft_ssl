@@ -118,14 +118,18 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			salt = hex2int64(options->salt);
 		else
 			salt = 0; // TODO: random
-		pbkdf2(options->password, salt, 10000, 8);
+		pbkdf2(sha256, options->password, salt, 10000, 8);
 		key = 0x133457799bbcdff1;
 	}
 	else
 	{
 		key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
-		key = key << ((16 - strlen(options->key)) * 4);
+		if (strlen(options->key) != 16)
+		{
+			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+			key = key << ((16 - strlen(options->key)) * 4);
+		}
 	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < *res_len; i += 8)
@@ -231,7 +235,11 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	{
 		key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
-		key = key << ((16 - strlen(options->key)) * 4);
+		if (strlen(options->key) != 16)
+		{
+			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+			key = key << ((16 - strlen(options->key)) * 4);
+		}
 	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size; i += 8)

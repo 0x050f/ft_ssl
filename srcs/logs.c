@@ -52,7 +52,7 @@ int			args_error(int error, char *str, int range1, int range2)
 		if (error == ERR_OOR_ARG)
 			dprintf(STDERR_FILENO, ": out of range: %d <= value <= %d", range1, range2);
 		else if (error == ERR_HEX_ARG)
-			dprintf(STDERR_FILENO, ": must be in lowercase hexadecimal ([0-9a-f] and len %% 2 == 0)");
+			dprintf(STDERR_FILENO, ": must be in lowercase hexadecimal ([0-9a-f])");
 		else if (error == ERR_PRINT_ARG)
 			dprintf(STDERR_FILENO, ": must be printable (' ' <= x <= '~')");
 		dprintf(STDERR_FILENO, "\n");

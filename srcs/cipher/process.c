@@ -69,13 +69,15 @@ void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, u
 /*
   RFC 8018
   default openssl -pbkdf2:  -iter 10000 -md sha256
+  prf: pseudo-random-function (here sha256)
   p: password
   s: salt
   c: iteration count
   dklen: length of the derived key
 */
-char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
+char	*pbkdf2(char *(prf(uint8_t *, size_t)), char *p, uint64_t s, size_t c, size_t dklen)
 {
+	(void)prf;
 	(void)s;
 	(void)p;
 	uint32_t t[2];
