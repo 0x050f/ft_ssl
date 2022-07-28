@@ -23,7 +23,7 @@ void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *di
   RFC 2104
 */
 // TODO: error
-void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, caddr_t digest)
+void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
 {
 	(void)text;
 	(void)text_len;
