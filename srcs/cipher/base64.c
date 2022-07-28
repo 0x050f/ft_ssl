@@ -70,7 +70,7 @@ char			*base64_encode(unsigned char *str, size_t size, size_t *res_len)
 
 char			*base64(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
-	DPRINT("base64(\"%.*s\", %zu)\n", size, str, size);
+	DPRINT("base64(\"%.*s\", %zu)\n", (int)size, str, size);
 	char *cipher;
 	if (options->mode == CMODE_ENCODE)
 		cipher = base64_encode(str, size, res_len);

@@ -203,7 +203,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		block = ((uint64_t)to_feistel << 32) | to_xor;
 		/* [final_permutation] -> OK*/
 		block = permutation(block, 64, FP, 64);
-		DPRINT("res block: %lx\n",block);
+		DPRINT("res block: %llx\n",block);
 		b_memcpy(ciphertext + i, &block, 8);
 	}
 	free(plaintext);
@@ -315,7 +315,7 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		block = ((uint64_t)to_feistel << 32) | to_xor;
 		/* [final_permutation] -> OK*/
 		block = permutation(block, 64, FP, 64);
-		DPRINT("res block: %lx\n",block);
+		DPRINT("res block: %llx\n",block);
 		b_memcpy(plaintext + i, &block, 8);
 		if (i == size - 8)
 			*res_len = size - (plaintext + i)[7];
@@ -326,7 +326,7 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 
 char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
-	DPRINT("des_ecb(\"%.*s\", %zu)\n", size, str, size);
+	DPRINT("des_ecb(\"%.*s\", %zu)\n", (int)size, str, size);
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
 		result = des_ecb_encrypt(str, size, res_len, options);

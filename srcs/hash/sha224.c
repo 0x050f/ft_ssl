@@ -5,7 +5,7 @@
 // https://en.wikipedia.org/wiki/SHA-2
 char		*sha224(uint8_t *str, size_t size)
 {
-	DPRINT("sha224(\"%.*s\", %zu)\n", size, str, size);
+	DPRINT("sha224(\"%.*s\", %zu)\n", (int)size, str, size);
 	uint64_t padding_zeroes;
 	// setup msg
 	//             v 0x80     v size

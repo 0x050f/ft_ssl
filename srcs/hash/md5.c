@@ -3,7 +3,7 @@
 // https://en.wikipedia.org/wiki/MD5
 char			*md5(uint8_t *str, size_t size)
 {
-	DPRINT("md5(\"%.*s\", %zu)\n", size, str, size);
+	DPRINT("md5(\"%.*s\", %zu)\n", (int)size, str, size);
 	int padding_zeroes;
 	// setup msg
 	//             v 0x80     v size
