@@ -11,8 +11,9 @@ int			ceil(float num)
 
 uint64_t	hex2int64(const char *hex)
 {
+	size_t			i = 0;
 	uint64_t		val = 0;
-	while ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F'))
+	while (((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')) && i < 16)
 	{
 		char byte = *hex++; 
 		if (byte >= '0' && byte <= '9')
@@ -22,14 +23,16 @@ uint64_t	hex2int64(const char *hex)
 		else if (byte >= 'A' && byte <='F')
 			byte = byte - 'A' + 10;
 		val = (val << 4) | (byte & 0xf);
+		i++;
 	}
 	return (val);
 }
 
 uint32_t	hex2int32(const char *hex)
 {
+	size_t			i = 0;
 	uint32_t		val = 0;
-	while ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F'))
+	while (((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')) && i < 8)
 	{
 		char byte = *hex++; 
 		if (byte >= '0' && byte <= '9')
@@ -39,6 +42,7 @@ uint32_t	hex2int32(const char *hex)
 		else if (byte >= 'A' && byte <='F')
 			byte = byte - 'A' + 10;
 		val = (val << 4) | (byte & 0xf);
+		i++;
 	}
 	return (val);
 }

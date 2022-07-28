@@ -125,11 +125,13 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	{
 		key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) != 16)
+		if (strlen(options->key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
 			key = key << ((16 - strlen(options->key)) * 4);
 		}
+		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < *res_len; i += 8)
@@ -235,11 +237,13 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	{
 		key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) != 16)
+		if (strlen(options->key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
 			key = key << ((16 - strlen(options->key)) * 4);
 		}
+		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 	}
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size; i += 8)
