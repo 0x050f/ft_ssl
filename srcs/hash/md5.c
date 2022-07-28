@@ -1,7 +1,7 @@
 #include "ft_ssl.h"
 
 // https://en.wikipedia.org/wiki/MD5
-char			*md5(char *str, size_t size)
+char			*md5(uint8_t *str, size_t size)
 {
 	DPRINT("md5(\"%.*s\", %zu)\n", size, str, size);
 	int padding_zeroes;

@@ -3,7 +3,7 @@
 #define SHA256_BLOCK_SIZE 64
 
 // TODO: error
-void	h(unsigned char *text, int text_len, unsigned char *key, int key_len, caddr_t digest)
+void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
 {
 	void		*result;
 	size_t		buflen = text_len + key_len;
@@ -23,8 +23,10 @@ void	h(unsigned char *text, int text_len, unsigned char *key, int key_len, caddr
   RFC 2104
 */
 // TODO: error
-void	hmac_sha256(unsigned char *text, int text_len, unsigned char *key, int key_len, caddr_t digest)
+void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, caddr_t digest)
 {
+	(void)text;
+	(void)text_len;
 	uint8_t		k[SHA256_BLOCK_SIZE];
 	uint8_t		k_ipad[SHA256_BLOCK_SIZE];
 	uint8_t		k_opad[SHA256_BLOCK_SIZE];
@@ -35,16 +37,16 @@ void	hmac_sha256(unsigned char *text, int text_len, unsigned char *key, int key_
 	/* start out by storing key in pads */
 	memset(k_ipad, 0x36, SHA256_BLOCK_SIZE);
 	memset(k_opad, 0x5c, SHA256_BLOCK_SIZE);
-	if (keylen > SHA256_BLOCK_SIZE)
+	if (key_len > SHA256_BLOCK_SIZE)
 	{
-		uint8_t *tmp = sha256(key, keylen);
+		uint8_t *tmp = (uint8_t *)sha256(key, key_len);
 		if (!tmp)
 			return ;
 		memcpy(k, tmp, SHA256_BLOCK_SIZE);
 		free(tmp);
 	}
 	else
-		memcpy(k, key, keylen);
+		memcpy(k, key, key_len);
 	/* XOR key with ipad and opad values */
 	for (size_t i = 0; i < SHA256_BLOCK_SIZE; i++)
 	{
@@ -52,10 +54,13 @@ void	hmac_sha256(unsigned char *text, int text_len, unsigned char *key, int key_
 		k_opad[i] ^= k[i];
 	}
 	/* HMAC */
+	int datalen = 0; // what
+	uint8_t data[0] = "";
 	h(k_ipad, SHA256_BLOCK_SIZE, data, datalen, ihash);
 	h(k_opad, SHA256_BLOCK_SIZE, ihash, SHA256_BLOCK_SIZE, ohash);
 
-	sz = (outlen > SHA256_HASH_SIZE) ? SHA256_HASH_SIZE : outlen;
+	int outlen = 0; //what
+	sz = (outlen > SHA256_BLOCK_SIZE) ? SHA256_BLOCK_SIZE : outlen;
 	memcpy(digest, ohash, sz);
 	printf("digest: %s\n", digest);
 }
@@ -72,13 +77,13 @@ void	hmac_sha256(unsigned char *text, int text_len, unsigned char *key, int key_
 char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
 {
 	(void)s;
+	(void)p;
 	uint32_t t[2];
 	size_t i;
+	(void)i;
 
 	i = 0;
 	memset(&t, 0, sizeof(uint32_t) * 2);
-	(void)password;
-	(void)salt;
 	(void)c;
 	(void)dklen;
 	/*
@@ -111,7 +116,7 @@ char	*pbkdf2(char *p, uint64_t s, size_t c, size_t dklen)
 char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_options *options)
 {
 	char *cmds[NB_CIPHER_CMDS] = CMD_CIPHER;
-	char *(*functions[NB_CIPHER_CMDS])(unsigned char *, size_t, size_t *, t_options *) = FUNC_CIPHER;
+	char *(*functions[NB_CIPHER_CMDS])(uint8_t *, size_t, size_t *, t_options *) = FUNC_CIPHER;
 
 	for (int i = 0; i < NB_CIPHER_CMDS; i++)
 	{

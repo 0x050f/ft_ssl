@@ -3,12 +3,12 @@
 char		*launch_hash(t_ssl *ssl, char *query, size_t size)
 {
 	char *cmds[NB_HASH_CMDS] = CMD_HASH;
-	char *(*functions[NB_HASH_CMDS])(char *, size_t) = FUNC_HASH;
+	char *(*functions[NB_HASH_CMDS])(uint8_t *, size_t) = FUNC_HASH;
 
 	for (int i = 0; i < NB_HASH_CMDS; i++)
 	{
 		if (!strcmp(ssl->cmd, cmds[i]))
-			return (functions[i](query, size));
+			return (functions[i]((uint8_t *)query, size));
 	}
 	return (NULL);
 }

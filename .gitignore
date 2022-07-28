@@ -1,4 +1,6 @@
 ft_ssl
 debug-ft_ssl
 *.o
+*.d
 *.swp
+compiled_srcs

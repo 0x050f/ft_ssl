@@ -3,7 +3,7 @@
 #define RIGHTROTATE(x, y) (((x) >> (y)) | ((x) << (64 - (y))))
 
 // https://en.wikipedia.org/wiki/SHA-2
-char		*sha512(char *str, size_t size)
+char		*sha512(uint8_t *str, size_t size)
 {
 	DPRINT("sha512(\"%.*s\", %zu)\n", size, str, size);
 	uint64_t padding_zeroes;
