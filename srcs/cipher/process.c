@@ -23,7 +23,7 @@ void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *di
   RFC 2104
 */
 // TODO: error
-void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
+char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
 {
 	(void)text;
 	(void)text_len;
@@ -41,7 +41,7 @@ void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, u
 	{
 		uint8_t *tmp = (uint8_t *)sha256(key, key_len);
 		if (!tmp)
-			return ;
+			return (NULL);
 		memcpy(k, tmp, SHA256_BLOCK_SIZE);
 		free(tmp);
 	}
@@ -63,6 +63,7 @@ void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, u
 	sz = (outlen > SHA256_BLOCK_SIZE) ? SHA256_BLOCK_SIZE : outlen;
 	memcpy(digest, ohash, sz);
 	printf("digest: %s\n", digest);
+	return (NULL);
 }
 
 
@@ -75,7 +76,7 @@ void	hmac_sha256(unsigned char *text, int text_len, uint8_t *key, int key_len, u
   c: iteration count
   dklen: length of the derived key
 */
-char	*pbkdf2(char *(prf(uint8_t *, size_t)), char *p, uint64_t s, size_t c, size_t dklen)
+char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int, uint8_t *)), char *p, uint64_t s, size_t c, size_t dklen)
 {
 	(void)prf;
 	(void)s;
