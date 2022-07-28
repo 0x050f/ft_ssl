@@ -1,8 +1,10 @@
 #include "ft_ssl.h"
 
 #define SHA256_BLOCK_SIZE 64
+#define LENGTH_OUT_SHA256 32
 
 // TODO: error
+// hash(text || key)
 void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
 {
 	void		*result;
@@ -21,6 +23,7 @@ void	h(unsigned char *text, int text_len, uint8_t *key, int key_len, uint8_t *di
 
 /*
   RFC 2104
+  https://en.wikipedia.org/wiki/HMAC
 */
 // TODO: error
 char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *digest)
@@ -34,10 +37,12 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8
 	uint8_t		ohash[SHA256_BLOCK_SIZE];
 	size_t		sz;
 
+	/* Compute the block_size key */
+	memset(k, 0, SHA256_BLOCK_SIZE);
 	/* start out by storing key in pads */
 	memset(k_ipad, 0x36, SHA256_BLOCK_SIZE);
 	memset(k_opad, 0x5c, SHA256_BLOCK_SIZE);
-	if (key_len > SHA256_BLOCK_SIZE)
+	if (key_len > SHA256_BLOCK_SIZE) /* key = hash(key) */
 	{
 		uint8_t *tmp = (uint8_t *)sha256(key, key_len);
 		if (!tmp)
@@ -45,22 +50,20 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8
 		memcpy(k, tmp, SHA256_BLOCK_SIZE);
 		free(tmp);
 	}
-	else
+	else /* pad key */
 		memcpy(k, key, key_len);
 	/* XOR key with ipad and opad values */
 	for (size_t i = 0; i < SHA256_BLOCK_SIZE; i++)
 	{
-		k_ipad[i] ^= k[i];
-		k_opad[i] ^= k[i];
+		k_ipad[i] ^= k[i]; // outer padded key
+		k_opad[i] ^= k[i]; // inner padded key
 	}
 	/* HMAC */
-	int datalen = 0; // what
-	uint8_t data[0] = "";
-	h(k_ipad, SHA256_BLOCK_SIZE, data, datalen, ihash);
-	h(k_opad, SHA256_BLOCK_SIZE, ihash, SHA256_BLOCK_SIZE, ohash);
+	// hash(o_key_pad || hash(i_key_pad || message))
+	h(k_ipad, SHA256_BLOCK_SIZE, text, text_len, ihash); // hash(k_ipad || text)
+	h(k_opad, SHA256_BLOCK_SIZE, ihash, SHA256_BLOCK_SIZE, ohash); // hash(k_opad || ihash);
 
-	int outlen = 0; //what
-	sz = (outlen > SHA256_BLOCK_SIZE) ? SHA256_BLOCK_SIZE : outlen;
+	sz = (LENGTH_OUT_SHA256 > SHA256_BLOCK_SIZE) ? SHA256_BLOCK_SIZE : LENGTH_OUT_SHA256;
 	memcpy(digest, ohash, sz);
 	printf("digest: %s\n", digest);
 	return (NULL);
@@ -85,6 +88,10 @@ char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int, uint8_t *)), char *p, ui
 	size_t i;
 	(void)i;
 
+	char digest[64];
+	char key[] = "key";
+	char msg[] = "The quick brown fox jumps over the lazy dog";
+	hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key), (unsigned char *)digest);
 	i = 0;
 	memset(&t, 0, sizeof(uint32_t) * 2);
 	(void)c;
