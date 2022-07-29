@@ -3,7 +3,6 @@
 #define SHA256_BLOCK_SIZE 64
 #define SHA256_HASH_SIZE 32
 
-// TODO: error
 // hash(text || key)
 char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
 {
@@ -23,7 +22,6 @@ char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
   RFC 2104
   https://en.wikipedia.org/wiki/HMAC
 */
-// TODO: error
 char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 {
 	uint8_t		k[SHA256_BLOCK_SIZE];
@@ -68,6 +66,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 	return (ohash);
 }
 
+#define HLEN 32 // output of sha256 in bits
 
 /*
   RFC 8018
@@ -78,107 +77,59 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
   c: iteration count
   dklen: length of the derived key
 */
-char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, uint64_t s, size_t c, size_t dklen)
+char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen)
 {
-	(void)prf;
-	(void)s;
-	(void)p;
-	uint32_t t[2];
-	size_t i;
-	(void)i;
-
+	if (dklen > 4294967295 * HLEN) // dklen > (2 ^ 32 - 1) * hlen
 	{
-		char key[] = "key";
-		char msg[] = "The quick brown fox jumps over the lazy dog";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
+		dprintf(STDERR_FILENO, "derived key too long\n");
+		return (NULL);
 	}
+	int l = ceil((float)dklen / (float)HLEN); // bytes in block - ceil
+	int r = dklen - (l - 1) * HLEN; // bytes in last block
+	
+	uint8_t t[l][HLEN];
+	for (size_t i = 0; i <= (size_t)l; i++)
+		memset(t[i], 0, HLEN);
+	// F(P, S, c, i)
+	for (size_t i = 1; i <= (size_t)l; i++)
 	{
-		printf("Test case 1\n");
-		char key[] = "\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b";
-		char msg[] = "Hi There";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 2\n");
-		char key[] = "Jefe";
-		char msg[] = "what do ya want for nothing?";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 3\n");
-		char key[] = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa";
-		char msg[] = "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 4\n");
-		char key[] = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19";
-		char msg[] = "\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 5\n");
-		char key[] = "\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c";
-		char msg[] = "\x54\x65\x73\x74\x20\x57\x69\x74\x68\x20\x54\x72\x75\x6e\x63\x61\x74\x69\x6f\x6e";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 6\n");
-		char key[] = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa";
-		char msg[] = "\x54\x65\x73\x74\x20\x55\x73\x69\x6e\x67\x20\x4c\x61\x72\x67\x65\x72\x20\x54\x68\x61\x6e\x20\x42\x6c\x6f\x63\x6b\x2d\x53\x69\x7a\x65\x20\x4b\x65\x79\x20\x2d\x20\x48\x61\x73\x68\x20\x4b\x65\x79\x20\x46\x69\x72\x73\x74";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	{
-		printf("Test case 7\n");
-		char key[] = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa";
-		char msg[] = "\x54\x68\x69\x73\x20\x69\x73\x20\x61\x20\x74\x65\x73\x74\x20\x75\x73\x69\x6e\x67\x20\x61\x20\x6c\x61\x72\x67\x65\x72\x20\x74\x68\x61\x6e\x20\x62\x6c\x6f\x63\x6b\x2d\x73\x69\x7a\x65\x20\x6b\x65\x79\x20\x61\x6e\x64\x20\x61\x20\x6c\x61\x72\x67\x65\x72\x20\x74\x68\x61\x6e\x20\x62\x6c\x6f\x63\x6b\x2d\x73\x69\x7a\x65\x20\x64\x61\x74\x61\x2e\x20\x54\x68\x65\x20\x6b\x65\x79\x20\x6e\x65\x65\x64\x73\x20\x74\x6f\x20\x62\x65\x20\x68\x61\x73\x68\x65\x64\x20\x62\x65\x66\x6f\x72\x65\x20\x62\x65\x69\x6e\x67\x20\x75\x73\x65\x64\x20\x62\x79\x20\x74\x68\x65\x20\x48\x4d\x41\x43\x20\x61\x6c\x67\x6f\x72\x69\x74\x68\x6d\x2e";
-		char *digest = hmac_sha256((unsigned char *)msg, strlen(msg), (unsigned char *)key, strlen(key));
-		printf("digest: %.64s\n", digest);
-		free(digest);
-	}
-	exit(0);
-	i = 0;
-	memset(&t, 0, sizeof(uint32_t) * 2);
-	(void)c;
-	(void)dklen;
-	/*
-	size_t block_len = 0;
-	while (block_len < dklen)
-	{
-		// F(P, S, c, i + 1)
-		uint32_t u[c];
-		for (size_t j = 0; j < c; j++) // U_{j + 1}
+		uint8_t u[HLEN];
+		// U_j = PRF (P, u_{j-1})
+		for (size_t j = 1; j <= c; j++)
 		{
+//			printf("j: %zu\n", j);
 			char *hash;
-			if (!j) // PRF(P, S || INT(i + 1))
-				hash = hmac_sha256(p, strlen(password), );// ??
-			else // PRF(P, U_{j - 1})
-				hash = hmac_sha256(p, strlen(password), u[j - 1], sizeof(uint32_t));
-			u[j] = hex2int32(hash);
+			if (j == 1)
+			{
+				uint8_t		tmp[ssize + sizeof(int)];
+				memcpy(tmp, s, ssize);
+				b_memcpy(tmp + ssize, &i, sizeof(int));
+//				printf("s: %s\n", s);
+//				printf("int(i): %d\n", (int)i);
+//				printf("tmp: ");
+//				for (size_t k = 0; k < ssize + sizeof(int); k++)
+//					printf("%02x", tmp[k]);
+//				printf("\n");
+				hash = prf(tmp, ssize + sizeof(int), (uint8_t *)p, psize);
+			}
+			else
+				hash = prf(u, HLEN, (uint8_t *)p, psize);
+			if (!hash)
+				return (NULL);
+//			printf("hash: %.64s\n", hash);
+			hex2bytes(hash, u, HLEN);
 			free(hash);
+			for (size_t k = 0; k < HLEN; k++)
+				t[i - 1][k] ^= u[k];
 		}
-		for (size_t j = 0; j < c; j++)
-			t[i] ^= u[j];
-		block_len += sizeof(uint32_t);
-		i++;
 	}
-	for (size_t i = 0; i < 2; i++)
-		printf("t[%d]: %x", i, t[i]);
-	*/
+//	(void) r;
+	for (size_t i = 0; i < (size_t)l; i++)
+	{
+		for (size_t j = 0; j < HLEN && (i != (size_t)l - 1 || j < (size_t)r); j++)
+			printf("%02x", t[i][j]);
+		printf("\n");
+	}
 	return (NULL);
 }
 

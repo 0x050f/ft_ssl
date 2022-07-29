@@ -13,7 +13,7 @@ void		hex2bytes(const char *hex, uint8_t *result, size_t size)
 	size_t		i = 0;
 	while (i < size * 2 && ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')))
 	{
-		char byte = *hex++; 
+		char byte = *hex++;
 		if (byte >= '0' && byte <= '9')
 			byte = byte - '0';
 		else if (byte >= 'a' && byte <='f')
@@ -34,7 +34,7 @@ uint64_t	hex2int64(const char *hex)
 	uint64_t		val = 0;
 	while (((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')) && i < 16)
 	{
-		char byte = *hex++; 
+		char byte = *hex++;
 		if (byte >= '0' && byte <= '9')
 			byte = byte - '0';
 		else if (byte >= 'a' && byte <='f')
@@ -53,7 +53,7 @@ uint32_t	hex2int32(const char *hex)
 	uint32_t		val = 0;
 	while (((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')) && i < 8)
 	{
-		char byte = *hex++; 
+		char byte = *hex++;
 		if (byte >= '0' && byte <= '9')
 			byte = byte - '0';
 		else if (byte >= 'a' && byte <='f')

@@ -118,7 +118,27 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			salt = hex2int64(options->salt);
 		else
 			salt = 0; // TODO: random
-		pbkdf2(hmac_sha256, options->password, salt, 10000, 8);
+		(void)salt;
+//		pbkdf2(hmac_sha256, options->password, salt, 10000, 8);
+		printf("test 1:\n");
+		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 1, 20);
+		printf("test 2:\n");
+		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 2, 20);
+		printf("test 3:\n");
+		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 4096, 20);
+//		printf("test 4:\n");
+//		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 16777216, 20);
+		printf("test 5:\n");
+		pbkdf2(hmac_sha256, "passwordPASSWORDpassword", 24, "saltSALTsaltSALTsaltSALTsaltSALTsalt", 36, 4096, 25);
+		printf("test 6:\n");
+		pbkdf2(hmac_sha256, "pass\0word", 9, "sa\0lt", 5, 4096, 16);
+		printf("test 7:\n");
+		pbkdf2(hmac_sha256, "passwd", 6, "salt", 4, 1, 128);
+		printf("test 8:\n");
+		pbkdf2(hmac_sha256, "Password", 8, "NaCl", 4, 80000, 128);
+		printf("test 9:\n");
+		pbkdf2(hmac_sha256, "Password", 8, "sa\0lt", 5, 4096, 256);
+		exit(0);
 		key = 0x133457799bbcdff1;
 	}
 	else
