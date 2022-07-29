@@ -3,7 +3,9 @@
 int			main(int argc, char *argv[])
 {
 	t_ssl	ssl;
+	time_t	t;
 
+	srand((unsigned) time(&t)); /* Initialize rand */
 	if (check_args(argc, argv, &ssl))
 	{
 		clear_opt_arg(ssl.opt_args);

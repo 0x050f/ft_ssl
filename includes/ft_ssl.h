@@ -7,6 +7,7 @@
 # include <stdlib.h>
 # include <stdint.h>
 # include <string.h>
+# include <time.h>
 # include <unistd.h>
 
 # define PRG_NAME "ft_ssl"

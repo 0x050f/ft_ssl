@@ -116,9 +116,22 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		uint8_t salt[8];
 		memset(salt, 0, 8);
 		if (options->salt)
-			hex2bytes(options->salt, salt, 8);
-//		else
-//			salt = 0; // TODO: random
+		{
+			uint64_t tmp = hex2int64(options->salt);
+			if (strlen(options->salt) < 16)
+			{
+				dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+				tmp = tmp << ((16 - strlen(options->salt)) * 4);
+			}
+			else if (strlen(options->salt) > 16) // removing 8 bytes + auto with hex2int64 but print it
+				dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+			b_memcpy(salt, &tmp, 8);
+		}
+		else
+		{
+			for (size_t i = 0; i < 8; i++)
+				salt[i] = rand() % 256;
+		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
