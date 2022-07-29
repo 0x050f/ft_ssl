@@ -77,7 +77,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
   c: iteration count
   dklen: length of the derived key
 */
-char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen)
+uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen)
 {
 	if (dklen > 4294967295 * HLEN) // dklen > (2 ^ 32 - 1) * hlen
 	{
@@ -88,7 +88,7 @@ char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize,
 	int r = dklen - (l - 1) * HLEN; // bytes in last block
 	
 	uint8_t t[l][HLEN];
-	for (size_t i = 0; i <= (size_t)l; i++)
+	for (size_t i = 0; i < (size_t)l; i++)
 		memset(t[i], 0, HLEN);
 	// F(P, S, c, i)
 	for (size_t i = 1; i <= (size_t)l; i++)
@@ -97,40 +97,37 @@ char	*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize,
 		// U_j = PRF (P, u_{j-1})
 		for (size_t j = 1; j <= c; j++)
 		{
-//			printf("j: %zu\n", j);
 			char *hash;
 			if (j == 1)
 			{
 				uint8_t		tmp[ssize + sizeof(int)];
 				memcpy(tmp, s, ssize);
 				b_memcpy(tmp + ssize, &i, sizeof(int));
-//				printf("s: %s\n", s);
-//				printf("int(i): %d\n", (int)i);
-//				printf("tmp: ");
-//				for (size_t k = 0; k < ssize + sizeof(int); k++)
-//					printf("%02x", tmp[k]);
-//				printf("\n");
 				hash = prf(tmp, ssize + sizeof(int), (uint8_t *)p, psize);
 			}
 			else
 				hash = prf(u, HLEN, (uint8_t *)p, psize);
 			if (!hash)
 				return (NULL);
-//			printf("hash: %.64s\n", hash);
 			hex2bytes(hash, u, HLEN);
 			free(hash);
 			for (size_t k = 0; k < HLEN; k++)
 				t[i - 1][k] ^= u[k];
 		}
 	}
-//	(void) r;
+	uint8_t *ret = malloc(dklen);
+	if (!ret)
+		return (NULL);
+	size_t n = 0;
 	for (size_t i = 0; i < (size_t)l; i++)
 	{
 		for (size_t j = 0; j < HLEN && (i != (size_t)l - 1 || j < (size_t)r); j++)
-			printf("%02x", t[i][j]);
-		printf("\n");
+		{
+			ret[n] = t[i][j];
+			n++;
+		}
 	}
-	return (NULL);
+	return (ret);
 }
 
 char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_options *options)

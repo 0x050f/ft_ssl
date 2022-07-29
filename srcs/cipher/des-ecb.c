@@ -113,33 +113,19 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	if (!options->key)
 	{
 		/* PKBFD */
-		uint64_t salt;
+		uint8_t salt[8];
+		memset(salt, 0, 8);
 		if (options->salt)
-			salt = hex2int64(options->salt);
-		else
-			salt = 0; // TODO: random
-		(void)salt;
-//		pbkdf2(hmac_sha256, options->password, salt, 10000, 8);
-		printf("test 1:\n");
-		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 1, 20);
-		printf("test 2:\n");
-		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 2, 20);
-		printf("test 3:\n");
-		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 4096, 20);
-//		printf("test 4:\n");
-//		pbkdf2(hmac_sha256, "password", 8, "salt", 4, 16777216, 20);
-		printf("test 5:\n");
-		pbkdf2(hmac_sha256, "passwordPASSWORDpassword", 24, "saltSALTsaltSALTsaltSALTsaltSALTsalt", 36, 4096, 25);
-		printf("test 6:\n");
-		pbkdf2(hmac_sha256, "pass\0word", 9, "sa\0lt", 5, 4096, 16);
-		printf("test 7:\n");
-		pbkdf2(hmac_sha256, "passwd", 6, "salt", 4, 1, 128);
-		printf("test 8:\n");
-		pbkdf2(hmac_sha256, "Password", 8, "NaCl", 4, 80000, 128);
-		printf("test 9:\n");
-		pbkdf2(hmac_sha256, "Password", 8, "sa\0lt", 5, 4096, 256);
+			hex2bytes(options->salt, salt, 8);
+//		else
+//			salt = 0; // TODO: random
+		// default openssl -pbkdf2:  -iter 10000 -md sha256
+		// TODO: password could contain '\0'
+		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
+		b_memcpy(&key, key_uint, 8);
+		printf("key: %08llx\n", key);
+		free(key_uint);
 		exit(0);
-		key = 0x133457799bbcdff1;
 	}
 	else
 	{
