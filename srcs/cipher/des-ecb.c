@@ -86,6 +86,8 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 	return (half_block);
 }
 
+// TODO: opti without key given parameter with Salted__ output size
+// refacto a bit
 char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	size_t padding = 0;
@@ -105,15 +107,11 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	}
 	memcpy(plaintext, str, size);
 	memset(plaintext + size, padding, padding);
-	uint64_t key;
-	/*
-	* TODO:
-	* Ask for a password and check for keysize etc..
-	*/
+	uint64_t	key;
+	uint8_t		salt[8];
 	if (!options->key)
 	{
 		/* PKBFD */
-		uint8_t salt[8];
 		memset(salt, 0, 8);
 		if (options->salt)
 		{
@@ -135,10 +133,14 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
+		if (!key_uint)
+		{
+			free(plaintext);
+			free(ciphertext);
+			return (NULL);
+		}
 		b_memcpy(&key, key_uint, 8);
-		printf("key: %08llx\n", key);
 		free(key_uint);
-		exit(0);
 	}
 	else
 	{
@@ -225,10 +227,27 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(ciphertext + i, &block, 8);
 	}
+	if (!options->key)
+	{
+		*res_len += 16;
+		char *new_cipher = malloc(sizeof(char) * *res_len);
+		if (!new_cipher)
+		{
+			free(plaintext);
+			free(ciphertext);
+			return (NULL);
+		}
+		memcpy(new_cipher, "Salted__", 8);
+		memcpy(new_cipher + 8, salt, 8);
+		memcpy(new_cipher + 16, ciphertext, *res_len - 16);
+		free(ciphertext);
+		ciphertext = new_cipher;
+	}
 	free(plaintext);
 	return (ciphertext);
 }
 
+// TODO: decode non key
 char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	*res_len = 0;
@@ -250,6 +269,7 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	if (!options->key)
 	{
 		/* ask for password */
+		// TODO: Check for salt at the beginning
 		key = 0x133457799bbcdff1;
 	}
 	else

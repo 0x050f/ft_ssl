@@ -253,6 +253,7 @@ int			fill_options(t_options *options, t_ssl *ssl)
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 			return (ERR_MALLOC);
 		}
+		//TODO: ask password when verifying header ?
 		sprintf(msg, "Verifying - enter %s encryption password: ", ssl->cmd);
 		tmp = getpass(msg);
 		if (!tmp)
