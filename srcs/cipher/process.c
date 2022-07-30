@@ -38,11 +38,11 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 	memset(k_opad, 0x5c, SHA256_BLOCK_SIZE);
 	if (key_len > SHA256_BLOCK_SIZE) /* key = hash(key) */
 	{
-		uint8_t *tmp = (uint8_t *)sha256(key, key_len);
-		if (!tmp)
+		uint8_t *digest = (uint8_t *)sha256(key, key_len);
+		if (!digest)
 			return (NULL);
-		hex2bytes(k, SHA256_BLOCK_SIZE, (char *)tmp);
-		free(tmp);
+		hex2bytes(k, SHA256_BLOCK_SIZE, (char *)digest);
+		free(digest);
 	}
 	else /* pad key */
 		memcpy(k, key, key_len);

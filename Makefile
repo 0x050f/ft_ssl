@@ -10,6 +10,7 @@ CC_FLAGS	=	-Wall -Wextra -Werror -fno-builtin
 DIR_HEADERS		=	./includes/
 DIR_SRCS		=	./srcs/
 DIR_OBJS		=	./compiled_srcs/
+DIR_TESTS		=	./tests/
 
 SRCS			=	ft_ssl.c \
 					opt_arg.c \
@@ -36,6 +37,8 @@ OBJS 		=	$(SRCS:%.c=$(DIR_OBJS)%.o)
 DEPS 		=	$(SRCS:%.c=$(DIR_OBJS)%.d)
 NAME 		=	ft_ssl
 
+LIB			=	libft_ssl.a
+
 ifeq ($(BUILD),debug)
 	CC_FLAGS		+=	-DDEBUG -g3 -fsanitize=address
 	DIR_OBJS		=	./debug-compiled_srcs/
@@ -43,6 +46,16 @@ ifeq ($(BUILD),debug)
 endif
 
 all:			$(NAME)
+
+test:			$(LIB)
+				@make -C $(DIR_TESTS)
+				$(DIR_TESTS)ftest_ssl
+
+$(LIB):			$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
+				@printf "\033[2K\r$(_BLUE) All files compiled into '$(DIR_OBJS)'. $(_END)✅\n"
+				@ar rc $(LIB) $(OBJS)
+				@ranlib $(LIB)
+				@printf "\033[2K\r$(_GREEN) Library '$(LIB)' created. $(_END)✅\n"
 
 $(NAME):		$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 				@printf "\033[2K\r$(_BLUE) All files compiled into '$(DIR_OBJS)'. $(_END)✅\n"
@@ -65,10 +78,13 @@ clean:
 				@printf "\033[2K\r$(_RED) '"$(DIR_OBJS)"' has been deleted. $(_END)🗑️\n"
 
 fclean:			clean
+				@make fclean -C $(DIR_TESTS)
+				@rm -rf $(LIB)
+				@printf "\033[2K\r$(_RED) '"$(LIB)"' has been deleted. $(_END)🗑️\n"
 				@rm -rf $(NAME)
 				@printf "\033[2K\r$(_RED) '"$(NAME)"' has been deleted. $(_END)🗑️\n"
 
 re:				fclean
 				@$(MAKE) --no-print-directory
 
-.PHONY:			all clean fclean re
+.PHONY:			all clean fclean re test

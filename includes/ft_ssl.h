@@ -3,6 +3,7 @@
 
 # include <errno.h>
 # include <fcntl.h>
+# include <math.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <stdint.h>
@@ -111,7 +112,6 @@ void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
-int			ceil(float num);
 void		hex2bytes(uint8_t *result, size_t size, const char *hex);
 uint64_t	hex2int64(const char *hex);
 uint32_t	hex2int32(const char *hex);

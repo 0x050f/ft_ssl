@@ -1,13 +1,5 @@
 #include "ft_ssl.h"
 
-int			ceil(float num)
-{
-	int inum = (int)num;
-	if (num == (float)inum)
-		return (inum);
-	return (inum + 1);
-}
-
 void		hex2bytes(uint8_t *result, size_t size, const char *hex)
 {
 	size_t		i = 0;

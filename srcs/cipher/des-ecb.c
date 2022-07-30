@@ -113,6 +113,9 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			get_salt(salt, options->salt);
 		else
 		{
+			time_t	t;
+
+			srand((unsigned) time(&t)); /* Initialize rand */
 			/* Random salt */
 			for (size_t i = 0; i < 8; i++)
 				salt[i] = rand() % 256;
