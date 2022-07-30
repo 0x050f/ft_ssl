@@ -276,8 +276,8 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			if (size < 16 || memcmp(str, "Salted__", 8))
 				return (NULL);
 			memcpy(salt, str + 8, 8);
-			str += 8;
-			size -= 8;
+			str += 16;
+			size -= 16;
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'

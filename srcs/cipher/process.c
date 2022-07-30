@@ -271,8 +271,8 @@ int			fill_options(t_options *options, t_ssl *ssl)
 				dprintf(STDERR_FILENO, "bad password read\n");
 				return (-2);
 			}
-			options->password = password;
 		}
+		options->password = password;
 	}
 	else
 		options->password = get_last_content(ssl->opt_args, 'p');
