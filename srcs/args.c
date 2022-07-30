@@ -210,15 +210,24 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 	}
 	while (i < argc)
 	{
-		if (!strchr(ssl->options, 'f')) // append the option
-			strcat(ssl->options, "f");
-		if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) // add files (HASH)
+		if (ssl->mode == MODE_HASH)
 		{
-			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-			free_options(cmd_options.options, cmd_options.nb_options);
-			return (ERR_MALLOC);
+			if (!strchr(ssl->options, 'f')) // append the option
+				strcat(ssl->options, "f");
+			if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) // add files (HASH)
+			{
+				dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+				free_options(cmd_options.options, cmd_options.nb_options);
+				return (ERR_MALLOC);
+			}
+			i++;
 		}
-		i++;
+		else
+		{
+			args_error(ERR_INV_ARG, argv[i], 0, 0);
+			free_options(cmd_options.options, cmd_options.nb_options);
+			return (ERR_INV_ARG);
+		}
 	}
 	free_options(cmd_options.options, cmd_options.nb_options);
 	return (0);

@@ -47,9 +47,12 @@ endif
 
 all:			$(NAME)
 
-test:			$(LIB)
+test:			$(LIB) $(NAME)
 				@make -C $(DIR_TESTS)
+				@printf "\033[2K\r$(_BLUE)Testing Library... $(_END)\n"
 				$(DIR_TESTS)ftest_ssl
+				@printf "\033[2K\r$(_BLUE)Testing Executable... $(_END)\n"
+				$(DIR_TESTS)test_script.sh
 
 $(LIB):			$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 				@printf "\033[2K\r$(_BLUE) All files compiled into '$(DIR_OBJS)'. $(_END)✅\n"

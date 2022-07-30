@@ -107,6 +107,7 @@ START_TEST (hmac_sha256_test_vectors_7)
 }
 END_TEST
 
+/*
 START_TEST (hmac_sha256_test_vectors_8)
 {
 	char password[] = "Password";
@@ -120,6 +121,7 @@ START_TEST (hmac_sha256_test_vectors_8)
 	test_vector_pbkdf2(password, password_len, salt, salt_len, c, dklen, expected_output);
 }
 END_TEST
+*/
 
 START_TEST (hmac_sha256_test_vectors_9)
 {
@@ -150,7 +152,7 @@ Suite *test_pbkdf2_sha256(void)
 	tcase_add_test(tc_core, hmac_sha256_test_vectors_5);
 	tcase_add_test(tc_core, hmac_sha256_test_vectors_6);
 	tcase_add_test(tc_core, hmac_sha256_test_vectors_7);
-	tcase_add_test(tc_core, hmac_sha256_test_vectors_8);
+//	tcase_add_test(tc_core, hmac_sha256_test_vectors_8); -> long
 	tcase_add_test(tc_core, hmac_sha256_test_vectors_9);
 	suite_add_tcase(s, tc_core);
 
