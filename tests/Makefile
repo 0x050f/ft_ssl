@@ -12,7 +12,8 @@ DIR_SRCS		=	srcs/
 DIR_OBJS		=	compiled_srcs/
 
 SRCS			=	main.c \
-					check_hmac_sha256.c
+					check_hmac_sha256.c \
+					check_pbkdf2_sha256.c
 
 INCLUDES		=	tests.h
 

@@ -4,3 +4,5 @@ debug-ft_ssl
 *.d
 *.swp
 compiled_srcs
+libft_ssl.a
+ftest_ssl

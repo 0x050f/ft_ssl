@@ -5,7 +5,7 @@
 	https://datatracker.ietf.org/doc/html/rfc4231
 */
 
-void	test_vector(char *data, int data_len, char *key, int key_len, char *expected_output)
+void	test_vector_hmac(char *data, int data_len, char *key, int key_len, char *expected_output)
 {
 	char *digest = hmac_sha256((uint8_t *)data, data_len, (uint8_t *)key, key_len);
 	ck_assert_mem_eq(digest, expected_output, sizeof(expected_output));
@@ -21,7 +21,7 @@ START_TEST (hmac_sha256_test_vectors_1)
 	char expected_output[64] = "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7";
 
 	memset(key, 0x0b, key_len);
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -33,7 +33,7 @@ START_TEST (hmac_sha256_test_vectors_2)
 	int data_len = strlen(data);
 	char expected_output[64] = "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -48,7 +48,7 @@ START_TEST (hmac_sha256_test_vectors_3)
 	memset(data, 0xdd, data_len);
 	char expected_output[64] = "773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -64,7 +64,7 @@ START_TEST (hmac_sha256_test_vectors_4)
 	memset(data, 0xcd, data_len);
 	char expected_output[64] = "82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -78,7 +78,7 @@ START_TEST (hmac_sha256_test_vectors_5)
 	memset(key, 0x0c, key_len);
 	char expected_output[32] = "a3b6167473100ee06e0c796c2955552b";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -92,7 +92,7 @@ START_TEST (hmac_sha256_test_vectors_6)
 	memset(key, 0xaa, key_len);
 	char expected_output[64] = "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 
@@ -107,7 +107,7 @@ START_TEST (hmac_sha256_test_vectors_7)
 	memset(key, 0xaa, key_len);
 	char expected_output[64] = "9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2";
 
-	test_vector(data, data_len, key, key_len, expected_output);
+	test_vector_hmac(data, data_len, key, key_len, expected_output);
 }
 END_TEST
 

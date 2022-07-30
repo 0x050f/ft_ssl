@@ -122,10 +122,7 @@ uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t ps
 	for (size_t i = 0; i < (size_t)l; i++)
 	{
 		for (size_t j = 0; j < HLEN && (i != (size_t)l - 1 || j < (size_t)r); j++)
-		{
-			ret[n] = t[i][j];
-			n++;
-		}
+			ret[n++] = t[i][j];
 	}
 	return (ret);
 }

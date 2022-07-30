@@ -8,5 +8,6 @@
 #include "cipher.h"
 
 Suite *test_hmac_sha256(void);
+Suite *test_pbkdf2_sha256(void);
 
 #endif

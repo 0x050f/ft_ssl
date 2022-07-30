@@ -8,6 +8,8 @@ int		main(void)
 
 	s = test_hmac_sha256();
 	runner = srunner_create(s);
+	s = test_pbkdf2_sha256();
+	srunner_add_suite(runner, s);
 
 	srunner_run_all(runner, CK_NORMAL);
 	no_failed = srunner_ntests_failed(runner);
