@@ -41,7 +41,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 		uint8_t *tmp = (uint8_t *)sha256(key, key_len);
 		if (!tmp)
 			return (NULL);
-		hex2bytes((char *)tmp, k, SHA256_BLOCK_SIZE);
+		hex2bytes(k, SHA256_BLOCK_SIZE, (char *)tmp);
 		free(tmp);
 	}
 	else /* pad key */
@@ -58,7 +58,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 	if (!ihash)
 		return (NULL);
 	 /* translate to 32 bytes non-ascii */
-	hex2bytes((char *)ihash, tmp, SHA256_BLOCK_SIZE);
+	hex2bytes(tmp, SHA256_BLOCK_SIZE, (char *)ihash);
 	free(ihash);
 	ohash = h(k_opad, SHA256_BLOCK_SIZE, tmp, SHA256_HASH_SIZE); // hash(k_opad || ihash);
 	if (!ohash)
@@ -109,7 +109,7 @@ uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t ps
 				hash = prf(u, HLEN, (uint8_t *)p, psize);
 			if (!hash)
 				return (NULL);
-			hex2bytes(hash, u, HLEN);
+			hex2bytes(u, HLEN, hash);
 			free(hash);
 			for (size_t k = 0; k < HLEN; k++)
 				t[i - 1][k] ^= u[k];

@@ -8,7 +8,7 @@ int			ceil(float num)
 	return (inum + 1);
 }
 
-void		hex2bytes(const char *hex, uint8_t *result, size_t size)
+void		hex2bytes(uint8_t *result, size_t size, const char *hex)
 {
 	size_t		i = 0;
 	while (i < size * 2 && ((*hex >= '0' && *hex <= '9') || (*hex >= 'a' && *hex <= 'f') || (*hex >= 'A' && *hex <= 'F')))

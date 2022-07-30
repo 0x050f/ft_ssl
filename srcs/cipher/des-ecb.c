@@ -86,6 +86,19 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 	return (half_block);
 }
 
+void		get_salt(uint8_t dest[8], char *salt)
+{
+	uint64_t tmp = hex2int64(salt);
+	if (strlen(salt) < 16)
+	{
+		dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+		tmp = tmp << ((16 - strlen(salt)) * 4);
+	}
+	else if (strlen(salt) > 16) // removing 8 bytes + auto with hex2int64 but print it
+		dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+	b_memcpy(dest, &tmp, 8);
+}
+
 // TODO: opti without key given parameter with Salted__ output size
 // refacto a bit
 char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
@@ -97,17 +110,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		/* PKBFD */
 		memset(salt, 0, 8);
 		if (options->salt)
-		{
-			uint64_t tmp = hex2int64(options->salt);
-			if (strlen(options->salt) < 16)
-			{
-				dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-				tmp = tmp << ((16 - strlen(options->salt)) * 4);
-			}
-			else if (strlen(options->salt) > 16) // removing 8 bytes + auto with hex2int64 but print it
-				dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-			b_memcpy(salt, &tmp, 8);
-		}
+			get_salt(salt, options->salt);
 		else
 		{
 			/* Random salt */
@@ -245,31 +248,16 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (ciphertext);
 }
 
-// TODO: decode non key
 char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	uint64_t	key;
 	uint8_t		salt[8];
-	/*
-	* TODO:
-	* Ask for a password and check for keysize etc..
-	*/
 	if (!options->key)
 	{
 		/* PKBDF */
 		memset(salt, 0, 8);
 		if (options->salt)
-		{
-			uint64_t tmp = hex2int64(options->salt);
-			if (strlen(options->salt) < 16)
-			{
-				dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-				tmp = tmp << ((16 - strlen(options->salt)) * 4);
-			}
-			else if (strlen(options->salt) > 16) // removing 8 bytes + auto with hex2int64 but print it
-				dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-			b_memcpy(salt, &tmp, 8);
-		}
+			get_salt(salt, options->salt);
 		else
 		{
 			/* Get salt */
