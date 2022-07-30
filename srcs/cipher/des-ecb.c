@@ -90,23 +90,6 @@ uint32_t		feistel_function(uint32_t half_block, uint64_t key)
 // refacto a bit
 char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
-	size_t padding = 0;
-	if (size % 8)
-		padding = (8 - (size % 8));
-	else
-		padding = 8;
-	*res_len = size + padding;
-	unsigned char *plaintext = malloc(sizeof(char) * *res_len);
-	if (!plaintext)
-		return (NULL);
-	char *ciphertext = malloc(sizeof(char) * *res_len);
-	if (!ciphertext)
-	{
-		free(plaintext);
-		return (NULL);
-	}
-	memcpy(plaintext, str, size);
-	memset(plaintext + size, padding, padding);
 	uint64_t	key;
 	uint8_t		salt[8];
 	if (!options->key)
@@ -127,6 +110,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		}
 		else
 		{
+			/* Random salt */
 			for (size_t i = 0; i < 8; i++)
 				salt[i] = rand() % 256;
 		}
@@ -134,11 +118,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
 		if (!key_uint)
-		{
-			free(plaintext);
-			free(ciphertext);
 			return (NULL);
-		}
 		b_memcpy(&key, key_uint, 8);
 		free(key_uint);
 	}
@@ -154,6 +134,24 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 	}
+
+	size_t padding = 0;
+	if (size % 8)
+		padding = (8 - (size % 8));
+	else
+		padding = 8;
+	*res_len = size + padding;
+	unsigned char *plaintext = malloc(sizeof(char) * *res_len);
+	if (!plaintext)
+		return (NULL);
+	char *ciphertext = malloc(sizeof(char) * *res_len);
+	if (!ciphertext)
+	{
+		free(plaintext);
+		return (NULL);
+	}
+	memcpy(plaintext, str, size);
+	memset(plaintext + size, padding, padding);
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < *res_len; i += 8)
 	{
@@ -250,27 +248,44 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 // TODO: decode non key
 char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
-	*res_len = 0;
-	unsigned char *ciphertext = malloc(sizeof(char) * size);
-	if (!ciphertext)
-		return (NULL);
-	char *plaintext = malloc(sizeof(char) * size);
-	if (!plaintext)
-	{
-		free(ciphertext);
-		return (NULL);
-	}
-	memcpy(ciphertext, str, size);
-	uint64_t key;
+	uint64_t	key;
+	uint8_t		salt[8];
 	/*
 	* TODO:
 	* Ask for a password and check for keysize etc..
 	*/
 	if (!options->key)
 	{
-		/* ask for password */
-		// TODO: Check for salt at the beginning
-		key = 0x133457799bbcdff1;
+		/* PKBDF */
+		memset(salt, 0, 8);
+		if (options->salt)
+		{
+			uint64_t tmp = hex2int64(options->salt);
+			if (strlen(options->salt) < 16)
+			{
+				dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+				tmp = tmp << ((16 - strlen(options->salt)) * 4);
+			}
+			else if (strlen(options->salt) > 16) // removing 8 bytes + auto with hex2int64 but print it
+				dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+			b_memcpy(salt, &tmp, 8);
+		}
+		else
+		{
+			/* Get salt */
+			if (size < 16 || memcmp(str, "Salted__", 8))
+				return (NULL);
+			memcpy(salt, str + 8, 8);
+			str += 8;
+			size -= 8;
+		}
+		// default openssl -pbkdf2:  -iter 10000 -md sha256
+		// TODO: password could contain '\0'
+		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
+		if (!key_uint)
+			return (NULL);
+		b_memcpy(&key, key_uint, 8);
+		free(key_uint);
 	}
 	else
 	{
@@ -284,6 +299,18 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 	}
+
+	*res_len = 0;
+	unsigned char *ciphertext = malloc(sizeof(char) * size);
+	if (!ciphertext)
+		return (NULL);
+	char *plaintext = malloc(sizeof(char) * size);
+	if (!plaintext)
+	{
+		free(ciphertext);
+		return (NULL);
+	}
+	memcpy(ciphertext, str, size);
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size; i += 8)
 	{

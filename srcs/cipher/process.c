@@ -253,23 +253,26 @@ int			fill_options(t_options *options, t_ssl *ssl)
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 			return (ERR_MALLOC);
 		}
-		//TODO: ask password when verifying header ?
-		sprintf(msg, "Verifying - enter %s encryption password: ", ssl->cmd);
-		tmp = getpass(msg);
-		if (!tmp)
+		if (options->mode == CMODE_ENCODE) // Don't verify password in decode mode
 		{
-			free(password);
-			dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
-			return (-1);
+			//TODO: ask password when verifying header ?
+			sprintf(msg, "Verifying - enter %s encryption password: ", ssl->cmd);
+			tmp = getpass(msg);
+			if (!tmp)
+			{
+				free(password);
+				dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
+				return (-1);
+			}
+			if (strcmp(tmp, password))
+			{
+				free(password);
+				printf("Verify failure\n");
+				dprintf(STDERR_FILENO, "bad password read\n");
+				return (-2);
+			}
+			options->password = password;
 		}
-		if (strcmp(tmp, password))
-		{
-			free(password);
-			printf("Verify failure\n");
-			dprintf(STDERR_FILENO, "bad password read\n");
-			return (-2);
-		}
-		options->password = password;
 	}
 	else
 		options->password = get_last_content(ssl->opt_args, 'p');
