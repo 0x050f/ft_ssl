@@ -99,12 +99,8 @@ void		get_salt(uint8_t dest[8], char *salt)
 	b_memcpy(dest, &tmp, 8);
 }
 
-// TODO: opti without key given parameter with Salted__ output size
-// refacto a bit
-char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt)
 {
-	uint64_t	key;
-	uint8_t		salt[8];
 	if (!options->key)
 	{
 		/* PKBFD */
@@ -121,25 +117,37 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 				salt[i] = rand() % 256;
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		// TODO: password could contain '\0'
+		// TODO: password could contain '\0' ?
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
 		if (!key_uint)
-			return (NULL);
-		b_memcpy(&key, key_uint, 8);
+			return (-1);
+		b_memcpy(key, key_uint, 8);
 		free(key_uint);
 	}
 	else
 	{
-		key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
 		if (strlen(options->key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			key = key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
 		}
 		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+		memcpy(key, &tmp_key, 8);
 	}
+	return (0);
+}
+
+// TODO: opti without key given parameter with Salted__ output size
+// refacto a bit
+char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+{
+	uint8_t		salt[8];
+	uint64_t	key;
+	if (get_key_encrypt(options, &key, salt) < 0)
+		return (NULL);
 
 	size_t padding = 0;
 	if (size % 8)
@@ -251,9 +259,8 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (ciphertext);
 }
 
-char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key)
 {
-	uint64_t	key;
 	uint8_t		salt[8];
 	if (!options->key)
 	{
@@ -261,34 +268,43 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		memset(salt, 0, 8);
 		/* ignore salt on decrypt */
 		/* Get salt */
-		if (size < 16 || memcmp(str, "Salted__", 8))
+		if (*size < 16 || memcmp(*str, "Salted__", 8))
 		{
 			dprintf(STDERR_FILENO, "bad magic number\n");
-			return (NULL);
+			return (-1);
 		}
-		memcpy(salt, str + 8, 8);
-		str += 16;
-		size -= 16;
+		memcpy(salt, *str + 8, 8);
+		*str += 16;
+		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
 		if (!key_uint)
-			return (NULL);
-		b_memcpy(&key, key_uint, 8);
+			return (-1);
+		b_memcpy(key, key_uint, 8);
 		free(key_uint);
 	}
 	else
 	{
-		key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(options->key);
 		/* if key was not provided with 8 bytes */
 		if (strlen(options->key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			key = key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
 		}
 		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+		memcpy(key, &tmp_key, 8);
 	}
+	return (0);
+}
+
+char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+{
+	uint64_t	key;
+	if (get_key_decrypt(&str, &size, options, &key) < 0)
+		return (NULL);
 
 	*res_len = 0;
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
