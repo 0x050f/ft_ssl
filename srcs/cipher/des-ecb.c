@@ -399,6 +399,8 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	DPRINT("des_ecb(\"%.*s\", %zu)\n", (int)size, str, size);
+	if (options->iv)
+		dprintf(STDERR_FILENO, "warning: iv not used by this cipher\n");
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
 		result = des_ecb_encrypt(str, size, res_len, options);
