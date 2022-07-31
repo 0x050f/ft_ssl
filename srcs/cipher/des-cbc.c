@@ -92,7 +92,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		uint64_t block;
 		b_memcpy(&block, plaintext + i, 8);
 
-		/* TODO: apply xor iv/previous block */
+		/* CBC */
 		if (!i)
 			block ^= iv;
 		else
@@ -150,10 +150,29 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 
 char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
+	uint64_t	iv;
 	uint64_t	key;
+
 	if (get_key_decrypt(&str, &size, options, &key) < 0)
 		return (NULL);
 	*res_len = 0;
+	if (options->iv)
+	{
+		uint64_t tmp = hex2int64(options->iv);
+		if (strlen(options->iv) < 16)
+		{
+			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+			tmp = tmp << ((16 - strlen(options->iv)) * 4);
+		}
+		else if (strlen(options->iv) > 16) // removing 8 bytes + auto with hex2int64 but print it
+			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+		memcpy(&iv, &tmp, 8);
+	}
+	else // ko
+	{
+		dprintf(STDERR_FILENO, "iv undefined\n");
+		return (NULL);
+	}
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
 	if (!ciphertext)
 		return (NULL);
@@ -164,6 +183,7 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		return (NULL);
 	}
 	memcpy(ciphertext, str, size);
+	uint64_t prev_block;
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < size; i += 8)
 	{
@@ -234,6 +254,14 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		block = ((uint64_t)to_feistel << 32) | to_xor;
 		/* [final_permutation] -> OK*/
 		block = permutation(block, 64, FP, 64);
+
+		/* CBC */
+		if (!i)
+			block ^= iv;
+		else
+			block ^= prev_block;
+
+		b_memcpy(&prev_block, ciphertext + i, 8);
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(plaintext + i, &block, 8);
 		if (i == size - 8)
