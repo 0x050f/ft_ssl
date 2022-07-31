@@ -29,10 +29,12 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		}
 		else if (strlen(options->iv) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		b_memcpy(&iv, &tmp, 8);
+		memcpy(&iv, &tmp, 8);
 	}
-	else // setup random iv
+	else // ko
 	{
+		dprintf(STDERR_FILENO, "iv undefined\n");
+		return (NULL);
 	}
 	unsigned char *plaintext = malloc(sizeof(char) * *res_len);
 	if (!plaintext)
@@ -45,6 +47,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	}
 	memcpy(plaintext, str, size);
 	memset(plaintext + size, padding, padding);
+	uint64_t prev_block;
 	/* key and block are both 64 bits */
 	for (size_t i = 0; i < *res_len; i += 8)
 	{
@@ -89,6 +92,12 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		uint64_t block;
 		b_memcpy(&block, plaintext + i, 8);
 
+		/* TODO: apply xor iv/previous block */
+		if (!i)
+			block ^= iv;
+		else
+			block ^= prev_block;
+
 		/* [init_permutation] -> OK */
 		block = permutation(block, 64, IP, 64);
 		uint32_t to_xor = (block >> 32);
@@ -117,6 +126,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		block = permutation(block, 64, FP, 64);
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(ciphertext + i, &block, 8);
+		prev_block = block;
 	}
 	if (!options->key)
 	{
