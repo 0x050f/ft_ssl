@@ -2,6 +2,17 @@
 
 exec=ft_ssl
 
+test_des-ecb() {
+	TEST_DIR=/tmp/ftest_ssl
+	mkdir $TEST_DIR
+	output=$(./$exec des-ecb -p abc -iMakefile -o$TEST_DIR/output)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -k abc -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	rm -rf $TEST_DIR
+}
+
 test_arguments() {
 	output=$(./$exec md5 abc 2>&1 | head -n 1)
 	assertEquals "$output" "ft_ssl: md5: abc: No such file or directory"
@@ -25,7 +36,7 @@ test_arguments() {
 	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
 }
 
-test_args() {
+test_commands() {
 	output=$(./$exec | head -n 1 | cut -c1-6)
 	assertEquals "$output" "usage:"
 	output=$(./$exec abc 2>&1 | head -n 1)
