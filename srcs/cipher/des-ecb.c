@@ -259,17 +259,16 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	{
 		/* PKBDF */
 		memset(salt, 0, 8);
-		if (options->salt)
-			get_salt(salt, options->salt);
-		else
+		/* ignore salt on decrypt */
+		/* Get salt */
+		if (size < 16 || memcmp(str, "Salted__", 8))
 		{
-			/* Get salt */
-			if (size < 16 || memcmp(str, "Salted__", 8))
-				return (NULL);
-			memcpy(salt, str + 8, 8);
-			str += 16;
-			size -= 16;
+			dprintf(STDERR_FILENO, "bad magic number\n");
+			return (NULL);
 		}
+		memcpy(salt, str + 8, 8);
+		str += 16;
+		size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);

@@ -3,8 +3,39 @@
 exec=ft_ssl
 TEST_DIR=/tmp/ftest_ssl
 
+test_commands() {
+	output=$(./$exec | head -n 1 | cut -c1-6)
+	assertEquals "$output" "usage:"
+	output=$(./$exec abc 2>&1 | head -n 1)
+	assertEquals "$output" "ft_ssl: Error: 'abc' is an invalid command."
+	output=$(./$exec abc def ghi 2>&1 | head -n 1)
+}
+
+test_arguments() {
+	output=$(./$exec md5 abc 2>&1 | head -n 1)
+	assertEquals "$output" "ft_ssl: md5: abc: No such file or directory"
+	output=$(./$exec sha256 abc 2>&1 | head -n 1)
+	assertEquals "$output" "ft_ssl: sha256: abc: No such file or directory"
+	output=$(./$exec sha512 abc 2>&1 | head -n 1)
+	assertEquals "$output" "ft_ssl: sha512: abc: No such file or directory"
+	output=$(./$exec base64 abc 2>&1)
+	assertEquals "$output" "ft_ssl: invalid argument: 'abc'"
+	output=$(./$exec des-ecb abc 2>&1)
+	assertEquals "$output" "ft_ssl: invalid argument: 'abc'"
+	output=$(./$exec md5 -z 2>&1)
+	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
+	output=$(./$exec sha256 -z 2>&1)
+	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
+	output=$(./$exec sha512 -z 2>&1)
+	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
+	output=$(./$exec base64 -z 2>&1)
+	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
+	output=$(./$exec des-ecb -z 2>&1)
+	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
+}
+
 test_des-ecb_key() {
-	mkdir $TEST_DIR
+	mkdir -p $TEST_DIR
 	# Test encrypt
 	output=$(./$exec des-ecb -k 0000000000000000 -iMakefile -o$TEST_DIR/output 2>&1)
 	assertEquals "$output" ""
@@ -59,8 +90,8 @@ test_des-ecb_key() {
 }
 
 test_des-ecb_password() {
+	mkdir -p $TEST_DIR
 	# Test encrypt
-	mkdir $TEST_DIR
 	output=$(./$exec des-ecb -p abc -iMakefile -o$TEST_DIR/output 2>&1)
 	assertEquals "$output" ""
 	openssl des-ecb -d -pbkdf2 -k abc -in $TEST_DIR/output -out $TEST_DIR/original
@@ -83,35 +114,53 @@ test_des-ecb_password() {
 	rm -rf $TEST_DIR
 }
 
-test_arguments() {
-	output=$(./$exec md5 abc 2>&1 | head -n 1)
-	assertEquals "$output" "ft_ssl: md5: abc: No such file or directory"
-	output=$(./$exec sha256 abc 2>&1 | head -n 1)
-	assertEquals "$output" "ft_ssl: sha256: abc: No such file or directory"
-	output=$(./$exec sha512 abc 2>&1 | head -n 1)
-	assertEquals "$output" "ft_ssl: sha512: abc: No such file or directory"
-	output=$(./$exec base64 abc 2>&1)
-	assertEquals "$output" "ft_ssl: invalid argument: 'abc'"
-	output=$(./$exec des-ecb abc 2>&1)
-	assertEquals "$output" "ft_ssl: invalid argument: 'abc'"
-	output=$(./$exec md5 -z 2>&1)
-	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
-	output=$(./$exec sha256 -z 2>&1)
-	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
-	output=$(./$exec sha512 -z 2>&1)
-	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
-	output=$(./$exec base64 -z 2>&1)
-	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
-	output=$(./$exec des-ecb -z 2>&1)
-	assertEquals "$output" "ft_ssl: invalid option -- 'z'"
-}
-
-test_commands() {
-	output=$(./$exec | head -n 1 | cut -c1-6)
-	assertEquals "$output" "usage:"
-	output=$(./$exec abc 2>&1 | head -n 1)
-	assertEquals "$output" "ft_ssl: Error: 'abc' is an invalid command."
-	output=$(./$exec abc def ghi 2>&1 | head -n 1)
+test_des-ecb_password_salt () {
+	mkdir -p $TEST_DIR
+	# Test encrypt salt
+	output=$(./$exec des-ecb -p abc -s0000000000000000 -iMakefile -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -k abc -S 0000000000000000 -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	output=$(./$exec des-ecb -p passwd -s0123456789abcdef -i/bin/ls -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -k passwd -S 0000000000000000 -in $TEST_DIR/output -out $TEST_DIR/original # openssl ignore salt if specified in doc
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test encrypt too short/long salt
+	output=$(./$exec des-ecb -p passwd -s0123456789abcdefff -i/bin/ls -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" "hex string is too long, ignoring excess"
+	openssl des-ecb -d -pbkdf2 -k passwd -S 0000000000000000ff -in $TEST_DIR/output -out $TEST_DIR/original # openssl ignore salt if specified in doc ?
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	output=$(./$exec des-ecb -p passwd -s0123456789abcff -i/bin/ls -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" "hex string is too short, padding with zero bytes to length"
+	openssl des-ecb -d -pbkdf2 -k passwd -S 000000000000ff -in $TEST_DIR/output -out $TEST_DIR/original # openssl ignore salt if specified in doc ?
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test decrypt salt
+	openssl des-ecb -pbkdf2 -k abc -S 0000000000000000 -in Makefile -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -p abc -s0000000000000000 -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	openssl des-ecb -pbkdf2 -k passwd -S 0123456789abcdef -in /bin/ls -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -p passwd -s0123456789abcdef -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test decrypt too short/long salt
+	openssl des-ecb -pbkdf2 -k passwd -S 0000000000000000ff -in /bin/ls -out $TEST_DIR/output 2&> /dev/null
+	output=$(./$exec des-ecb -d -p passwd -s0123456789abcdefff -i$TEST_DIR/output -o$TEST_DIR/original 2>&1) # ignore salt
+	assertEquals "$output" ""
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	openssl des-ecb -pbkdf2 -k passwd -S 000000000000ff -in /bin/ls -out $TEST_DIR/output 2&> /dev/null
+	output=$(./$exec des-ecb -d -p passwd -s0123456789abcff -i$TEST_DIR/output -o$TEST_DIR/original 2>&1) # ignore salt
+	assertEquals "$output" ""
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	rm -rf $TEST_DIR
 }
 
 . shunit2
