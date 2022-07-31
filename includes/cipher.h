@@ -22,6 +22,8 @@ uint8_t			*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t p
 void			process_cipher(t_ssl *ssl);
 
 /* base64.c */
+char			*base64_decode(unsigned char *str, size_t size, size_t *res_len);
+char			*base64_encode(unsigned char *str, size_t size, size_t *res_len);
 char			*base64(uint8_t *str, size_t size, size_t *res_len, t_options *options);
 
 /* des-ecb.c */

@@ -403,8 +403,20 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 		dprintf(STDERR_FILENO, "warning: iv not used by this cipher\n");
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
+	{
 		result = des_ecb_encrypt(str, size, res_len, options);
+			if (strchr(options->options, 'a'))
+			{
+				char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
+				free(result);
+				result = new_result;
+			}
+	}
 	else if (options->mode == CMODE_DECODE)
+	{
+		if (strchr(options->options, 'a'))
+			str = (unsigned char *)base64_decode(str, size, &size);
 		result = des_ecb_decrypt(str, size, res_len, options);
+	}
 	return (result);
 }

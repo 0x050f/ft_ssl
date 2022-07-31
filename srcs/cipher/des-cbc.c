@@ -12,13 +12,6 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 
 	if (get_key_encrypt(options, &key, salt) < 0)
 		return (NULL);
-
-	size_t padding = 0;
-	if (size % 8)
-		padding = (8 - (size % 8));
-	else
-		padding = 8;
-	*res_len = size + padding;
 	if (options->iv)
 	{
 		uint64_t tmp = hex2int64(options->iv);
@@ -36,6 +29,14 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		dprintf(STDERR_FILENO, "iv undefined\n");
 		return (NULL);
 	}
+
+	size_t padding = 0;
+	if (size % 8)
+		padding = (8 - (size % 8));
+	else
+		padding = 8;
+	*res_len = size + padding;
+
 	unsigned char *plaintext = malloc(sizeof(char) * *res_len);
 	if (!plaintext)
 		return (NULL);
@@ -276,8 +277,20 @@ char			*des_cbc(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	DPRINT("des_cbc(\"%.*s\", %zu)\n", (int)size, str, size);
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
+	{
 		result = des_cbc_encrypt(str, size, res_len, options);
+		if (strchr(options->options, 'a'))
+		{
+			char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
+			free(result);
+			result = new_result;
+		}
+	}
 	else if (options->mode == CMODE_DECODE)
+	{
+		if (strchr(options->options, 'a'))
+			str = (unsigned char *)base64_decode(str, size, &size);
 		result = des_cbc_decrypt(str, size, res_len, options);
+	}
 	return (result);
 }
