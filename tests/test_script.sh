@@ -1,14 +1,48 @@
 #!/bin/bash
 
 exec=ft_ssl
+TEST_DIR=/tmp/ftest_ssl
 
-test_des-ecb() {
-	TEST_DIR=/tmp/ftest_ssl
+test_des-ecb_key() {
 	mkdir $TEST_DIR
-	output=$(./$exec des-ecb -p abc -iMakefile -o$TEST_DIR/output)
+	# Test encrypt
+	output=$(./$exec des-ecb -k 0000000000000000 -iMakefile -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -K 0000000000000000 -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff Makefile $TEST_DIR/original)
+	output=$(./$exec des-ecb -k 0123456789abcdef -iMakefile -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -K 0123456789abcdef -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff Makefile $TEST_DIR/original)
+	output=$(./$exec des-ecb -k 0123456789abcdef -i/bin/ls -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -K 0123456789abcdef -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	rm -rf $TEST_DIR
+}
+
+test_des-ecb_password() {
+	# Test encrypt
+	mkdir $TEST_DIR
+	output=$(./$exec des-ecb -p abc -iMakefile -o$TEST_DIR/output 2>&1)
 	assertEquals "$output" ""
 	openssl des-ecb -d -pbkdf2 -k abc -in $TEST_DIR/output -out $TEST_DIR/original
 	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	output=$(./$exec des-ecb -p Passwordpassw0rdPasswordPASSWORDPasswordpassword -i/bin/ls -o$TEST_DIR/output 2>&1)
+	assertEquals "$output" ""
+	openssl des-ecb -d -pbkdf2 -k Passwordpassw0rdPasswordPASSWORDPasswordpassword -in $TEST_DIR/output -out $TEST_DIR/original
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test decrypt
+	openssl des-ecb -pbkdf2 -k abc -in Makefile -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -p abc -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	openssl des-ecb -pbkdf2 -k Passwordpassw0rdPasswordPASSWORDPasswordpassword -in /bin/ls -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -p Passwordpassw0rdPasswordPASSWORDPasswordpassword -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	output=$(diff /bin/ls $TEST_DIR/original)
 	assertEquals "$output" ""
 	rm -rf $TEST_DIR
 }
