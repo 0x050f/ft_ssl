@@ -19,6 +19,42 @@ test_des-ecb_key() {
 	openssl des-ecb -d -pbkdf2 -K 0123456789abcdef -in $TEST_DIR/output -out $TEST_DIR/original
 	output=$(diff /bin/ls $TEST_DIR/original)
 	assertEquals "$output" ""
+	# Test encrypt too short/long key
+	output_exec=$(./$exec des-ecb -k 000000000000ff -i/bin/ls -o$TEST_DIR/output 2>&1)
+	output_openssl=$(openssl des-ecb -d -pbkdf2 -K 000000000000ff -in $TEST_DIR/output -out $TEST_DIR/original 2>&1)
+	assertEquals "$output_exec" "$output_openssl"
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	output_exec=$(./$exec des-ecb -k 000000000000ffffff -i/bin/ls -o$TEST_DIR/output 2>&1)
+	output_openssl=$(openssl des-ecb -d -pbkdf2 -K 000000000000ffffff -in $TEST_DIR/output -out $TEST_DIR/original 2>&1)
+	assertEquals "$output_exec" "$output_openssl"
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test decrypt
+	openssl des-ecb -pbkdf2 -K 0000000000000000 -in Makefile -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -k 0000000000000000 -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff Makefile $TEST_DIR/original)
+	openssl des-ecb -pbkdf2 -K 0123456789abcdef -in Makefile -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -k 0123456789abcdef -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff Makefile $TEST_DIR/original)
+	openssl des-ecb -pbkdf2 -K 0123456789abcdef -in /bin/ls -out $TEST_DIR/output
+	output=$(./$exec des-ecb -d -k 0123456789abcdef -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	# Test decrypt too short/long key
+	output_openssl=$(openssl des-ecb -pbkdf2 -K 000000000000ff -in /bin/ls -out $TEST_DIR/output 2>&1)
+	output_exec=$(./$exec des-ecb -d -k 000000000000ff -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output_exec" "$output_openssl"
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
+	output_openssl=$(openssl des-ecb -pbkdf2 -K 000000000000ffffff -in /bin/ls -out $TEST_DIR/output 2>&1)
+	output_exec=$(./$exec des-ecb -d -k 000000000000ffffff -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output_exec" "$output_openssl"
+	output=$(diff /bin/ls $TEST_DIR/original)
+	assertEquals "$output" ""
 	rm -rf $TEST_DIR
 }
 
