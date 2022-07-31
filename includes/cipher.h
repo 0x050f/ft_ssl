@@ -26,6 +26,12 @@ char			*base64(uint8_t *str, size_t size, size_t *res_len, t_options *options);
 
 /* des-ecb.c */
 char			*des_ecb(uint8_t *str, size_t size, size_t *res_len, t_options *options);
+uint64_t		permutation(uint64_t block, size_t size_input, uint8_t *table, size_t size_output);
+uint32_t		substitution(uint64_t block);
+uint32_t		feistel_function(uint32_t half_block, uint64_t key);
+void			get_salt(uint8_t dest[8], char *salt);
+int				get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt);
+int				get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key);
 
 /* des-cbc.c */
 char			*des_cbc(uint8_t *str, size_t size, size_t *res_len, t_options *options);
