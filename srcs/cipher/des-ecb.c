@@ -99,7 +99,7 @@ void		get_salt(uint8_t dest[8], char *salt)
 	b_memcpy(dest, &tmp, 8);
 }
 
-int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt)
+int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t *iv)
 {
 	if (!options->key)
 	{
@@ -118,10 +118,12 @@ int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt)
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0' ?
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
 		if (!key_uint)
 			return (-1);
 		b_memcpy(key, key_uint, 8);
+		if (iv)
+			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
@@ -146,7 +148,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 {
 	uint8_t		salt[8];
 	uint64_t	key;
-	if (get_key_encrypt(options, &key, salt) < 0)
+	if (get_key_encrypt(options, &key, salt, NULL) < 0)
 		return (NULL);
 
 	size_t padding = 0;
@@ -259,7 +261,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (ciphertext);
 }
 
-int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key)
+int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key, uint64_t *iv)
 {
 	uint8_t		salt[8];
 	if (!options->key)
@@ -278,10 +280,12 @@ int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uin
 		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		// TODO: password could contain '\0'
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 8);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
 		if (!key_uint)
 			return (-1);
 		b_memcpy(key, key_uint, 8);
+		if (iv)
+			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
@@ -303,7 +307,7 @@ int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uin
 char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	uint64_t	key;
-	if (get_key_decrypt(&str, &size, options, &key) < 0)
+	if (get_key_decrypt(&str, &size, options, &key, NULL) < 0)
 		return (NULL);
 
 	*res_len = 0;

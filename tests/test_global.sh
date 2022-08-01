@@ -1,6 +1,4 @@
 #!/bin/bash
-exec=ft_ssl
-TEST_DIR=/tmp/ftest_ssl
 
 test_commands() {
 	output=$(./$exec | head -n 1 | cut -c1-6)

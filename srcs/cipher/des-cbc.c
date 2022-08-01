@@ -10,7 +10,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_encrypt(options, &key, salt) < 0)
+	if (get_key_encrypt(options, &key, salt, &iv) < 0)
 		return (NULL);
 	if (options->iv)
 	{
@@ -24,7 +24,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 		memcpy(&iv, &tmp, 8);
 	}
-	else // ko
+	else if (!options->password)
 	{
 		dprintf(STDERR_FILENO, "iv undefined\n");
 		return (NULL);
@@ -154,7 +154,7 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_decrypt(&str, &size, options, &key) < 0)
+	if (get_key_decrypt(&str, &size, options, &key, &iv) < 0)
 		return (NULL);
 	*res_len = 0;
 	if (options->iv)
@@ -169,11 +169,12 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 		memcpy(&iv, &tmp, 8);
 	}
-	else // ko
+	else if (!options->password)// ko
 	{
 		dprintf(STDERR_FILENO, "iv undefined\n");
 		return (NULL);
 	}
+
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
 	if (!ciphertext)
 		return (NULL);

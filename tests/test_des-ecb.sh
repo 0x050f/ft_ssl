@@ -1,6 +1,4 @@
 #!/bin/bash
-exec=ft_ssl
-TEST_DIR=/tmp/ftest_ssl
 
 test_des-ecb_key() {
 	mkdir -p $TEST_DIR
@@ -9,10 +7,12 @@ test_des-ecb_key() {
 	assertEquals "$output" ""
 	openssl des-ecb -d -pbkdf2 -K 0000000000000000 -in $TEST_DIR/output -out $TEST_DIR/original
 	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
 	output=$(./$exec des-ecb -k 0123456789abcdef -iMakefile -o$TEST_DIR/output 2>&1)
 	assertEquals "$output" ""
 	openssl des-ecb -d -pbkdf2 -K 0123456789abcdef -in $TEST_DIR/output -out $TEST_DIR/original
 	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
 	output=$(./$exec des-ecb -k 0123456789abcdef -i/bin/ls -o$TEST_DIR/output 2>&1)
 	assertEquals "$output" ""
 	openssl des-ecb -d -pbkdf2 -K 0123456789abcdef -in $TEST_DIR/output -out $TEST_DIR/original
@@ -34,10 +34,12 @@ test_des-ecb_key() {
 	output=$(./$exec des-ecb -d -k 0000000000000000 -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
 	assertEquals "$output" ""
 	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
 	openssl des-ecb -pbkdf2 -K 0123456789abcdef -in Makefile -out $TEST_DIR/output
 	output=$(./$exec des-ecb -d -k 0123456789abcdef -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
 	assertEquals "$output" ""
 	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
 	openssl des-ecb -pbkdf2 -K 0123456789abcdef -in /bin/ls -out $TEST_DIR/output
 	output=$(./$exec des-ecb -d -k 0123456789abcdef -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
 	assertEquals "$output" ""
