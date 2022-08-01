@@ -186,6 +186,17 @@ void		process_cipher_file(char *cmd, t_options *options)
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, strerror(errno));
 		return ;
 	}
+	struct stat buf;
+	if (fstat(fd, &buf) != 0) {
+		close(fd);
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, strerror(errno));
+		return ;
+	}
+	if (S_ISDIR(buf.st_mode)) {
+		close(fd);
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, "Is a directory");
+		return ;
+	}
 	if (!(query = read_query(fd, &size)))
 	{
 		close(fd);
