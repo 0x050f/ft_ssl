@@ -47,10 +47,10 @@ endif
 
 all:			$(NAME)
 
-test:			$(LIB) $(NAME)
-				@make -C $(DIR_TESTS)
-				@printf "\033[2K\r$(_BLUE)Testing Library... $(_END)\n"
-				$(DIR_TESTS)ftest_ssl
+test:			$(NAME) #$(LIB)
+#				@make -C $(DIR_TESTS)
+#				@printf "\033[2K\r$(_BLUE)Testing Library... $(_END)\n"
+#				$(DIR_TESTS)ftest_ssl
 				@printf "\033[2K\r$(_BLUE)Testing Executable... $(_END)\n"
 				$(DIR_TESTS)test_script.sh
 
@@ -62,7 +62,7 @@ $(LIB):			$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 
 $(NAME):		$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 				@printf "\033[2K\r$(_BLUE) All files compiled into '$(DIR_OBJS)'. $(_END)✅\n"
-				@$(CC) $(CC_FLAGS) -I $(DIR_HEADERS) $(OBJS) -o $(NAME)
+				@$(CC) $(CC_FLAGS) -I $(DIR_HEADERS) $(OBJS) -o $(NAME) -lm
 				@printf "\033[2K\r$(_GREEN) Executable '$(NAME)' created. $(_END)✅\n"
 
 $(OBJS):		| $(DIR_OBJS)
