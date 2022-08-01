@@ -4,14 +4,28 @@ char			*base64_decode(unsigned char *str, size_t size, size_t *res_len)
 {
 	char base[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+	/* remove all '\n' */
+	for (size_t i = 0; i < size; i++)
+	{
+		if (str[i] == '\n')
+		{
+			memmove(&str[i], &str[i + 1], (size - i - 1));
+			size--;
+		}
+	}
 	size_t padding = 0;
 	for (size_t i = 0; i < size; i++)
 	{
+		if (!strchr(base, str[i]) && str[i] != '=') /* not a base64 char */
+			return (NULL);
 		if (str[i] == '=')
 		{
-			if (i + 1 < size && str[i + 1] != '=')
-				return (NULL);
 			padding++;
+			if (i + 1 < size && str[i + 1] != '=')
+			{
+				size = size - (size - (i + 1)); // ignore char after '='
+				break ;
+			}
 		}
 	}
 	if (padding > 2)

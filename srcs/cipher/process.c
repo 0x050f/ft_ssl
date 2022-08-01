@@ -154,7 +154,7 @@ void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options
 			return ;
 		}
 	}
-	if (!strcmp(cmd, "base64"))
+	if ((!strcmp(cmd, "base64") || strchr(options->options, 'a')) && !strchr(options->options, 'd'))
 	{
 		char *tmp = result;
 		while (result_size > 64)

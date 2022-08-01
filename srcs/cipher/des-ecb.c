@@ -413,13 +413,22 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 			{
 				char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
 				free(result);
+				if (!new_result)
+					return (NULL);
 				result = new_result;
 			}
 	}
 	else if (options->mode == CMODE_DECODE)
 	{
 		if (strchr(options->options, 'a'))
+		{
 			str = (unsigned char *)base64_decode(str, size, &size);
+			if (!str)
+			{
+				dprintf(STDERR_FILENO, "error reading input file\n");
+				return (NULL);
+			}
+		}
 		result = des_ecb_decrypt(str, size, res_len, options);
 	}
 	return (result);
