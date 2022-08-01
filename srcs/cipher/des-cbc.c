@@ -187,7 +187,7 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	memcpy(ciphertext, str, size);
 	uint64_t prev_block;
 	/* key and block are both 64 bits */
-	for (size_t i = 0; i < size; i += 8)
+	for (size_t i = 0; i < size - 7; i += 8)
 	{
 		/*
 			initial permutation and final permutation:
@@ -266,9 +266,11 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		b_memcpy(&prev_block, ciphertext + i, 8);
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(plaintext + i, &block, 8);
-		if (i == size - 8)
+		if (i <= size - 8)
 			*res_len = size - (plaintext + i)[7];
 	}
+	if (size % 8)
+		dprintf(STDERR_FILENO, "bad decrypt\n");
 	free(ciphertext);
 	return (plaintext);
 }

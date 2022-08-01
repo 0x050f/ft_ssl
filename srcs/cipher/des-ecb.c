@@ -117,7 +117,6 @@ int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t
 				salt[i] = rand() % 256;
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		// TODO: password could contain '\0' ?
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
 		if (!key_uint)
 			return (-1);
@@ -279,7 +278,6 @@ int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uin
 		*str += 16;
 		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		// TODO: password could contain '\0'
 		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
 		if (!key_uint)
 			return (-1);
@@ -322,7 +320,7 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	}
 	memcpy(ciphertext, str, size);
 	/* key and block are both 64 bits */
-	for (size_t i = 0; i < size; i += 8)
+	for (size_t i = 0; i < size - 7; i += 8)
 	{
 		/*
 			initial permutation and final permutation:
@@ -393,9 +391,11 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		block = permutation(block, 64, FP, 64);
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(plaintext + i, &block, 8);
-		if (i == size - 8)
+		if (i <= size - 8)
 			*res_len = size - (plaintext + i)[7];
 	}
+	if (size % 8)
+		dprintf(STDERR_FILENO, "bad decrypt\n");
 	free(ciphertext);
 	return (plaintext);
 }

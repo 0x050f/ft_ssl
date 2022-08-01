@@ -5,6 +5,7 @@ TEST_DIR=/tmp/ftest_ssl
 
 suite() {
 	. ./tests/test_global.sh
+	. ./tests/test_base64.sh
 	. ./tests/test_des-ecb.sh
 	. ./tests/test_des-cbc.sh
 }
