@@ -2,12 +2,14 @@
 
 char		**search_long_option(char *to_search, char ***options, int nb_options)
 {
+	char *str;
 	int i;
 
 	for (i = 0; i < nb_options; i++)
 	{
+		str = options[i][INDEX_FULLNAME];
 		if (options[i][INDEX_FULLNAME] &&
-	!strncmp(to_search, options[i][INDEX_FULLNAME] + 2, strlen(options[i][INDEX_FULLNAME] + 2)))
+	!strncmp(to_search, str, strlen(str)))
 			break;
 	}
 	if (i == nb_options)
@@ -17,12 +19,14 @@ char		**search_long_option(char *to_search, char ***options, int nb_options)
 
 char		**search_short_option(char *to_search, char ***options, int nb_options)
 {
+	char *str;
 	int i;
 
 	for (i = 0; i < nb_options; i++)
 	{
+		str = strrchr(options[i][INDEX_NAME], '-') + 1;
 		if (options[i][INDEX_NAME] &&
-	!strncmp(to_search, options[i][INDEX_NAME] + 1, strlen(options[i][INDEX_NAME] + 1)))
+	!strncmp(to_search, str, strlen(str)))
 			break;
 	}
 	if (i == nb_options)
@@ -68,7 +72,12 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 		else if (option[INDEX_CHECK] &&
 			!strcmp(option[INDEX_CHECK], "PRINT") && !isprintable(str)) // should be printable
 			return (args_error(ERR_PRINT_ARG, name, 0, 0) + 1);
-		if (!append_opt_arg(&ssl->opt_args, option[INDEX_NAME][1], str))
+		t_opt_arg *ret;
+		if (option[INDEX_NAME])
+			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_NAME], '-') + 1, str);
+		else
+			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_FULLNAME], '-') + 1, str);
+		if (!ret)
 		{
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 			return (ERR_MALLOC);
@@ -88,39 +97,35 @@ int			handle_options(
 	int		ret;
 	int		j;
 
-	j = 1;
-	if (!strncmp("--", argv[*i], 2)) {
+	j = 0;
+	char **option = search_long_option(
+		&argv[*i][j], cmd_options->options, cmd_options->nb_options
+	);
+	if (!option) {
 		j++;
-		char **option = search_long_option(
-			&argv[*i][j], cmd_options->options, cmd_options->nb_options
-		);
-		if (!option) {
-			args_error(ERR_INV_OPT, &argv[*i][j], 0, 0);
-			return (2);
+		while (argv[*i][j]) {
+			char **option = search_short_option(
+				&argv[*i][j], cmd_options->options, cmd_options->nb_options
+			);
+			if (!option) {
+				char letter[2] = {argv[*i][j], 0};
+
+				args_error(ERR_INV_OPT, letter, 0, 0);
+				return (2);
+			} else {
+				j++;
+				ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_NAME] + 1);
+				if (ret > 1)
+					return (ret);
+				else if (ret == 1)
+					return (0);
+			}
 		}
-		j += strlen(option[INDEX_FULLNAME]) - 2;
-		if ((ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_FULLNAME] + 2)) > 1)
-			return (ret);
 		return (0);
 	}
-	while (argv[*i][j]) {
-		char **option = search_short_option(
-			&argv[*i][j], cmd_options->options, cmd_options->nb_options
-		);
-		if (!option) {
-			char letter[2] = {argv[*i][j], 0};
-
-			args_error(ERR_INV_OPT, letter, 0, 0);
-			return (2);
-		} else {
-			j++;
-			ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_NAME] + 1);
-			if (ret > 1)
-				return (ret);
-			else if (ret == 1)
-				return (0);
-		}
-	}
+	j = strlen(option[INDEX_FULLNAME]);
+	if ((ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_FULLNAME] + 2)) > 1)
+		return (ret);
 	return (0);
 }
 
@@ -151,7 +156,8 @@ int			setup_cmd_options(
 	ptr = strtok(opt_tmp, ",");
 	while (ptr) {
 		for (i = 0; i < nb_options; i++) {
-			if (!strcmp(ptr, options[i][INDEX_NAME] + 1)) {
+			if (!strcmp(ptr, strrchr(options[i][INDEX_NAME], '-') + 1) ||
+				!strcmp(ptr, strrchr(options[i][INDEX_FULLNAME], '-') + 1)) {
 				cmd_options->options[i] = malloc(sizeof(char *) * NB_COLUMNS_OPTIONS);
 				if (!cmd_options->options[i])
 					goto free_everything;
@@ -220,7 +226,7 @@ int			compute_options(int argc, char *argv[], t_ssl *ssl, t_cmd_options *cmd_opt
 		if (ssl->mode == MODE_HASH) {
 			if (!strchr(ssl->options, 'f')) // append the option
 				strcat(ssl->options, "f");
-			if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) { // add files (HASH)
+			if (!append_opt_arg(&ssl->opt_args, "f", argv[i])) { // add files (HASH)
 				dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 				free_options(cmd_options->options, cmd_options->nb_options);
 				return (ERR_MALLOC);

@@ -23,7 +23,7 @@ void		process_hash_files(t_ssl *ssl)
 	tmp = ssl->opt_args;
 	while (tmp)
 	{
-		if (tmp->arg == 'f')
+		if (!strcmp(tmp->arg, "f"))
 		{
 			int fd = open(tmp->content, O_RDONLY);
 			if (fd < 0)
@@ -71,7 +71,7 @@ void		process_hash_strings(t_ssl *ssl)
 	tmp = ssl->opt_args;
 	while (tmp)
 	{
-		if (tmp->arg == 's')
+		if (!strcmp(tmp->arg, "s"))
 		{
 			result = launch_hash(ssl, tmp->content, strlen(tmp->content));
 			if (!result)

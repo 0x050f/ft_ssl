@@ -74,8 +74,8 @@
 # define CIPHER_OPTIONS		{ \
 		{"-d", "--decode", NULL, "decode/decrypt mode", NULL}, \
 		{"-e", "--encode", NULL, "encode/encrypt mode (default)", NULL}, \
-		{"-i", "--input", "<file>", "input file for message", NULL}, \
-		{"-o", "--output", "<output>", "output file for message", NULL}, \
+		{"-i", "-input", "<file>", "input file for message", NULL}, \
+		{"-o", "--output", "<file>", "output file for message", NULL}, \
 		{"-a", "--base64", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
 		{"-k", "--key", "<key>", "key in hex", "HEX"}, \
 		{"-p", "--password", "<password>", "password in ascii", "PRINT"}, \
@@ -91,12 +91,40 @@
 }
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
+# define NB_STD_OPTIONS	16
+# define STD_OPTIONS		{ \
+		{NULL, "-in", "<file>", "input file", NULL}, \
+		{NULL, "-out", "<output>", "output file", NULL}, \
+		{NULL, "-inkey", "<file>", "input file", NULL}, \
+		{NULL, "-inform", "<pem>", "don't know", NULL}, \
+		{NULL, "-outform", "<pem>", "don't know", NULL}, \
+		{NULL, "-passin", "<arg>", "don't know", NULL}, \
+		{NULL, "-passout", "<arg>", "don't know", NULL}, \
+		{NULL, "-des", NULL, "don't know", NULL}, \
+		{NULL, "-text", NULL, "don't know", NULL}, \
+		{NULL, "-noout", NULL, "don't know", NULL}, \
+		{NULL, "-modulus", NULL, "don't know", NULL}, \
+		{NULL, "-check", NULL, "don't know", NULL}, \
+		{NULL, "-pubin", NULL, "don't know", NULL}, \
+		{NULL, "-pubout", NULL, "don't know", NULL}, \
+		{NULL, "-decrypt", NULL, "idk", NULL}, \
+		{NULL, "-encrypt", NULL, "idk", NULL}, \
+		{NULL, "-hexdump", NULL, "idk", NULL} \
+}
+# define NB_STD_CMDS		3
+# define CMD_STD		{ \
+		{"genrsa", "o"}, \
+		{"rsa", "in,out,inform,outform,passin,passout,des,text,noout,modulus,check,pubin,pubout"}, \
+		{"rsautl", "in,out,inkey,pubin,encrypt,decrypt,hexdump"} \
+}
+
 # define MODE_HASH			1
 # define MODE_CIPHER		2
+# define MODE_STD			3
 
 typedef struct		s_opt_arg
 {
-	char			arg;
+	char			*arg;
 	void			*content;
 	void			*next;
 }					t_opt_arg;
@@ -120,10 +148,10 @@ typedef struct		s_cmd_options
 # include "error.h"
 
 /* opt_arg.c */
-t_opt_arg	*append_opt_arg(t_opt_arg **opt_args, char arg, void *content);
+t_opt_arg	*append_opt_arg(t_opt_arg **opt_args, char *arg, void *content);
 void		clear_opt_arg(t_opt_arg *opt_args);
-t_opt_arg	*get_last_arg(t_opt_arg *opt_args, char arg);
-void		*get_last_content(t_opt_arg *opt_args, char arg);
+t_opt_arg	*get_last_arg(t_opt_arg *opt_args, char *arg);
+void		*get_last_content(t_opt_arg *opt_args, char *arg);
 
 /* args.c */
 int			check_args(int argc, char *argv[], t_ssl *ssl);

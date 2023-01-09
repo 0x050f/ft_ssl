@@ -241,11 +241,11 @@ int			fill_options(t_options *options, t_ssl *ssl)
 	void *pos_d = strchr(ssl->options, 'd');
 	void *pos_e = strchr(ssl->options, 'e');
 	options->mode = (pos_e >= pos_d) ? CMODE_ENCODE : CMODE_DECODE;
-	options->infile = get_last_content(ssl->opt_args, 'i');
-	options->outfile = get_last_content(ssl->opt_args, 'o');
-	options->key = get_last_content(ssl->opt_args, 'k');
+	options->infile = get_last_content(ssl->opt_args, "i");
+	options->outfile = get_last_content(ssl->opt_args, "o");
+	options->key = get_last_content(ssl->opt_args, "k");
 	char *tmp;
-	if ((tmp = get_last_content(ssl->opt_args, 'p')))
+	if ((tmp = get_last_content(ssl->opt_args, "p")))
 	{
 		options->password = strdup(tmp);
 		if (!options->password)
@@ -289,8 +289,8 @@ int			fill_options(t_options *options, t_ssl *ssl)
 		}
 		options->password = password;
 	}
-	options->salt = get_last_content(ssl->opt_args, 's');
-	options->iv = get_last_content(ssl->opt_args, 'v');
+	options->salt = get_last_content(ssl->opt_args, "s");
+	options->iv = get_last_content(ssl->opt_args, "v");
 	return (0);
 }
 
