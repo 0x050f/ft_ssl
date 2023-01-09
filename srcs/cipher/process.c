@@ -129,12 +129,12 @@ uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t ps
 
 char		*launch_cipher(char *cmd, char *query, size_t size, size_t *res_len, t_options *options)
 {
-	char *cmds[NB_CIPHER_CMDS] = CMD_CIPHER;
+	char *cmds[NB_CIPHER_CMDS][2] = CMD_CIPHER;
 	char *(*functions[NB_CIPHER_CMDS])(uint8_t *, size_t, size_t *, t_options *) = FUNC_CIPHER;
 
 	for (int i = 0; i < NB_CIPHER_CMDS; i++)
 	{
-		if (!strcmp(cmd, cmds[i]))
+		if (!strcmp(cmd, cmds[i][0]))
 			return (functions[i]((unsigned char *)query, size, res_len, options));
 	}
 	return (NULL);

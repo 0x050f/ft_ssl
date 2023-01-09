@@ -37,11 +37,16 @@
 
 /*
 	OPTIONS:
-	{name, argument, desc, check}
+	{name, fullname, argument, desc, check}
 	'f' option set for file
 */
 
 # define NB_COLUMNS_OPTIONS	4
+
+# define INDEX_NAME			0
+# define INDEX_ARG			1
+# define INDEX_DESC			2
+# define INDEX_CHECK		3
 
 # define NB_HASH_OPTIONS	4
 # define HASH_OPTIONS		{ \
@@ -50,13 +55,19 @@
 		{"-r", NULL, "reverse the format of the output", NULL}, \
 		{"-s", "<string>", "print the sum of the given string", NULL} \
 }
+
 # define NB_HASH_CMDS		5
-# define CMD_HASH			{"md5", "sha256", "sha224", "sha512", "sha384"}
+# define CMD_HASH	{ \
+		{"md5", "p,q,r,s"}, \
+		{"sha256", "p,q,r,s"}, \
+		{"sha224", "p,q,r,s"}, \
+		{"sha512", "p,q,r,s"}, \
+		{"sha384", "p,q,r,s"} \
+}
 # define FUNC_HASH			{&md5, &sha256, &sha224, &sha512, &sha384}
 
-# define NB_CIPHER_OPTIONS	4
-# define NB_CIPHER_DES_OPTIONS	9
-# define CIPHER_OPTIONS	{ \
+# define NB_CIPHER_OPTIONS	9
+# define CIPHER_OPTIONS		{ \
 		{"-d", NULL, "decode/decrypt mode", NULL}, \
 		{"-e", NULL, "encode/encrypt mode (default)", NULL}, \
 		{"-i", "<file>", "input file for message", NULL}, \
@@ -68,7 +79,12 @@
 		{"-v", "<iv>", "initialization vector in hex", "HEX"} \
 }
 # define NB_CIPHER_CMDS		4
-# define CMD_CIPHER			{"base64", "des", "des-ecb", "des-cbc"}
+# define CMD_CIPHER		{ \
+		{"base64", "d,e,i,o"}, \
+		{"des", "d,e,i,o,a,k,p,s,v"}, \
+		{"des-ecb", "d,e,i,o,a,k,p,s,v"}, \
+		{"des-cbc", "d,e,i,o,a,k,p,s,v"} \
+}
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
 # define MODE_HASH			1

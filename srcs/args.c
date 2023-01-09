@@ -6,8 +6,8 @@ char		**search_option(char *to_search, char ***options, int nb_options)
 
 	for (i = 0; i < nb_options; i++)
 	{
-		if (!strncmp(to_search, (options[i][0] + 1), strlen((options[i][0] + 1))))
-			break ;
+		if (!strncmp(to_search, options[i][INDEX_NAME] + 1, strlen(options[i][INDEX_NAME] + 1)))
+			break;
 	}
 	if (i == nb_options)
 		return (NULL);
@@ -62,15 +62,22 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 	return (0);
 }
 
-int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl, t_cmd_options *cmd_options)
-{
+int			handle_options(
+	int argc,
+	char *argv[],
+	int *i,
+	t_ssl *ssl,
+	t_cmd_options *cmd_options
+) {
 	int		ret;
 	int		j;
 
 	j = 1;
 	while (argv[*i][j])
 	{
-		char **option = search_option(&argv[*i][j], cmd_options->options, cmd_options->nb_options);
+		char **option = search_option(
+			&argv[*i][j], cmd_options->options, cmd_options->nb_options
+		);
 		if (!option)
 			goto error;
 		else 
@@ -92,31 +99,51 @@ int			handle_options(int argc, char *argv[], int *i, t_ssl *ssl, t_cmd_options *
 		return (2);
 }
 
-int			setup_cmd_options(t_cmd_options *cmd_options, int nb_options, char *options[][NB_COLUMNS_OPTIONS])
-{
+int			setup_cmd_options(
+	t_cmd_options *cmd_options,
+	int nb_options,
+	char *options[][NB_COLUMNS_OPTIONS],
+	char *option_list
+) {
 	int i;
+	int nb_opt;
+	char opt_tmp[strlen(option_list) + 1];
+	char *ptr;
 
-	cmd_options->nb_options = nb_options;
-	cmd_options->options = malloc(sizeof(char **) * nb_options);
+	strcpy(opt_tmp, option_list);
+	nb_opt = 0;
+	ptr = strtok(opt_tmp, ",");
+	while (ptr) {
+		if (*ptr)
+			nb_opt++;
+		ptr = strtok(NULL, ",");
+	}
+	cmd_options->nb_options = nb_opt;
+	cmd_options->options = malloc(sizeof(char **) * nb_opt);
 	if (!cmd_options->options)
 		goto error;
-	for (i = 0; i < nb_options; i++)
-	{
-		cmd_options->options[i] = malloc(sizeof(char *) * NB_COLUMNS_OPTIONS);
-		if (!cmd_options->options[i])
-			goto free_everything;
-		for (int j = 0; j < NB_COLUMNS_OPTIONS; j++)
-		{
-			if (options[i][j] && !(cmd_options->options[i][j] = strdup(options[i][j])))
-			{
-				while (--j > 0)
-					free(cmd_options->options[i][j]);
-				free(cmd_options->options[i]);
-				goto free_everything;
+	strcpy(opt_tmp, option_list);
+	ptr = strtok(opt_tmp, ",");
+	while (ptr) {
+		for (i = 0; i < nb_options; i++) {
+			if (!strcmp(ptr, options[i][INDEX_NAME] + 1)) {
+				cmd_options->options[i] = malloc(sizeof(char *) * NB_COLUMNS_OPTIONS);
+				if (!cmd_options->options[i])
+					goto free_everything;
+				for (int j = 0; j < NB_COLUMNS_OPTIONS; j++)
+				{
+					if (options[i][j] && !(cmd_options->options[i][j] = strdup(options[i][j]))) {
+						while (--j > 0)
+							free(cmd_options->options[i][j]);
+						free(cmd_options->options[i]);
+						goto free_everything;
+					} else if(!options[i][j])
+						cmd_options->options[i][j] = NULL;
+				}
+				break ;
 			}
-			else if(!options[i][j])
-				cmd_options->options[i][j] = NULL;
 		}
+		ptr = strtok(NULL, ",");
 	}
 	return (0);
 	free_everything:
@@ -143,19 +170,52 @@ void		free_options(char ***options, int nb_options)
 	free(options);
 }
 
-int			search_command(char *cmd, char *cmds[], int nb_cmds)
+int			search_command(char *cmd, char *cmds[][2], int nb_cmds)
 {
 	int i = 0;
-	while (i < nb_cmds && strcmp(cmd, cmds[i]))
+	while (i < nb_cmds && strcmp(cmd, cmds[i][0]))
 		i++;
 	return (i);
 }
 
+int			compute_options(int argc, char *argv[], t_ssl *ssl, t_cmd_options *cmd_options) {
+	int i, ret;
+
+	ssl->cmd = argv[1];
+	i = 2;
+	while (i < argc && *argv[i] == '-') {
+		ret = handle_options(argc, argv, &i, ssl, cmd_options);
+		if (ret) {
+			free_options(cmd_options->options, cmd_options->nb_options);
+			return (ret);
+		}
+		i++;
+	}
+	while (i < argc) {
+		if (ssl->mode == MODE_HASH) {
+			if (!strchr(ssl->options, 'f')) // append the option
+				strcat(ssl->options, "f");
+			if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) { // add files (HASH)
+				dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+				free_options(cmd_options->options, cmd_options->nb_options);
+				return (ERR_MALLOC);
+			}
+			i++;
+		} else {
+			args_error(ERR_INV_ARG, argv[i], 0, 0);
+			free_options(cmd_options->options, cmd_options->nb_options);
+			return (ERR_INV_ARG);
+		}
+	}
+	free_options(cmd_options->options, cmd_options->nb_options);
+	return (0);
+}
+
 int			check_args(int argc, char *argv[], t_ssl *ssl)
 {
-	int				ret;
-	char			*hash_cmds[NB_HASH_CMDS] = CMD_HASH;
-	char			*cipher_cmds[NB_CIPHER_CMDS] = CMD_CIPHER;
+	int				i;
+	char			*hash_cmds[NB_HASH_CMDS][2] = CMD_HASH;
+	char			*cipher_cmds[NB_CIPHER_CMDS][2] = CMD_CIPHER;
 	t_cmd_options	cmd_options;
 
 	memset(ssl, 0, sizeof(t_ssl));
@@ -164,71 +224,27 @@ int			check_args(int argc, char *argv[], t_ssl *ssl)
 		show_usage(STDOUT_FILENO);
 		return (0);
 	}
-	int i = search_command(argv[1], hash_cmds, NB_HASH_CMDS);
+	i = search_command(argv[1], hash_cmds, NB_HASH_CMDS);
 	if (i != NB_HASH_CMDS)
 	{
-		char		*options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
+		char *options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
 
 		ssl->mode = MODE_HASH;
-		if (setup_cmd_options(&cmd_options, NB_HASH_OPTIONS, options))
+		if (setup_cmd_options(&cmd_options, NB_HASH_OPTIONS, options, hash_cmds[i][1]))
 			return (ERR_MALLOC);
+		return (compute_options(argc, argv, ssl, &cmd_options));
 	}
-	else
+	i = search_command(argv[1], cipher_cmds, NB_CIPHER_CMDS);
+	if (i != NB_CIPHER_CMDS)
 	{
-		i = search_command(argv[1], cipher_cmds, NB_CIPHER_CMDS);
-		if (i != NB_CIPHER_CMDS)
-		{
-			int			nb_options;
-			char		*options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
+		char *options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
 
-			ssl->mode = MODE_CIPHER;
-			if (!strcmp(argv[1], "base64"))
-				nb_options = NB_CIPHER_OPTIONS;
-			else
-				nb_options = NB_CIPHER_DES_OPTIONS;
-			if (setup_cmd_options(&cmd_options, nb_options, options))
-				return (ERR_MALLOC);
-		}
-		else
-		{
-			dprintf(STDERR_FILENO, "%s: Error: '%s' is an invalid command.\n\n", PRG_NAME, argv[1]);
-			show_usage(STDERR_FILENO);
-			return (ERR_BADCMD);
-		}
+		ssl->mode = MODE_CIPHER;
+		if (setup_cmd_options(&cmd_options, NB_CIPHER_OPTIONS, options, cipher_cmds[i][1])) 
+			return (ERR_MALLOC);
+		return (compute_options(argc, argv, ssl, &cmd_options));
 	}
-	ssl->cmd = argv[1];
-	i = 2;
-	while (i < argc && *argv[i] == '-')
-	{
-		ret = handle_options(argc, argv, &i, ssl, &cmd_options);
-		if (ret)
-		{
-			free_options(cmd_options.options, cmd_options.nb_options);
-			return (ret);
-		}
-		i++;
-	}
-	while (i < argc)
-	{
-		if (ssl->mode == MODE_HASH)
-		{
-			if (!strchr(ssl->options, 'f')) // append the option
-				strcat(ssl->options, "f");
-			if (!append_opt_arg(&ssl->opt_args, 'f', argv[i])) // add files (HASH)
-			{
-				dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-				free_options(cmd_options.options, cmd_options.nb_options);
-				return (ERR_MALLOC);
-			}
-			i++;
-		}
-		else
-		{
-			args_error(ERR_INV_ARG, argv[i], 0, 0);
-			free_options(cmd_options.options, cmd_options.nb_options);
-			return (ERR_INV_ARG);
-		}
-	}
-	free_options(cmd_options.options, cmd_options.nb_options);
-	return (0);
+	dprintf(STDERR_FILENO, "%s: Error: '%s' is an invalid command.\n\n", PRG_NAME, argv[1]);
+	show_usage(STDERR_FILENO);
+	return (ERR_BADCMD);
 }

@@ -1,9 +1,9 @@
 #include "ft_ssl.h"
 
-void		show_commands(int fd, char *cmds[], int nb_cmds)
+void		show_commands(int fd, char *cmds[][2], int nb_cmds)
 {
 	for (int i = 0; i < nb_cmds; i++)
-		dprintf(fd, "    %s\n", cmds[i]);
+		dprintf(fd, "    %s\n", cmds[i][0]);
 }
 
 void		show_options(int fd, char *options[][4], int nb_options)
@@ -21,9 +21,9 @@ void		show_options(int fd, char *options[][4], int nb_options)
 
 void		show_usage(int fd)
 {
-	char	*hash_commands[NB_HASH_CMDS] = CMD_HASH;
+	char	*hash_commands[NB_HASH_CMDS][2] = CMD_HASH;
 	char	*hash_options[][4] = HASH_OPTIONS;
-	char	*cipher_commands[NB_CIPHER_CMDS] = CMD_CIPHER;
+	char	*cipher_commands[NB_CIPHER_CMDS][2] = CMD_CIPHER;
 	char	*cipher_options[][4] = CIPHER_OPTIONS;
 
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
@@ -37,8 +37,6 @@ void		show_usage(int fd)
 	show_options(fd, hash_options, NB_HASH_OPTIONS);
 	dprintf(fd, "  Cipher Options:\n");
 	show_options(fd, cipher_options, NB_CIPHER_OPTIONS);
-	dprintf(fd, "    des only:\n");
-	show_options(fd, &cipher_options[NB_CIPHER_OPTIONS], NB_CIPHER_DES_OPTIONS - NB_CIPHER_OPTIONS);
 }
 
 int			args_error(int error, char *str, int range1, int range2)
