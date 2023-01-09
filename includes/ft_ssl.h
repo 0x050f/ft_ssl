@@ -41,19 +41,23 @@
 	'f' option set for file
 */
 
-# define NB_COLUMNS_OPTIONS	4
+# define PADDING_ARG	20
+# define PADDING_DESC	35
+
+# define NB_COLUMNS_OPTIONS	5
 
 # define INDEX_NAME			0
-# define INDEX_ARG			1
-# define INDEX_DESC			2
-# define INDEX_CHECK		3
+# define INDEX_FULLNAME		1
+# define INDEX_ARG			2
+# define INDEX_DESC			3
+# define INDEX_CHECK		4
 
 # define NB_HASH_OPTIONS	4
 # define HASH_OPTIONS		{ \
-		{"-p", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT", NULL}, \
-		{"-q", NULL, "quiet mode", NULL}, \
-		{"-r", NULL, "reverse the format of the output", NULL}, \
-		{"-s", "<string>", "print the sum of the given string", NULL} \
+		{"-p", "--pipe", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT", NULL}, \
+		{"-q", "--quiet", NULL, "quiet mode", NULL}, \
+		{"-r", "--reverse", NULL, "reverse the format of the output", NULL}, \
+		{"-s", "--string", "<string>", "print the sum of the given string", NULL} \
 }
 
 # define NB_HASH_CMDS		5
@@ -68,15 +72,15 @@
 
 # define NB_CIPHER_OPTIONS	9
 # define CIPHER_OPTIONS		{ \
-		{"-d", NULL, "decode/decrypt mode", NULL}, \
-		{"-e", NULL, "encode/encrypt mode (default)", NULL}, \
-		{"-i", "<file>", "input file for message", NULL}, \
-		{"-o", "<output>", "output file for message", NULL}, \
-		{"-a", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
-		{"-k", "<key>", "key in hex", "HEX"}, \
-		{"-p", "<password>", "password in ascii", "PRINT"}, \
-		{"-s", "<salt>", "salt in hex", "HEX"}, \
-		{"-v", "<iv>", "initialization vector in hex", "HEX"} \
+		{"-d", "--decode", NULL, "decode/decrypt mode", NULL}, \
+		{"-e", "--encode", NULL, "encode/encrypt mode (default)", NULL}, \
+		{"-i", "--input", "<file>", "input file for message", NULL}, \
+		{"-o", "--output", "<output>", "output file for message", NULL}, \
+		{"-a", "--base64", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
+		{"-k", "--key", "<key>", "key in hex", "HEX"}, \
+		{"-p", "--password", "<password>", "password in ascii", "PRINT"}, \
+		{"-s", "--salt", "<salt>", "salt in hex", "HEX"}, \
+		{"-v", "--iv", "<iv>", "initialization vector in hex", "HEX"} \
 }
 # define NB_CIPHER_CMDS		4
 # define CMD_CIPHER		{ \

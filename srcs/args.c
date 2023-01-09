@@ -1,12 +1,28 @@
 #include "ft_ssl.h"
 
-char		**search_option(char *to_search, char ***options, int nb_options)
+char		**search_long_option(char *to_search, char ***options, int nb_options)
 {
 	int i;
 
 	for (i = 0; i < nb_options; i++)
 	{
-		if (!strncmp(to_search, options[i][INDEX_NAME] + 1, strlen(options[i][INDEX_NAME] + 1)))
+		if (options[i][INDEX_FULLNAME] &&
+	!strncmp(to_search, options[i][INDEX_FULLNAME] + 2, strlen(options[i][INDEX_FULLNAME] + 2)))
+			break;
+	}
+	if (i == nb_options)
+		return (NULL);
+	return (options[i]);
+}
+
+char		**search_short_option(char *to_search, char ***options, int nb_options)
+{
+	int i;
+
+	for (i = 0; i < nb_options; i++)
+	{
+		if (options[i][INDEX_NAME] &&
+	!strncmp(to_search, options[i][INDEX_NAME] + 1, strlen(options[i][INDEX_NAME] + 1)))
 			break;
 	}
 	if (i == nb_options)
@@ -18,41 +34,41 @@ char		*get_string_arg(int argc, char *argv[], int *i, int j, char *arg)
 {
 	char	*str;
 
-	if (argv[*i][j + 1])
-		str = &argv[*i][j + 1];
-	else if (argc  - 1 < *i + 1)
-	{
-		args_error(ERR_REQ_ARG, arg, 0, 0);
-		return (NULL);
-	}
-	else
-	{
-		*i += 1;
-		str = argv[*i];
+	str = &argv[*i][j];
+	if (!*str) {
+		if (argc - 1 < *i + 1) {
+			args_error(ERR_REQ_ARG, arg, 0, 0);
+			return (NULL);
+		} else {
+			*i += 1;
+			str = argv[*i];
+		}
 	}
 	return (str);
 }
 
-int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **option)
+int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **option, char *name)
 {
 	char	*str;
 
-	if (!(str = strchr(ssl->options, option[0][1]))) // append the option
-		ssl->options[strlen(ssl->options)] = option[0][1];
+	if (!(str = strchr(ssl->options, option[INDEX_NAME][1]))) // append the option
+		ssl->options[strlen(ssl->options)] = option[INDEX_NAME][1];
 	else
 	{
 		memmove(str, str + 1, strlen(str + 1));
-		ssl->options[strlen(ssl->options) - 1] = option[0][1];
+		ssl->options[strlen(ssl->options) - 1] = option[INDEX_NAME][1];
 	}
-	if (option[1]) // has an argument
+	if (option[INDEX_ARG]) // has an argument
 	{
-		if (!(str = get_string_arg(argc, argv, i, j, &option[0][1])))
+		if (!(str = get_string_arg(argc, argv, i, j, name)))
 			return (ERR_REQ_ARG);
-		if (option[3] && !strcmp(option[3], "HEX") && (!ishexa(str))) // should be hexa
-			return (args_error(ERR_HEX_ARG, &option[0][1], 0, 0) + 1);
-		else if (option[3] && !strcmp(option[3], "PRINT") && !isprintable(str)) // should be printable
-			return (args_error(ERR_PRINT_ARG, &option[0][1], 0, 0) + 1);
-		if (!append_opt_arg(&ssl->opt_args, option[0][1], str))
+		if (option[INDEX_CHECK] &&
+			!strcmp(option[INDEX_CHECK], "HEX") && (!ishexa(str))) // should be hexa
+			return (args_error(ERR_HEX_ARG, name, 0, 0) + 1);
+		else if (option[INDEX_CHECK] &&
+			!strcmp(option[INDEX_CHECK], "PRINT") && !isprintable(str)) // should be printable
+			return (args_error(ERR_PRINT_ARG, name, 0, 0) + 1);
+		if (!append_opt_arg(&ssl->opt_args, option[INDEX_NAME][1], str))
 		{
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 			return (ERR_MALLOC);
@@ -73,30 +89,39 @@ int			handle_options(
 	int		j;
 
 	j = 1;
-	while (argv[*i][j])
-	{
-		char **option = search_option(
+	if (!strncmp("--", argv[*i], 2)) {
+		j++;
+		char **option = search_long_option(
 			&argv[*i][j], cmd_options->options, cmd_options->nb_options
 		);
-		if (!option)
-			goto error;
-		else 
-		{
-			ret = append_option(argc, argv, i, j, ssl, option);
+		if (!option) {
+			args_error(ERR_INV_OPT, &argv[*i][j], 0, 0);
+			return (2);
+		}
+		j += strlen(option[INDEX_FULLNAME]) - 2;
+		if ((ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_FULLNAME] + 2)) > 1)
+			return (ret);
+		return (0);
+	}
+	while (argv[*i][j]) {
+		char **option = search_short_option(
+			&argv[*i][j], cmd_options->options, cmd_options->nb_options
+		);
+		if (!option) {
+			char letter[2] = {argv[*i][j], 0};
+
+			args_error(ERR_INV_OPT, letter, 0, 0);
+			return (2);
+		} else {
+			j++;
+			ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_NAME] + 1);
 			if (ret > 1)
 				return (ret);
 			else if (ret == 1)
 				return (0);
 		}
-		j++;
 	}
 	return (0);
-	char letter[2] = {0, 0};
-	error:
-		letter[0] = argv[*i][j];
-		letter[1] = 0;
-		args_error(ERR_INV_OPT, letter, 0, 0);
-		return (2);
 }
 
 int			setup_cmd_options(

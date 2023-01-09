@@ -6,25 +6,33 @@ void		show_commands(int fd, char *cmds[][2], int nb_cmds)
 		dprintf(fd, "    %s\n", cmds[i][0]);
 }
 
-void		show_options(int fd, char *options[][4], int nb_options)
+void		show_options(int fd, char *options[][NB_COLUMNS_OPTIONS], int nb_options)
 {
-	int		padding = 18;
+	int		sum;
 
 	for (int i = 0; i < nb_options; i++)
 	{
-		if (options[i][1])
-			dprintf(fd, "    %s %-*s %s\n", options[i][0], (int)(padding - (strlen(options[i][0]) + 1)), options[i][1], options[i][2]);
-		else
-			dprintf(fd, "    %-*s %s\n", padding, options[i][0], options[i][2]);
+		sum = 0;
+		dprintf(fd, "    %s", options[i][INDEX_NAME]);
+		sum += strlen(options[i][INDEX_NAME]) + 4;
+		if (options[i][INDEX_FULLNAME]) {
+			dprintf(fd, ", %s", options[i][INDEX_FULLNAME]);
+			sum += strlen(options[i][INDEX_FULLNAME]) + 2;
+		}
+		if (options[i][INDEX_ARG]) {
+			dprintf(fd, "%*s%s", PADDING_ARG - sum, "", options[i][INDEX_ARG]);
+			sum += strlen(options[i][INDEX_ARG]) + (PADDING_ARG - sum);
+		}
+		dprintf(fd, "%*s%s\n", PADDING_DESC - sum, "", options[i][INDEX_DESC]);
 	}
 }
 
 void		show_usage(int fd)
 {
 	char	*hash_commands[NB_HASH_CMDS][2] = CMD_HASH;
-	char	*hash_options[][4] = HASH_OPTIONS;
+	char	*hash_options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
 	char	*cipher_commands[NB_CIPHER_CMDS][2] = CMD_CIPHER;
-	char	*cipher_options[][4] = CIPHER_OPTIONS;
+	char	*cipher_options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
 
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
 	dprintf(fd, "Commands:\n");
