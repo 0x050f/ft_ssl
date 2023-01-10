@@ -1,4 +1,5 @@
 #include "ft_ssl.h"
+#include "hash.h"
 
 char		*launch_hash(t_ssl *ssl, char *query, size_t size)
 {

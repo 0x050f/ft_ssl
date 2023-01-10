@@ -7,10 +7,11 @@ char		**search_long_option(char *to_search, char ***options, int nb_options)
 
 	for (i = 0; i < nb_options; i++)
 	{
-		str = options[i][INDEX_FULLNAME];
-		if (options[i][INDEX_FULLNAME] &&
-	!strncmp(to_search, str, strlen(str)))
-			break;
+		if (options[i][INDEX_FULLNAME]) {
+			str = options[i][INDEX_FULLNAME];
+			if (!strncmp(to_search, str, strlen(str)))
+				break;
+		}
 	}
 	if (i == nb_options)
 		return (NULL);
@@ -24,10 +25,11 @@ char		**search_short_option(char *to_search, char ***options, int nb_options)
 
 	for (i = 0; i < nb_options; i++)
 	{
-		str = strrchr(options[i][INDEX_NAME], '-') + 1;
-		if (options[i][INDEX_NAME] &&
-	!strncmp(to_search, str, strlen(str)))
-			break;
+		if (options[i][INDEX_NAME]) {
+			str = strrchr(options[i][INDEX_NAME], '-') + 1;
+			if (!strncmp(to_search, str, strlen(str)))
+				break;
+		}
 	}
 	if (i == nb_options)
 		return (NULL);

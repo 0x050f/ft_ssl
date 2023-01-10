@@ -91,8 +91,9 @@
 }
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
-# define NB_STD_OPTIONS	17
+# define NB_STD_OPTIONS	18
 # define STD_OPTIONS		{ \
+		{"-i", NULL, NULL, "print in the standard output"}, \
 		{NULL, "-in", "<file>", "input file", NULL}, \
 		{"-o", "-out", "<output>", "output file", NULL}, \
 		{NULL, "-inkey", "<file>", "input file", NULL}, \
@@ -113,10 +114,11 @@
 }
 # define NB_STD_CMDS		3
 # define CMD_STD		{ \
-		{"genrsa", "o"}, \
+		{"genrsa", "i,o"}, \
 		{"rsa", "in,out,inform,outform,passin,passout,des,text,noout,modulus,check,pubin,pubout"}, \
 		{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
 }
+# define FUNC_STD		{&genrsa, &rsa, &rsautl}
 
 # define MODE_HASH			1
 # define MODE_CIPHER		2
@@ -143,9 +145,6 @@ typedef struct		s_cmd_options
 	char			***options;
 }					t_cmd_options;
 
-# include "hash.h"
-# include "cipher.h"
-# include "std.h"
 # include "error.h"
 
 /* opt_arg.c */
@@ -172,5 +171,10 @@ void		ft_toupper(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);
 char		*read_query(int fd, size_t *size);
+
+/* process.c */
+void		process_cipher(t_ssl *ssl);
+void		process_hash(t_ssl *ssl);
+void		process_std(t_ssl *ssl);
 
 #endif

@@ -1,9 +1,6 @@
 #ifndef HASH_H
 # define HASH_H
 
-/* Hash functions are located in the hash/ directory */
-void		process_hash(t_ssl *ssl);
-
 /* sha384.c */
 char		*sha384(uint8_t *str, size_t size);
 

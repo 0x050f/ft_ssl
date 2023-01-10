@@ -1,4 +1,5 @@
 #include "ft_ssl.h"
+#include "cipher.h"
 
 char			*base64_decode(unsigned char *str, size_t size, size_t *res_len)
 {

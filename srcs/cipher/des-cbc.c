@@ -1,4 +1,5 @@
 #include "ft_ssl.h"
+#include "cipher.h"
 
 #define NB_ROUND 16
 

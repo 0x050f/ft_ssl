@@ -1,4 +1,6 @@
 #include "ft_ssl.h"
+#include "cipher.h"
+#include "hash.h"
 
 #define SHA256_BLOCK_SIZE 64
 #define SHA256_HASH_SIZE 32
@@ -234,15 +236,15 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 	free(result);
 }
 
-int			fill_options(t_options *options, t_ssl *ssl)
+int			fill_cipher_options(t_options *options, t_ssl *ssl)
 {
 	/* set options to the last arg recv */
 	t_opt_arg *arg = get_last_arg(ssl->opt_args, "d");
 	int pos_d = arg ? arg->index : -1;
 	arg = get_last_arg(ssl->opt_args, "e");
 	int pos_e = arg ? arg->index : -1;
-	options->base64 = get_last_arg(ssl->opt_args, "a") ? true : false;
 	options->mode = (pos_e >= pos_d) ? CMODE_ENCODE : CMODE_DECODE;
+	options->base64 = get_last_arg(ssl->opt_args, "a") ? true : false;
 	options->infile = get_last_content(ssl->opt_args, "i");
 	options->outfile = get_last_content(ssl->opt_args, "o");
 	options->key = get_last_content(ssl->opt_args, "k");
@@ -298,12 +300,10 @@ int			fill_options(t_options *options, t_ssl *ssl)
 
 void	process_cipher(t_ssl *ssl)
 {
-	size_t			result_len;
 	t_options		options;
 
-	(void)result_len;
 	memset(&options, 0, sizeof(t_options));
-	int ret = fill_options(&options, ssl);
+	int ret = fill_cipher_options(&options, ssl);
 	if (ret)
 		return ;
 	if (!get_last_arg(ssl->opt_args, "i"))
