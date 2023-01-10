@@ -154,7 +154,7 @@ void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options
 			return ;
 		}
 	}
-	if ((!strcmp(cmd, "base64") || strchr(options->options, 'a')) && options->mode == CMODE_ENCODE)
+	if ((!strcmp(cmd, "base64") || options->base64) && options->mode == CMODE_ENCODE)
 	{
 		char *tmp = result;
 		while (result_size > 64)
@@ -236,10 +236,12 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 
 int			fill_options(t_options *options, t_ssl *ssl)
 {
-	options->options = ssl->options;
 	/* set options to the last arg recv */
-	void *pos_d = strchr(ssl->options, 'd');
-	void *pos_e = strchr(ssl->options, 'e');
+	t_opt_arg *arg = get_last_arg(ssl->opt_args, "d");
+	int pos_d = arg ? arg->index : -1;
+	arg = get_last_arg(ssl->opt_args, "e");
+	int pos_e = arg ? arg->index : -1;
+	options->base64 = get_last_arg(ssl->opt_args, "a") ? true : false;
 	options->mode = (pos_e >= pos_d) ? CMODE_ENCODE : CMODE_DECODE;
 	options->infile = get_last_content(ssl->opt_args, "i");
 	options->outfile = get_last_content(ssl->opt_args, "o");
@@ -304,7 +306,7 @@ void	process_cipher(t_ssl *ssl)
 	int ret = fill_options(&options, ssl);
 	if (ret)
 		return ;
-	if (!strchr(ssl->options, 'i'))
+	if (!get_last_arg(ssl->opt_args, "i"))
 		process_cipher_stdin(ssl->cmd, &options);
 	else
 		process_cipher_file(ssl->cmd, &options);

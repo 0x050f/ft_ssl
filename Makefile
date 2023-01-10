@@ -26,7 +26,11 @@ SRCS			=	ft_ssl.c \
 					cipher/process.c \
 					cipher/base64.c \
 					cipher/des-ecb.c \
-					cipher/des-cbc.c
+					cipher/des-cbc.c \
+					std/process.c \
+					std/genrsa.c \
+					std/rsa.c \
+					std/rsautl.c
 
 INCLUDES		=	ft_ssl.h \
 					cipher.h \

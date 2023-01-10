@@ -6,10 +6,11 @@ void		show_commands(int fd, char *cmds[][2], int nb_cmds)
 		dprintf(fd, "    %s\n", cmds[i][0]);
 }
 
-void		show_options(int fd, char *options[][NB_COLUMNS_OPTIONS], int nb_options)
+void		show_options(int fd, char ***options, int nb_options)
 {
 	int		sum;
 
+	printf("nb_options: %d\n", nb_options);
 	for (int i = 0; i < nb_options; i++)
 	{
 		sum = 0;
@@ -32,14 +33,19 @@ void		show_options(int fd, char *options[][NB_COLUMNS_OPTIONS], int nb_options)
 	}
 }
 
+void		show_cmd(int fd, char *cmd, t_cmd_options *cmd_options)
+{
+	dprintf(fd, "usage: %s %s [flags] [file/string]\n", PRG_NAME, cmd);
+	dprintf(fd, "Options:\n");
+	dprintf(fd, "    -h, --help %*s%s\n", PADDING_DESC - 15, "", "print this summary");
+	show_options(fd, cmd_options->options, cmd_options->nb_options);
+}
+
 void		show_usage(int fd)
 {
 	char	*std_commands[NB_STD_CMDS][2] = CMD_STD;
-	char	*std_options[][NB_COLUMNS_OPTIONS] = STD_OPTIONS;
 	char	*hash_commands[NB_HASH_CMDS][2] = CMD_HASH;
-	char	*hash_options[][NB_COLUMNS_OPTIONS] = HASH_OPTIONS;
 	char	*cipher_commands[NB_CIPHER_CMDS][2] = CMD_CIPHER;
-	char	*cipher_options[][NB_COLUMNS_OPTIONS] = CIPHER_OPTIONS;
 
 	dprintf(fd, "usage: %s command [flags] [file/string]\n", PRG_NAME);
 	dprintf(fd, "Commands:\n");
@@ -49,13 +55,6 @@ void		show_usage(int fd)
 	show_commands(fd, hash_commands, NB_HASH_CMDS);
 	dprintf(fd, "  Cipher Commands:\n");
 	show_commands(fd, cipher_commands, NB_CIPHER_CMDS);
-	dprintf(fd, "Options:\n");
-	dprintf(fd, "  Standard Options:\n");
-	show_options(fd, std_options, NB_STD_OPTIONS);
-	dprintf(fd, "  Hash Options:\n");
-	show_options(fd, hash_options, NB_HASH_OPTIONS);
-	dprintf(fd, "  Cipher Options:\n");
-	show_options(fd, cipher_options, NB_CIPHER_OPTIONS);
 }
 
 int			args_error(int error, char *str, int range1, int range2)

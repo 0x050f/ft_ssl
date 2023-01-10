@@ -43,7 +43,7 @@ void		process_hash_files(t_ssl *ssl)
 				free(query);
 				return ;
 			}
-			if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
+			if (!get_last_arg(ssl->opt_args, "q") && !get_last_arg(ssl->opt_args, "r"))
 			{
 				char uppercase[12];
 
@@ -52,7 +52,7 @@ void		process_hash_files(t_ssl *ssl)
 				printf("%s(%s)= ", uppercase, (char *)tmp->content);
 			}
 			printf("%s", result);
-			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
+			if (!get_last_arg(ssl->opt_args, "q") && !get_last_arg(ssl->opt_args, "r"))
 				printf(" %s", (char *)tmp->content);
 			printf("\n");
 			free(query);
@@ -76,7 +76,7 @@ void		process_hash_strings(t_ssl *ssl)
 			result = launch_hash(ssl, tmp->content, strlen(tmp->content));
 			if (!result)
 				return ;
-			if (!strchr(ssl->options, 'q') && !strchr(ssl->options, 'r'))
+			if (!get_last_arg(ssl->opt_args, "q") && !get_last_arg(ssl->opt_args, "r"))
 			{
 				char uppercase[12];
 
@@ -85,7 +85,7 @@ void		process_hash_strings(t_ssl *ssl)
 				printf("%s(\"%s\")= ", uppercase, (char *)tmp->content);
 			}
 			printf("%s", result);
-			if (!strchr(ssl->options, 'q') && strchr(ssl->options, 'r'))
+			if (!get_last_arg(ssl->opt_args, "q") && !get_last_arg(ssl->opt_args, "r"))
 				printf(" \"%s\"", (char *)tmp->content);
 			printf("\n");
 			free(result);
@@ -108,13 +108,13 @@ void		process_hash_stdin(t_ssl *ssl)
 		free(query);
 		return ;
 	}
-	if (strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
+	if (get_last_arg(ssl->opt_args, "p") && !get_last_arg(ssl->opt_args, "q"))
 		printf("(\"%.*s\")= %s\n", (int)ft_strlen_special(query, size), query, result);
-	else if (!strchr(ssl->options, 'p') && !strchr(ssl->options, 'q'))
+	else if (!get_last_arg(ssl->opt_args, "p") && !get_last_arg(ssl->opt_args, "q"))
 		printf("(stdin)= %s\n", result);
-	else if (strchr(ssl->options, 'q'))
+	else if (get_last_arg(ssl->opt_args, "q"))
 	{
-		if (strchr(ssl->options, 'p'))
+		if (get_last_arg(ssl->opt_args, "p"))
 			printf("%.*s\n", (int)ft_strlen_special(query, size), query);
 		printf("%s\n", result);
 	}
@@ -124,7 +124,7 @@ void		process_hash_stdin(t_ssl *ssl)
 
 void		process_hash(t_ssl *ssl)
 {
-	if ((!strchr(ssl->options, 's') && !strchr(ssl->options, 'f')) || strchr(ssl->options, 'p'))
+	if ((!get_last_arg(ssl->opt_args, "s") && !get_last_arg(ssl->opt_args, "f")) || get_last_arg(ssl->opt_args, "p"))
 		process_hash_stdin(ssl);
 	process_hash_strings(ssl);
 	process_hash_files(ssl);

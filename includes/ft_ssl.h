@@ -8,7 +8,7 @@
 # include <stdlib.h>
 # include <stdint.h>
 # include <string.h>
-#include  <sys/stat.h>
+# include  <sys/stat.h>
 # include <time.h>
 # include <unistd.h>
 
@@ -74,7 +74,7 @@
 # define CIPHER_OPTIONS		{ \
 		{"-d", "--decode", NULL, "decode/decrypt mode", NULL}, \
 		{"-e", "--encode", NULL, "encode/encrypt mode (default)", NULL}, \
-		{"-i", "-input", "<file>", "input file for message", NULL}, \
+		{"-i", "--input", "<file>", "input file for message", NULL}, \
 		{"-o", "--output", "<file>", "output file for message", NULL}, \
 		{"-a", "--base64", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
 		{"-k", "--key", "<key>", "key in hex", "HEX"}, \
@@ -91,31 +91,31 @@
 }
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
-# define NB_STD_OPTIONS	16
+# define NB_STD_OPTIONS	17
 # define STD_OPTIONS		{ \
 		{NULL, "-in", "<file>", "input file", NULL}, \
-		{NULL, "-out", "<output>", "output file", NULL}, \
+		{"-o", "-out", "<output>", "output file", NULL}, \
 		{NULL, "-inkey", "<file>", "input file", NULL}, \
-		{NULL, "-inform", "<pem>", "don't know", NULL}, \
-		{NULL, "-outform", "<pem>", "don't know", NULL}, \
-		{NULL, "-passin", "<arg>", "don't know", NULL}, \
-		{NULL, "-passout", "<arg>", "don't know", NULL}, \
-		{NULL, "-des", NULL, "don't know", NULL}, \
-		{NULL, "-text", NULL, "don't know", NULL}, \
-		{NULL, "-noout", NULL, "don't know", NULL}, \
-		{NULL, "-modulus", NULL, "don't know", NULL}, \
-		{NULL, "-check", NULL, "don't know", NULL}, \
-		{NULL, "-pubin", NULL, "don't know", NULL}, \
-		{NULL, "-pubout", NULL, "don't know", NULL}, \
-		{NULL, "-decrypt", NULL, "idk", NULL}, \
-		{NULL, "-encrypt", NULL, "idk", NULL}, \
-		{NULL, "-hexdump", NULL, "idk", NULL} \
+		{NULL, "-inform", "<pem>", "input format", NULL}, \
+		{NULL, "-outform", "<pem>", "output format", NULL}, \
+		{NULL, "-passin", "<arg>", "input file pass phrase source", NULL}, \
+		{NULL, "-passout", "<arg>", "output file pass phrase source", NULL}, \
+		{NULL, "-des", NULL, "encrypt the private key with the specifed cipher", NULL}, \
+		{NULL, "-text", NULL, "print the key in text", NULL}, \
+		{NULL, "-noout", NULL, "don't print key out", NULL}, \
+		{NULL, "-modulus", NULL, "print the RSA key modulus", NULL}, \
+		{NULL, "-check", NULL, "verify key consistency", NULL}, \
+		{NULL, "-pubin", NULL, "expect a public key in input file", NULL}, \
+		{NULL, "-pubout", NULL, "output a public key", NULL}, \
+		{NULL, "-encrypt", NULL, "encrypt with public key", NULL}, \
+		{NULL, "-decrypt", NULL, "decrypt with private key", NULL}, \
+		{NULL, "-hexdump", NULL, "hex dump output", NULL} \
 }
 # define NB_STD_CMDS		3
 # define CMD_STD		{ \
 		{"genrsa", "o"}, \
 		{"rsa", "in,out,inform,outform,passin,passout,des,text,noout,modulus,check,pubin,pubout"}, \
-		{"rsautl", "in,out,inkey,pubin,encrypt,decrypt,hexdump"} \
+		{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
 }
 
 # define MODE_HASH			1
@@ -124,6 +124,7 @@
 
 typedef struct		s_opt_arg
 {
+	int				index;
 	char			*arg;
 	void			*content;
 	void			*next;
@@ -134,7 +135,6 @@ typedef struct		s_ssl
 	char			*cmd;
 	int				mode;
 	t_opt_arg		*opt_args;
-	char			options[32];
 }					t_ssl;
 
 typedef struct		s_cmd_options
@@ -145,6 +145,7 @@ typedef struct		s_cmd_options
 
 # include "hash.h"
 # include "cipher.h"
+# include "std.h"
 # include "error.h"
 
 /* opt_arg.c */
@@ -157,6 +158,7 @@ void		*get_last_content(t_opt_arg *opt_args, char *arg);
 int			check_args(int argc, char *argv[], t_ssl *ssl);
 
 /* logs.c */
+void		show_cmd(int fd, char *cmd, t_cmd_options *cmd_options);
 void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 

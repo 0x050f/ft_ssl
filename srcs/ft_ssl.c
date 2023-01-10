@@ -15,6 +15,8 @@ int			main(int argc, char *argv[])
 			process_hash(&ssl);
 		else if (ssl.mode == MODE_CIPHER)
 			process_cipher(&ssl);
+		else if (ssl.mode == MODE_STD)
+			process_std(&ssl);
 	}
 	clear_opt_arg(ssl.opt_args);
 	return (EXIT_SUCCESS);

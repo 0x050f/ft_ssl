@@ -20,15 +20,15 @@ test_arguments() {
 	output=$(./$exec des-ecb abc 2>&1)
 	assertEquals "ft_ssl: invalid argument: 'abc'" "$output"
 	output=$(./$exec md5 -z 2>&1)
-	assertEquals "ft_ssl: invalid option -- 'z'" "$output"
+	assertEquals "ft_ssl: invalid option -- '-z'" "$output"
 	output=$(./$exec sha256 -z 2>&1)
-	assertEquals "ft_ssl: invalid option -- 'z'" "$output"
+	assertEquals "ft_ssl: invalid option -- '-z'" "$output"
 	output=$(./$exec sha512 -z 2>&1)
-	assertEquals "ft_ssl: invalid option -- 'z'" "$output"
+	assertEquals "ft_ssl: invalid option -- '-z'" "$output"
 	output=$(./$exec base64 -z 2>&1)
-	assertEquals "ft_ssl: invalid option -- 'z'" "$output"
+	assertEquals "ft_ssl: invalid option -- '-z'" "$output"
 	output=$(./$exec des-ecb -z 2>&1)
-	assertEquals "ft_ssl: invalid option -- 'z'" "$output"
+	assertEquals "ft_ssl: invalid option -- '-z'" "$output"
 }
 
 suite_addTest test_commands

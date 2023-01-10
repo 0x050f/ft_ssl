@@ -1,6 +1,23 @@
 #!/bin/bash
 
-test_base64_simple()
+test_base64_decrypt()
+{
+	mkdir -p $TEST_DIR
+	# Decrypt
+	cat Makefile | base64 > $TEST_DIR/output
+	output=$(./$exec base64 -d -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff Makefile $TEST_DIR/original)
+	assertEquals "$output" ""
+	cat $exec | base64 > $TEST_DIR/output
+	output=$(./$exec base64 -d -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
+	assertEquals "$output" ""
+	output=$(diff $exec $TEST_DIR/original)
+	assertEquals "$output" ""
+	rm -rf $TEST_DIR
+}
+
+test_base64_encrypt()
 {
 	mkdir -p $TEST_DIR
 	# Encrypt
@@ -23,18 +40,8 @@ test_base64_simple()
 	assertEquals "" "$output"
 	output=$(diff Makefile $TEST_DIR/original)
 	assertEquals "" "$output"
-	# Decrypt
-	cat Makefile | base64 > $TEST_DIR/output
-	output=$(./$exec base64 -d -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
-	assertEquals "$output" ""
-	output=$(diff Makefile $TEST_DIR/original)
-	assertEquals "$output" ""
-	cat $exec | base64 > $TEST_DIR/output
-	output=$(./$exec base64 -d -i$TEST_DIR/output -o$TEST_DIR/original 2>&1)
-	assertEquals "$output" ""
-	output=$(diff $exec $TEST_DIR/original)
-	assertEquals "$output" ""
 	rm -rf $TEST_DIR
 }
 
-suite_addTest test_base64_simple
+suite_addTest test_base64_encrypt
+suite_addTest test_base64_decrypt

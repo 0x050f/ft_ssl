@@ -282,7 +282,7 @@ char			*des_cbc(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	if (options->mode == CMODE_ENCODE)
 	{
 		result = des_cbc_encrypt(str, size, res_len, options);
-		if (strchr(options->options, 'a'))
+		if (options->base64)
 		{
 			char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
 			free(result);
@@ -293,7 +293,7 @@ char			*des_cbc(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	}
 	else if (options->mode == CMODE_DECODE)
 	{
-		if (strchr(options->options, 'a'))
+		if (options->base64)
 		{
 			str = (unsigned char *)base64_decode(str, size, &size);
 			if (!str)
@@ -303,7 +303,7 @@ char			*des_cbc(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 			}
 		}
 		result = des_cbc_decrypt(str, size, res_len, options);
-		if (strchr(options->options, 'a'))
+		if (options->base64)
 			free(str);
 	}
 	return (result);

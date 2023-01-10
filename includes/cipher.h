@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #ifndef CIPHER_H
 # define CIPHER_H
 
@@ -6,8 +8,8 @@
 
 typedef struct		s_options
 {
-	char			*options;
 	int				mode;
+	bool			base64;
 	char			*infile;
 	char			*outfile;
 	char			*key;

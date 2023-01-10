@@ -1,5 +1,7 @@
 #include "ft_ssl.h"
 
+static int idx = 0;
+
 t_opt_arg		*new_opt_arg(char *arg, void *content)
 {
 	t_opt_arg	*new;
@@ -7,9 +9,11 @@ t_opt_arg		*new_opt_arg(char *arg, void *content)
 	new = malloc(sizeof(t_opt_arg));
 	if (!new)
 		return (NULL);
+	new->index = idx;
 	new->arg = strdup(arg);
 	new->content = content;
 	new->next = NULL;
+	idx++;
 	return (new);
 }
 
