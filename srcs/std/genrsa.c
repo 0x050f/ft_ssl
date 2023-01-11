@@ -29,10 +29,10 @@ uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
 
 	while (n) {
 		if (n % 2) {
-			z = (z * x) % p;
+			z = (z * (__int128_t)x) % p;
 		}
 		n /= 2;
-		x = (x * x) % p;
+		x = ((__int128_t)x * x) % p;
 	}
 	return (z);
 }
@@ -41,44 +41,55 @@ bool		miller(uint64_t n, uint64_t a) {
 	int			s;
 	uint64_t	d, x;
 
-	printf("a: %zu\n", a);
 	s = 0;
 	d = n - 1;
 	while (!(d % 2)) { // n - 1 = (2 ^ s) * d
 		s++;
 		d /= 2;
 	}
-	printf("%zu - 1 = (2 ^ %zu) * %zu\n", n, s, d);
 	x = power_mod(a, d, n);
-	printf("(%zu ^ %zu) %% %zu = %zu\n", a, d, n, x);
-	if (x == 1 || x == n - 1) {
-		printf("lol\n");
+	if (x == 1 || x == n - 1)
 		return (false);
-	}
-	printf("s: %d\n", s);
-	printf("x: %zu\n", x);
-	while (--s > 0) {
+	while (s-- > 0) {
 		x = power_mod(x, 2, n);
-		printf("x: %zu\n", x);
 		if (x == n - 1)
 			return (false);
 	}
-	printf("mais mdr\n");
 	return (true);
 }
 
-// Return true if integer n is probably prime (n odd >= 3, k >= 1)
-bool		miller_rabin(uint64_t n, size_t k) {
+// Return true if integer n is probably prime (n odd > 2, k > 0)
+bool		miller_rabin(uint64_t n, int k) {
+	if (n == 2 || n == 3) {
+		return (true);
+	}
+	if (n <= 1 || !(n % 2)) {
+		return (false);
+	}
 	uint64_t a;
 
-	while (k--) {
+	while (k-- > 0) {
 		a = rand_range(2, n - 2);
-		// random choose a between 2 and n - 2
-		printf("lool\n");
 		if (miller(n, a))
 			return (false);
 	}
 	return (true);
+}
+
+#include <math.h>
+
+double		pow(double, double);
+
+bool		check_prime(uint64_t n, double proba) {
+	if (!(proba >= 0.0 && proba <= 1.0))
+		return (false);
+
+	double nb_round = 1.0;
+	// miller-rabin: 75% chance on each round to detect a non-prime value
+	while (pow(0.25, nb_round) > 1.0 - proba) {
+		nb_round += 1;
+	}
+	return (miller_rabin(n, nb_round));
 }
 
 char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
@@ -91,14 +102,13 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	result = malloc(*res_len);
 	memset(result, 0, *res_len);
 
-	bool ret = miller_rabin(87178291199, 1000000);
-	if (ret) {
-		printf("miller-rabin: true\n");
-	} else {
-		printf("miller-rabin: false\n");
-	}
-
 	/* Solovay-Strassen < Miller-Rabin speed */
+
+	uint64_t prime = custom_rand();
+	while (!check_prime(prime, 1.0))
+		prime = custom_rand();
+	printf("%llu is prime\n", prime);
+
 
 	/* 1. choose two large prime numbers p and q */
 
