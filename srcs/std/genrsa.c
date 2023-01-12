@@ -1,95 +1,30 @@
 #include "ft_ssl.h"
 #include "std.h"
 
-uint64_t	custom_rand(void) {
-	uint64_t	result;
-	int			ret, fd;
+#define		ID_INTEGER			0x2
+#define		ID_OCTET			0x4
+#define		ID_NULL				0x5
+#define		ID_OBJECT			0x6
+#define		ID_SEQ				0x30
 
-	fd = open("/dev/urandom", O_RDONLY);
-	if (fd < 0) {
-		dprintf(STDERR_FILENO, "%s: open: /dev/urandom: %s\n", PRG_NAME, strerror(errno));
-		return (-1);
+#define		PUBLIC_EXPONENT		65537
+
+int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
+	unsigned __int128	tmp;
+	size_t				size;
+
+	size = 1;
+	tmp = nb;
+	while (tmp / 0xff) {
+		size++;
+		tmp /= 0xff;
 	}
-	ret = read(fd, &result, sizeof(result));
-	if (ret < 0) {
-		dprintf(STDERR_FILENO, "%s: read: /dev/urandom: %s\n", PRG_NAME, strerror(errno));
-		return (-1);
+	*dst++ = ID_INTEGER;
+	*dst++ = size;
+	for (int i = size - 1; i >= 0; i--) {
+		*dst++ = ((uint8_t *)&nb)[i];
 	}
-	close(fd);
-	return (result);
-}
-
-uint64_t	rand_range(uint64_t min, uint64_t max) {
-	return (custom_rand() % (max + 1 - min) + min);
-}
-
-/* Return x^n % p fast */
-uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
-	uint64_t z = 1;
-
-	while (n) {
-		if (n % 2) {
-			z = (z * (__int128_t)x) % p;
-		}
-		n /= 2;
-		x = ((__int128_t)x * x) % p;
-	}
-	return (z);
-}
-
-bool		miller(uint64_t n, uint64_t a) {
-	int			s;
-	uint64_t	d, x;
-
-	s = 0;
-	d = n - 1;
-	while (!(d % 2)) { // n - 1 = (2 ^ s) * d
-		s++;
-		d /= 2;
-	}
-	x = power_mod(a, d, n);
-	if (x == 1 || x == n - 1)
-		return (false);
-	while (s-- > 0) {
-		x = power_mod(x, 2, n);
-		if (x == n - 1)
-			return (false);
-	}
-	return (true);
-}
-
-// Return true if integer n is probably prime (n odd > 2, k > 0)
-bool		miller_rabin(uint64_t n, int k) {
-	if (n == 2 || n == 3) {
-		return (true);
-	}
-	if (n <= 1 || !(n % 2)) {
-		return (false);
-	}
-	uint64_t a;
-
-	while (k-- > 0) {
-		a = rand_range(2, n - 2);
-		if (miller(n, a))
-			return (false);
-	}
-	return (true);
-}
-
-#include <math.h>
-
-double		pow(double, double);
-
-bool		check_prime(uint64_t n, double proba) {
-	if (!(proba >= 0.0 && proba <= 1.0))
-		return (false);
-
-	double nb_round = 1.0;
-	// miller-rabin: 75% chance on each round to detect a non-prime value
-	while (pow(0.25, nb_round) > 1.0 - proba) {
-		nb_round += 1;
-	}
-	return (miller_rabin(n, nb_round));
+	return (2 + size);
 }
 
 char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
@@ -98,24 +33,120 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	char	*result;
 
 	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
-	*res_len = strlen(header) + strlen(footer) + 1;
+
+	/* 1. choose two large prime numbers p and q */
+	uint64_t p = custom_rand();
+	while (!check_prime(p, 1.0))
+		p = custom_rand();
+	uint64_t q = custom_rand();
+	while (!check_prime(q, 1.0))
+		q = custom_rand();
+
+//	p = 3732117569;
+//	q = 3725659649;
+
+	/* 2. compute n = pq */
+	unsigned __int128 n = p * q;
+	(void)n;
+
+	/* 3. phi = (p - 1)(q - 1) */
+	unsigned __int128 phi = (p - 1) * (q - 1);
+
+	/* 4. coprime phi */
+	unsigned __int128 e = PUBLIC_EXPONENT;
+	while (pgcd_binary(phi, e) != 1)
+		e++;
+
+	/* 5. modular multiplicative inverse */
+	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
+	unsigned __int128 d = inv_mod(e, phi);
+
+	printf("modulus (n): %llu\n", n);
+	printf("publicExponent (e): %llu\n", e);
+	printf("privateExponent (d): %llu\n", d);
+	printf("prime1 (p): %llu\n", p);
+	printf("prime2 (q): %llu\n", q);
+
+	unsigned __int128 dp = d % (p - 1);
+	unsigned __int128 dq = d % (q - 1);
+	unsigned __int128 qinv = inv_mod(q, p);
+
+	printf("exponent1 (dp): %llu\n", d % (p - 1));
+	printf("exponent2 (dq): %llu\n", d % (q - 1));
+	printf("coefficient (qinv): %llu\n", inv_mod(q, p));
+
+	uint8_t		to_encode[4096];
+	uint8_t		*ptr = to_encode;
+
+	memset(to_encode, 0, 4096);
+
+	// MASTER SEQUENCE
+	*ptr++ = ID_SEQ;
+	uint8_t		*size_asn = ptr++;
+
+	ptr += add_integer_asn1(ptr, 0);
+
+	// SEQUENCE OBJECT
+	*ptr++ = ID_SEQ;
+	*ptr++ = 0x0d;
+	
+	*ptr++ = ID_OBJECT;
+	*ptr++ = 0x09;
+
+	memcpy(ptr, "\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01", 0x09);
+	ptr += 0x09;
+
+	*ptr++ = ID_NULL;
+	*ptr++ = 0x0;
+
+	// OCTET STRING + SEQUENCE
+	*ptr++ = ID_OCTET;
+	uint8_t		*size_octet = ptr++;
+	*ptr++ = ID_SEQ;
+	ptr++;
+	size_t		size_seq = 0;
+
+	size_seq += add_integer_asn1(ptr + size_seq, 0);
+	size_seq += add_integer_asn1(ptr + size_seq, n);
+	size_seq += add_integer_asn1(ptr + size_seq, e);
+	size_seq += add_integer_asn1(ptr + size_seq, d);
+	size_seq += add_integer_asn1(ptr + size_seq, p);
+	size_seq += add_integer_asn1(ptr + size_seq, q);
+	size_seq += add_integer_asn1(ptr + size_seq, dp);
+	size_seq += add_integer_asn1(ptr + size_seq, dq);
+	size_seq += add_integer_asn1(ptr + size_seq, qinv);
+	*(ptr - 1) = size_seq;
+	*size_octet = size_seq + 2;
+	ptr += size_seq;
+	*size_asn = (ptr - to_encode) - 2;
+
+	size_t	len_encoded;
+	char	*encoded = base64_encode(to_encode, *size_asn + 2, &len_encoded);
+
+//	printf("phi: %llu\n", phi);
+
+	printf("done !\n");
+
+	*res_len = strlen(header) + strlen(footer) + len_encoded + ceil((double)len_encoded / 64.0) + 1;
 	result = malloc(*res_len);
 	memset(result, 0, *res_len);
 
-	/* Solovay-Strassen < Miller-Rabin speed */
+	ptr = (uint8_t *)result;
 
-	uint64_t prime = custom_rand();
-	while (!check_prime(prime, 1.0))
-		prime = custom_rand();
-	printf("%llu is prime\n", prime);
-
-
-	/* 1. choose two large prime numbers p and q */
-
-	/* 2. compute n = pq */
-
-	memcpy(result, header, strlen(header));
-	memcpy(result + *res_len - (strlen(footer) + 1), footer, strlen(footer));
+	memcpy(ptr, header, strlen(header));
+	ptr += strlen(header);
+	memcpy(ptr, encoded, len_encoded);
+	size_t i = len_encoded;
+	while (i) {
+		size_t len_copy = (i > 64) ? 64 : i;
+		memcpy(ptr, encoded + len_encoded - i, len_copy);
+		ptr += len_copy;
+		memcpy(ptr, "\n", 1);
+		ptr += 1;
+		i -= len_copy;
+	}
+	memcpy(ptr, footer, strlen(footer));
+	free(encoded);
 	(void)query;
 	(void)size;
 	(void)res_len;

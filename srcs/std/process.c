@@ -1,6 +1,137 @@
 #include "ft_ssl.h"
 #include "std.h"
 
+uint64_t	custom_rand(void) {
+	uint64_t	result;
+	int			ret, fd;
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd < 0) {
+		dprintf(STDERR_FILENO, "%s: open: /dev/urandom: %s\n", PRG_NAME, strerror(errno));
+		return (-1);
+	}
+	ret = read(fd, &result, sizeof(result));
+	if (ret < 0) {
+		dprintf(STDERR_FILENO, "%s: read: /dev/urandom: %s\n", PRG_NAME, strerror(errno));
+		return (-1);
+	}
+	close(fd);
+	return (result);
+}
+
+uint64_t	rand_range(uint64_t min, uint64_t max) {
+	return (custom_rand() % (max + 1 - min) + min);
+}
+
+/* Return x^n % p fast */
+uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
+	uint64_t z = 1;
+
+	while (n) {
+		if (n % 2) {
+			z = (z * (__int128_t)x) % p;
+		}
+		n /= 2;
+		x = ((__int128_t)x * x) % p;
+	}
+	return (z);
+}
+
+bool		miller(uint64_t n, uint64_t a) {
+	int			s;
+	uint64_t	d, x;
+
+	s = 0;
+	d = n - 1;
+	while (!(d % 2)) { // n - 1 = (2 ^ s) * d
+		s++;
+		d /= 2;
+	}
+	x = power_mod(a, d, n);
+	if (x == 1 || x == n - 1)
+		return (false);
+	while (s-- > 0) {
+		x = power_mod(x, 2, n);
+		if (x == n - 1)
+			return (false);
+	}
+	return (true);
+}
+
+// Return true if integer n is probably prime (n odd > 2, k > 0)
+bool		miller_rabin(uint64_t n, int k) {
+	if (n == 2 || n == 3) {
+		return (true);
+	}
+	if (n <= 1 || !(n % 2)) {
+		return (false);
+	}
+	uint64_t a;
+
+	while (k-- > 0) {
+		a = rand_range(2, n - 2);
+		if (miller(n, a))
+			return (false);
+	}
+	return (true);
+}
+
+/* https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm */
+unsigned __int128	inv_mod(unsigned __int128 a, unsigned __int128 n) {
+	__int128 t = 0;
+	__int128 newt = 1;
+	__int128 r = n;
+	__int128 newr = a;
+
+	while (newr) {
+		__int128 tmp;
+		__int128 quotient = r / newr;
+		// (t, newt) := (newt, t - quotient * newt)
+		tmp = newt;
+		newt = t - quotient * newt;
+		t = tmp;
+		// (r, newr) := (newr, r - quotient * newr)
+		tmp = newr;
+		newr = r - quotient * newr;
+		r = tmp;
+	}
+	if (r > 1)
+		return (0); // not invertible
+	if (t < 0)
+		t += n;
+	return (t);
+}
+
+unsigned __int128	pgcd_binary(unsigned __int128 a, unsigned __int128 b) {
+	if (!a)
+		return (b);
+	if (!(a % 2) && !(b % 2))
+		return (2 * pgcd_binary(a / 2, b / 2));
+	if ((a % 2) && !(b % 2))
+		return (pgcd_binary(a, b / 2));
+	if (!(a % 2) && (b % 2))
+		return (pgcd_binary(a / 2, b));
+	if (a < b) {
+		unsigned __int128 tmp = a;
+		a = b;
+		b = tmp;
+	}
+	return (pgcd_binary((a - b)/2, b));
+}
+
+bool		check_prime(uint64_t n, double proba) {
+	if (!(proba >= 0.0 && proba <= 1.0))
+		return (false);
+
+	double nb_round = 1.0;
+	// miller-rabin: 75% chance on each round to detect a non-prime value
+	while (pow(0.25, nb_round) > 1.0 - proba) {
+		nb_round += 1;
+	}
+	/* Solovay-Strassen < Miller-Rabin speed */
+	return (miller_rabin(n, nb_round));
+}
+
 char		*launch_std(char *cmd, char *query, size_t size, size_t *res_len, t_options *options) {
 	char *cmds[NB_STD_CMDS][2] = CMD_STD;
 	char *(*functions[NB_STD_CMDS])(uint8_t *, size_t, size_t *, t_options *) = FUNC_STD;
