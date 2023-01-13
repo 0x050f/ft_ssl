@@ -7,7 +7,14 @@
 #define		ID_OBJECT			0x6
 #define		ID_SEQ				0x30
 
+#define		RSA_OBJECTID		"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01"
+
 #define		PUBLIC_EXPONENT		65537
+
+struct asn1 {
+	size_t		length;
+	uint8_t		*content;
+};
 
 int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
 	unsigned __int128	tmp;
@@ -27,12 +34,77 @@ int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
 	return (2 + size);
 }
 
+struct asn1		create_asn1_rsa_private_key(
+	unsigned __int128 n,
+	unsigned __int128 e,
+	unsigned __int128 d,
+	unsigned __int128 p,
+	unsigned __int128 q,
+	unsigned __int128 dp,
+	unsigned __int128 dq,
+	unsigned __int128 qinv
+) {
+	struct asn1		result;
+	uint8_t			tmp[4096];
+	size_t			i = 0;
+
+	// MASTER SEQUENCE
+	tmp[i] = ID_SEQ;
+	// fill sequence size at the end
+	i += 2;
+
+	i += add_integer_asn1(tmp + i, 0);
+
+	// SEQUENCE OBJECT
+	tmp[i++] = ID_SEQ;
+	tmp[i++] = strlen(RSA_OBJECTID) + 2;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(RSA_OBJECTID);
+
+	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
+	i += strlen(RSA_OBJECTID);
+
+	// OCTET STRING + SEQUENCE
+	tmp[i++] = ID_OCTET;
+	size_t		idx_octet = i++;
+
+	tmp[i++] = ID_SEQ;
+	size_t		idx_seq = i++;
+
+	i += add_integer_asn1(tmp + i, 0);
+	i += add_integer_asn1(tmp + i, n);
+	i += add_integer_asn1(tmp + i, e);
+	i += add_integer_asn1(tmp + i, d);
+	i += add_integer_asn1(tmp + i, p);
+	i += add_integer_asn1(tmp + i, q);
+	i += add_integer_asn1(tmp + i, dp);
+	i += add_integer_asn1(tmp + i, dq);
+	i += add_integer_asn1(tmp + i, qinv);
+	tmp[idx_seq] = i - idx_seq - 1;
+	tmp[idx_octet] = i - idx_octet - 1;
+	tmp[1] = i - 2;
+
+	result.length = i;
+	result.content = malloc(i * sizeof(uint8_t));
+	if (!result.content) {
+		return (result);
+	}
+	memcpy(result.content, tmp, i);
+	return (result);
+}
+
 char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	char	header[] = "-----BEGIN PRIVATE KEY-----\n";
 	char	footer[] = "-----END PRIVATE KEY-----\n";
 	char	*result;
 
 	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
+
+	(void)query;
+	(void)size;
+	(void)res_len;
+	(void)options;
 
 	/* 1. choose two large prime numbers p and q */
 	uint64_t p = custom_rand();
@@ -41,9 +113,6 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	uint64_t q = custom_rand();
 	while (!check_prime(q, 1.0))
 		q = custom_rand();
-
-//	p = 3732117569;
-//	q = 3725659649;
 
 	/* 2. compute n = pq */
 	unsigned __int128 n = p * q;
@@ -61,77 +130,38 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
 	unsigned __int128 d = inv_mod(e, phi);
 
-	printf("modulus (n): %llu\n", n);
-	printf("publicExponent (e): %llu\n", e);
-	printf("privateExponent (d): %llu\n", d);
-	printf("prime1 (p): %llu\n", p);
-	printf("prime2 (q): %llu\n", q);
+	DPRINT("modulus (n): %llu\n", n);
+	DPRINT("publicExponent (e): %llu\n", e);
+	DPRINT("privateExponent (d): %llu\n", d);
+	DPRINT("prime1 (p): %llu\n", p);
+	DPRINT("prime2 (q): %llu\n", q);
 
 	unsigned __int128 dp = d % (p - 1);
 	unsigned __int128 dq = d % (q - 1);
 	unsigned __int128 qinv = inv_mod(q, p);
 
-	printf("exponent1 (dp): %llu\n", d % (p - 1));
-	printf("exponent2 (dq): %llu\n", d % (q - 1));
-	printf("coefficient (qinv): %llu\n", inv_mod(q, p));
+	DPRINT("exponent1 (dp): %llu\n", d % (p - 1));
+	DPRINT("exponent2 (dq): %llu\n", d % (q - 1));
+	DPRINT("coefficient (qinv): %llu\n", inv_mod(q, p));
 
-	uint8_t		to_encode[4096];
-	uint8_t		*ptr = to_encode;
-
-	memset(to_encode, 0, 4096);
-
-	// MASTER SEQUENCE
-	*ptr++ = ID_SEQ;
-	uint8_t		*size_asn = ptr++;
-
-	ptr += add_integer_asn1(ptr, 0);
-
-	// SEQUENCE OBJECT
-	*ptr++ = ID_SEQ;
-	*ptr++ = 0x0d;
-	
-	*ptr++ = ID_OBJECT;
-	*ptr++ = 0x09;
-
-	memcpy(ptr, "\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01", 0x09);
-	ptr += 0x09;
-
-	*ptr++ = ID_NULL;
-	*ptr++ = 0x0;
-
-	// OCTET STRING + SEQUENCE
-	*ptr++ = ID_OCTET;
-	uint8_t		*size_octet = ptr++;
-	*ptr++ = ID_SEQ;
-	ptr++;
-	size_t		size_seq = 0;
-
-	size_seq += add_integer_asn1(ptr + size_seq, 0);
-	size_seq += add_integer_asn1(ptr + size_seq, n);
-	size_seq += add_integer_asn1(ptr + size_seq, e);
-	size_seq += add_integer_asn1(ptr + size_seq, d);
-	size_seq += add_integer_asn1(ptr + size_seq, p);
-	size_seq += add_integer_asn1(ptr + size_seq, q);
-	size_seq += add_integer_asn1(ptr + size_seq, dp);
-	size_seq += add_integer_asn1(ptr + size_seq, dq);
-	size_seq += add_integer_asn1(ptr + size_seq, qinv);
-	*(ptr - 1) = size_seq;
-	*size_octet = size_seq + 2;
-	ptr += size_seq;
-	*size_asn = (ptr - to_encode) - 2;
+	struct asn1 rsa_asn1 = create_asn1_rsa_private_key(n, e, d, p, q, dp, dq, qinv);
+	if (!rsa_asn1.content) {
+		return (NULL);
+	}
 
 	size_t	len_encoded;
-	char	*encoded = base64_encode(to_encode, *size_asn + 2, &len_encoded);
+	char	*encoded = base64_encode(rsa_asn1.content, rsa_asn1.length, &len_encoded);
 
-//	printf("phi: %llu\n", phi);
+	free(rsa_asn1.content);
 
-	printf("done !\n");
-
+	// ceil used to provide newlines every 64 base64 char
 	*res_len = strlen(header) + strlen(footer) + len_encoded + ceil((double)len_encoded / 64.0) + 1;
 	result = malloc(*res_len);
+	if (!result)
+		return (NULL);
 	memset(result, 0, *res_len);
 
-	ptr = (uint8_t *)result;
+	uint8_t	*ptr = (uint8_t *)result;
 
 	memcpy(ptr, header, strlen(header));
 	ptr += strlen(header);
@@ -147,9 +177,5 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	}
 	memcpy(ptr, footer, strlen(footer));
 	free(encoded);
-	(void)query;
-	(void)size;
-	(void)res_len;
-	(void)options;
 	return (result);
 }

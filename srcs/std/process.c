@@ -152,8 +152,8 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	options->mode = (pos_e >= pos_d) ? CMODE_ENCRYPT : CMODE_DECRYPT;
 	options->std_output = true;
 	options->out = get_last_content(ssl->opt_args, "o");
-	options->in = get_last_content(ssl->opt_args, "in");
-	if (options->out && get_last_content(ssl->opt_args, "i")) {
+	options->in = get_last_content(ssl->opt_args, "i");
+	if (options->out && !get_last_arg(ssl->opt_args, "i")) {
 		options->std_output = false;
 	}
 	options->inkey = get_last_content(ssl->opt_args, "inkey");
@@ -177,7 +177,18 @@ void	process_std_stdin(char *cmd, t_options *options) {
 	char	*result;
 
 	result = launch_std(cmd, NULL, 0, &ret, options);
-	printf("%.*s", ret, result);
+	if (!result) {
+		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+		return ;
+	}
+	if (options->std_output) {
+		printf("%.*s", ret, result);
+	}
+	if (options->out) {
+		int fd = open(options->out, O_RDWR | O_TRUNC);
+		dprintf(fd, "%.*s", (int)ret, result);
+		close(fd);
+	}
 }
 
 void	process_std(t_ssl *ssl) {
