@@ -151,11 +151,11 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 	if (!result_size)
 		return ;
 	if (options->std_output) {
-		dprintf(STDOUT_FILENO, "%.*s", (int)result_size, result);
+		dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
 	}
 	if (options->out) {
 		int fd = open(options->out, O_RDWR | O_TRUNC);
-		dprintf(fd, "%.*s", (int)result_size, result);
+		dprintf(fd, "%.*s\n", (int)result_size, result);
 		close(fd);
 	}
 }
@@ -188,7 +188,7 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	return (0);
 }
 
-void	process_std_stdin(char *cmd, t_options *options) {
+int		process_std_stdin(char *cmd, t_options *options) {
 	size_t	ret;
 	size_t	size;
 	char	*query;
@@ -198,17 +198,18 @@ void	process_std_stdin(char *cmd, t_options *options) {
 	size = 0;
 	if (!strcmp(cmd, "rsa")) {
 		if (!(query = read_query(STDIN_FILENO, &size)))
-			return ;
+			return (1);
 	}
 	result = launch_std(cmd, query, size, &ret, options);
 	free(query);
 	if (!result) {
-		return ;
+		return (1);
 	}
 	print_std_result(result, ret, cmd, options);
+	return (0);
 }
 
-void	process_std_file(char *cmd, t_options *options) {
+int		process_std_file(char *cmd, t_options *options) {
 	size_t		result_size;
 	size_t		size;
 	char		*query;
@@ -218,47 +219,49 @@ void	process_std_file(char *cmd, t_options *options) {
 	if (fd < 0)
 	{
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, strerror(errno));
-		return ;
+		return (1);
 	}
 	struct stat buf;
 	if (fstat(fd, &buf) != 0) {
 		close(fd);
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, strerror(errno));
-		return ;
+		return (1);
 	}
 	if (S_ISDIR(buf.st_mode)) {
 		close(fd);
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, "Is a directory");
-		return ;
+		return (1);
 	}
 	if (!(query = read_query(fd, &size)))
 	{
 		close(fd);
-		return ;
+		return (1);
 	}
 	result = launch_std(cmd, query, size, &result_size, options);
 	if (!result) {
 		free(query);
 		close(fd);
-		return ;
+		return (1);
 	}
 	print_std_result(result, result_size, cmd, options);
 	free(query);
 	free(result);
 	close(fd);
+	return (0);
 }
 
-void	process_std(t_ssl *ssl) {
+int		process_std(t_ssl *ssl) {
 	int				ret;
 	t_options		options;
 
 	memset(&options, 0, sizeof(t_options));
 	ret = fill_std_options(&options, ssl);
 	if (ret)
-		return ;
+		return (ret);
 	if (!options.in) {
-		process_std_stdin(ssl->cmd, &options);
+		ret = process_std_stdin(ssl->cmd, &options);
 	} else {
-		process_std_file(ssl->cmd, &options);
+		ret = process_std_file(ssl->cmd, &options);
 	}
+	return (ret);
 }

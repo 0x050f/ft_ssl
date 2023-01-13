@@ -1,21 +1,6 @@
 #include "ft_ssl.h"
 #include "std.h"
 
-#define		ID_INTEGER			0x2
-#define		ID_OCTET			0x4
-#define		ID_NULL				0x5
-#define		ID_OBJECT			0x6
-#define		ID_SEQ				0x30
-
-#define		RSA_OBJECTID		"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01"
-
-#define		PUBLIC_EXPONENT		65537
-
-struct asn1 {
-	size_t		length;
-	uint8_t		*content;
-};
-
 int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
 	unsigned __int128	tmp;
 	size_t				size;
@@ -57,13 +42,16 @@ struct asn1		create_asn1_rsa_private_key(
 
 	// SEQUENCE OBJECT
 	tmp[i++] = ID_SEQ;
-	tmp[i++] = strlen(RSA_OBJECTID) + 2;
+	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
 
 	tmp[i++] = ID_OBJECT;
 	tmp[i++] = strlen(RSA_OBJECTID);
 
 	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
 	i += strlen(RSA_OBJECTID);
+
+//	tmp[i++] = ID_NULL; // not needed but provided by openssl
+//	tmp[i++] = 0x0;
 
 	// OCTET STRING + SEQUENCE
 	tmp[i++] = ID_OCTET;
@@ -94,44 +82,20 @@ struct asn1		create_asn1_rsa_private_key(
 	return (result);
 }
 
-char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
-	char	header[] = "-----BEGIN PRIVATE KEY-----\n";
-	char	footer[] = "-----END PRIVATE KEY-----\n";
+char		*generate_base64_private_rsa(
+	unsigned __int128	n,
+	unsigned __int128	e,
+	unsigned __int128	d,
+	unsigned __int128	p,
+	unsigned __int128	q,
+	unsigned __int128	dp,
+	unsigned __int128	dq,
+	unsigned __int128	qinv,
+	size_t				*res_len
+) {
+	char	header[] = HEADER_PRIVATE;
+	char	footer[] = FOOTER_PRIVATE;
 	char	*result;
-
-	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
-
-	(void)query;
-	(void)size;
-	(void)res_len;
-	(void)options;
-
-	/* 1. choose two large prime numbers p and q */
-	uint64_t p = custom_rand();
-	while (!check_prime(p, 1.0))
-		p = custom_rand();
-	uint64_t q = custom_rand();
-	while (!check_prime(q, 1.0))
-		q = custom_rand();
-
-	/* 2. compute n = pq */
-	unsigned __int128 n = (unsigned __int128)p * q;
-
-	/* 3. phi = (p - 1)(q - 1) */
-	unsigned __int128 phi = ((unsigned __int128)p - 1) * (q - 1);
-
-	/* 4. coprime phi */
-	unsigned __int128 e = PUBLIC_EXPONENT;
-	while (pgcd_binary(phi, e) != 1)
-		e++;
-
-	/* 5. modular multiplicative inverse */
-	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
-	unsigned __int128 d = inv_mod(e, phi);
-
-	unsigned __int128 dp = d % (p - 1);
-	unsigned __int128 dq = d % (q - 1);
-	unsigned __int128 qinv = inv_mod(q, p);
 
 	struct asn1 rsa_asn1 = create_asn1_rsa_private_key(n, e, d, p, q, dp, dq, qinv);
 	if (!rsa_asn1.content) {
@@ -167,4 +131,43 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	memcpy(ptr, footer, strlen(footer));
 	free(encoded);
 	return (result);
+}
+
+char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
+
+	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
+
+	(void)query;
+	(void)size;
+	(void)res_len;
+	(void)options;
+
+	/* 1. choose two large prime numbers p and q */
+	uint64_t p = custom_rand();
+	while (!check_prime(p, 1.0))
+		p = custom_rand();
+	uint64_t q = custom_rand();
+	while (!check_prime(q, 1.0))
+		q = custom_rand();
+
+	/* 2. compute n = pq */
+	unsigned __int128 n = (unsigned __int128)p * q;
+
+	/* 3. phi = (p - 1)(q - 1) */
+	unsigned __int128 phi = ((unsigned __int128)p - 1) * (q - 1);
+
+	/* 4. coprime phi */
+	unsigned __int128 e = PUBLIC_EXPONENT;
+	while (pgcd_binary(phi, e) != 1)
+		e++;
+
+	/* 5. modular multiplicative inverse */
+	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
+	unsigned __int128 d = inv_mod(e, phi);
+
+	unsigned __int128 dp = d % (p - 1);
+	unsigned __int128 dq = d % (q - 1);
+	unsigned __int128 qinv = inv_mod(q, p);
+
+	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, res_len));
 }

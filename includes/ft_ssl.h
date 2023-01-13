@@ -1,6 +1,8 @@
 #ifndef FT_SSL_H
 # define FT_SSL_H
 
+# define _GNU_SOURCE
+
 # include <errno.h>
 # include <fcntl.h>
 # include <math.h>
@@ -8,7 +10,7 @@
 # include <stdlib.h>
 # include <stdint.h>
 # include <string.h>
-# include  <sys/stat.h>
+# include <sys/stat.h>
 # include <time.h>
 # include <unistd.h>
 
@@ -173,8 +175,8 @@ int			isprintable(char *str);
 char		*read_query(int fd, size_t *size);
 
 /* process.c */
-void		process_cipher(t_ssl *ssl);
-void		process_hash(t_ssl *ssl);
-void		process_std(t_ssl *ssl);
+int			process_cipher(t_ssl *ssl);
+int			process_hash(t_ssl *ssl);
+int			process_std(t_ssl *ssl);
 
 #endif

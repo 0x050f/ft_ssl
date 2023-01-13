@@ -123,10 +123,11 @@ void		process_hash_stdin(t_ssl *ssl)
 	free(result);
 }
 
-void		process_hash(t_ssl *ssl)
+int		process_hash(t_ssl *ssl)
 {
 	if ((!get_last_arg(ssl->opt_args, "s") && !get_last_arg(ssl->opt_args, "f")) || get_last_arg(ssl->opt_args, "p"))
 		process_hash_stdin(ssl);
 	process_hash_strings(ssl);
 	process_hash_files(ssl);
+	return (0);
 }

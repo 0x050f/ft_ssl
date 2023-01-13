@@ -175,7 +175,7 @@ void		print_cipher_result(char *result, size_t result_size, char *cmd, t_options
 		close(fd);
 }
 
-void		process_cipher_file(char *cmd, t_options *options)
+int			process_cipher_file(char *cmd, t_options *options)
 {
 	size_t		size;
 	char		*query;
@@ -186,38 +186,39 @@ void		process_cipher_file(char *cmd, t_options *options)
 	if (fd < 0)
 	{
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, strerror(errno));
-		return ;
+		return (1);
 	}
 	struct stat buf;
 	if (fstat(fd, &buf) != 0) {
 		close(fd);
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, strerror(errno));
-		return ;
+		return (1);
 	}
 	if (S_ISDIR(buf.st_mode)) {
 		close(fd);
 		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->infile, "Is a directory");
-		return ;
+		return (1);
 	}
 	if (!(query = read_query(fd, &size)))
 	{
 		close(fd);
-		return ;
+		return (1);
 	}
 	result = launch_cipher(cmd, query, size, &result_size, options);
 	if (!result)
 	{
 		free(query);
 		close(fd);
-		return ;
+		return (1);
 	}
 	print_cipher_result(result, result_size, cmd, options);
 	free(query);
 	free(result);
 	close(fd);
+	return (0);
 }
 
-void		process_cipher_stdin(char *cmd, t_options *options)
+int			process_cipher_stdin(char *cmd, t_options *options)
 {
 	size_t	size;
 	char	*query;
@@ -225,16 +226,17 @@ void		process_cipher_stdin(char *cmd, t_options *options)
 	size_t	result_size;
 
 	if (!(query = read_query(STDIN_FILENO, &size)))
-		return ;
+		return (1);
 	result = launch_cipher(cmd, query, size, &result_size, options);
 	if (!result)
 	{
 		free(query);
-		return ;
+		return (1);
 	}
 	print_cipher_result(result, result_size, cmd, options);
 	free(query);
 	free(result);
+	return (0);
 }
 
 int			fill_cipher_options(t_options *options, t_ssl *ssl)
@@ -282,14 +284,14 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 			{
 				free(password);
 				dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
-				return (-1);
+				return (1);
 			}
 			if (strcmp(tmp, password))
 			{
 				free(password);
 				printf("Verify failure\n");
 				dprintf(STDERR_FILENO, "bad password read\n");
-				return (-2);
+				return (2);
 			}
 		}
 		options->password = password;
@@ -299,17 +301,19 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 	return (0);
 }
 
-void	process_cipher(t_ssl *ssl)
+int		process_cipher(t_ssl *ssl)
 {
+	int				ret;
 	t_options		options;
 
 	memset(&options, 0, sizeof(t_options));
-	int ret = fill_cipher_options(&options, ssl);
+	ret = fill_cipher_options(&options, ssl);
 	if (ret)
-		return ;
+		return (ret);
 	if (!get_last_arg(ssl->opt_args, "i"))
-		process_cipher_stdin(ssl->cmd, &options);
+		ret = process_cipher_stdin(ssl->cmd, &options);
 	else
-		process_cipher_file(ssl->cmd, &options);
+		ret = process_cipher_file(ssl->cmd, &options);
 	free(options.password);
+	return (ret);
 }
