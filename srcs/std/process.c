@@ -103,6 +103,8 @@ unsigned __int128	inv_mod(unsigned __int128 a, unsigned __int128 n) {
 }
 
 unsigned __int128	pgcd_binary(unsigned __int128 a, unsigned __int128 b) {
+	if (!b)
+		return (1);
 	if (!a)
 		return (b);
 	if (!(a % 2) && !(b % 2))
@@ -144,6 +146,20 @@ char		*launch_std(char *cmd, char *query, size_t size, size_t *res_len, t_option
 	return (NULL);
 }
 
+void	print_std_result(char *result, size_t result_size, char *cmd, t_options *options) {
+	(void)cmd;
+	if (!result_size)
+		return ;
+	if (options->std_output) {
+		dprintf(STDOUT_FILENO, "%.*s", (int)result_size, result);
+	}
+	if (options->out) {
+		int fd = open(options->out, O_RDWR | O_TRUNC);
+		dprintf(fd, "%.*s", (int)result_size, result);
+		close(fd);
+	}
+}
+
 int		fill_std_options(t_options *options, t_ssl *ssl) {
 	t_opt_arg *arg = get_last_arg(ssl->opt_args, "decrypt");
 	int pos_d = arg ? arg->index : -1;
@@ -152,7 +168,7 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	options->mode = (pos_e >= pos_d) ? CMODE_ENCRYPT : CMODE_DECRYPT;
 	options->std_output = true;
 	options->out = get_last_content(ssl->opt_args, "o");
-	options->in = get_last_content(ssl->opt_args, "i");
+	options->in = get_last_content(ssl->opt_args, "in");
 	if (options->out && !get_last_arg(ssl->opt_args, "i")) {
 		options->std_output = false;
 	}
@@ -174,21 +190,62 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 
 void	process_std_stdin(char *cmd, t_options *options) {
 	size_t	ret;
+	size_t	size;
+	char	*query;
 	char	*result;
 
-	result = launch_std(cmd, NULL, 0, &ret, options);
+	query = NULL;
+	size = 0;
+	if (!strcmp(cmd, "rsa")) {
+		if (!(query = read_query(STDIN_FILENO, &size)))
+			return ;
+	}
+	result = launch_std(cmd, query, size, &ret, options);
+	free(query);
 	if (!result) {
-		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 		return ;
 	}
-	if (options->std_output) {
-		printf("%.*s", ret, result);
+	print_std_result(result, ret, cmd, options);
+}
+
+void	process_std_file(char *cmd, t_options *options) {
+	size_t		result_size;
+	size_t		size;
+	char		*query;
+	char		*result;
+
+	int fd = open(options->in, O_RDONLY);
+	if (fd < 0)
+	{
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, strerror(errno));
+		return ;
 	}
-	if (options->out) {
-		int fd = open(options->out, O_RDWR | O_TRUNC);
-		dprintf(fd, "%.*s", (int)ret, result);
+	struct stat buf;
+	if (fstat(fd, &buf) != 0) {
 		close(fd);
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, strerror(errno));
+		return ;
 	}
+	if (S_ISDIR(buf.st_mode)) {
+		close(fd);
+		dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->in, "Is a directory");
+		return ;
+	}
+	if (!(query = read_query(fd, &size)))
+	{
+		close(fd);
+		return ;
+	}
+	result = launch_std(cmd, query, size, &result_size, options);
+	if (!result) {
+		free(query);
+		close(fd);
+		return ;
+	}
+	print_std_result(result, result_size, cmd, options);
+	free(query);
+	free(result);
+	close(fd);
 }
 
 void	process_std(t_ssl *ssl) {
@@ -199,5 +256,9 @@ void	process_std(t_ssl *ssl) {
 	ret = fill_std_options(&options, ssl);
 	if (ret)
 		return ;
-	process_std_stdin(ssl->cmd, &options);
+	if (!options.in) {
+		process_std_stdin(ssl->cmd, &options);
+	} else {
+		process_std_file(ssl->cmd, &options);
+	}
 }

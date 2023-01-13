@@ -208,6 +208,7 @@ void		process_cipher_file(char *cmd, t_options *options)
 	if (!result)
 	{
 		free(query);
+		close(fd);
 		return ;
 	}
 	print_cipher_result(result, result_size, cmd, options);

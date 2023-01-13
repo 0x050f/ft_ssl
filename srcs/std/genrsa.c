@@ -129,19 +129,9 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
 	unsigned __int128 d = inv_mod(e, phi);
 
-	DPRINT("modulus (n): %llu\n", n);
-	DPRINT("publicExponent (e): %llu\n", e);
-	DPRINT("privateExponent (d): %llu\n", d);
-	DPRINT("prime1 (p): %llu\n", p);
-	DPRINT("prime2 (q): %llu\n", q);
-
 	unsigned __int128 dp = d % (p - 1);
 	unsigned __int128 dq = d % (q - 1);
 	unsigned __int128 qinv = inv_mod(q, p);
-
-	DPRINT("exponent1 (dp): %llu\n", d % (p - 1));
-	DPRINT("exponent2 (dq): %llu\n", d % (q - 1));
-	DPRINT("coefficient (qinv): %llu\n", inv_mod(q, p));
 
 	struct asn1 rsa_asn1 = create_asn1_rsa_private_key(n, e, d, p, q, dp, dq, qinv);
 	if (!rsa_asn1.content) {
