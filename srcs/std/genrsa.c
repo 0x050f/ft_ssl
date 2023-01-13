@@ -115,11 +115,10 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 		q = custom_rand();
 
 	/* 2. compute n = pq */
-	unsigned __int128 n = p * q;
-	(void)n;
+	unsigned __int128 n = (unsigned __int128)p * q;
 
 	/* 3. phi = (p - 1)(q - 1) */
-	unsigned __int128 phi = (p - 1) * (q - 1);
+	unsigned __int128 phi = ((unsigned __int128)p - 1) * (q - 1);
 
 	/* 4. coprime phi */
 	unsigned __int128 e = PUBLIC_EXPONENT;
