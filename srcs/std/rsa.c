@@ -1,15 +1,15 @@
 #include "ft_ssl.h"
 #include "std.h"
 
-struct rsa {
-	unsigned __int128 n;
-	unsigned __int128 e;
-	unsigned __int128 d;
-	unsigned __int128 p;
-	unsigned __int128 q;
-	unsigned __int128 dp;
-	unsigned __int128 dq;
-	unsigned __int128 qinv;
+struct __attribute__((__packed__)) rsa {
+	unsigned __int128	n;
+	unsigned __int128	e;
+	unsigned __int128	d;
+	unsigned __int128	p;
+	unsigned __int128	q;
+	unsigned __int128	dp;
+	unsigned __int128	dq;
+	unsigned __int128	qinv;
 };
 
 int		check_asn1_sequence(uint8_t *asn1, size_t size) {
@@ -71,9 +71,9 @@ unsigned __int128		get_asn1_integer(uint8_t *asn1) {
 
 	asn1 += 2;
 	nb = 0;
-	while (size--) {
-		nb *= 0xff;
-		nb += asn1[size];
+	for (size_t i = 0; i < size; i++) {
+		nb *= 256;
+		nb += asn1[i];
 	}
 	return (nb);
 }
@@ -89,7 +89,6 @@ int			parse_rsa_asn1_octet(struct rsa *rsa, uint8_t *asn1, int nb) {
 	while (i - 2 < octet_size) {
 		unsigned __int128 result = get_asn1_integer(&asn1[i]);
 		memcpy(&buffer[j], &result, 16);
-		buffer[j] = get_asn1_integer(&asn1[i]);
 		size_t integer_size = asn1[i + 1];
 		i += integer_size + 2;
 		j += 16;
@@ -136,16 +135,52 @@ int		read_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
 	return (0);
 }
 
+char	*get_hexa_repr(unsigned __int128 n) {
+	char				buf[3];
+	char				*hexa;
+	size_t				size_nb;
+	size_t				tmp;
+	unsigned __int128	nbis;
+
+	nbis = n;
+	size_nb = 0;
+	while (nbis) {
+		nbis /= 256;
+		size_nb++;
+	}
+
+	nbis = n;
+	hexa = malloc((size_nb * 3) * sizeof(char));
+	if (!hexa)
+		return (NULL);
+	tmp = size_nb;
+	while (tmp--) {
+		sprintf(buf, "%02x:", ((uint8_t *)&nbis)[0]);
+		memcpy(&hexa[tmp * 3], buf, 3);
+		nbis /= 256;
+	}
+	hexa[size_nb * 3 - 1] = '\0';
+	return (hexa);
+}
+
+int		get_size_in_bits(unsigned __int128 n) {
+	unsigned __int128 i;
+
+	for (i = 0; i < 128 && n; i++) {
+		if (((unsigned __int128)1 << i) & n) {
+			n ^= ((unsigned __int128)1 << i);
+		}
+	}
+	return (i);
+}
+
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	char	header_private[] = HEADER_PRIVATE;
 	char	footer_private[] = FOOTER_PRIVATE;
 	size_t		result_size;
 	char		*result;
 
-	(void)header_private;
-	(void)footer_private;
 	(void)size;
-	(void)options;
 	DPRINT("rsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
 	result_size = 0;
@@ -168,6 +203,35 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	int ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
 	if (ret)
 		goto could_not_read;
+	if (options->text) {
+		char *str;
+
+		ret = asprintf(&str, "Private-Key: (%d bit, %d primes)\n", get_size_in_bits(rsa.n), 2);
+		if (ret < 0) {
+			free(result);
+			return (NULL);
+		}
+		result = realloc(result, result_size + strlen(str));
+		strcpy(result + result_size, str);
+		result_size += strlen(str);
+		free(str);
+		char *hex = get_hexa_repr(rsa.n);
+		ret = asprintf(&str, "modulus:\n    %s\n", hex);
+		free(hex);
+		result = realloc(result, result_size + strlen(str));
+		strcpy(result + result_size, str);
+		result_size += strlen(str);
+		free(str);
+		/*
+		ret = asprintf(&str, "Private-Key: (%d bit, %d primes)\n)", );
+		asprintf(&str, "Private-Key: (%d bit, %d primes)\n
+modulus: abc\n
+publicExponent: %d (%x)\n
+privateExponent: abc\n
+prime1: %llu (%llx)\n
+prime2: %llu");
+		*/
+	}
 	if (!options->noout) {
 		printf("writing RSA key\n");
 		size_t len_encoded;
