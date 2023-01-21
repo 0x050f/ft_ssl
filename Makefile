@@ -30,7 +30,8 @@ SRCS			=	ft_ssl.c \
 					std/process.c \
 					std/genrsa.c \
 					std/rsa.c \
-					std/rsautl.c
+					std/rsautl.c \
+					std/asn1.c
 
 INCLUDES		=	ft_ssl.h \
 					cipher.h \

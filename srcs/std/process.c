@@ -154,7 +154,7 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 		dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
 	}
 	if (options->out) {
-		int fd = open(options->out, O_RDWR | O_TRUNC);
+		int fd = open(options->out, O_CREAT | O_WRONLY | O_TRUNC);
 		dprintf(fd, "%.*s\n", (int)result_size, result);
 		close(fd);
 	}

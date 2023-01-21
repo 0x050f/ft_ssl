@@ -33,6 +33,17 @@ struct asn1 {
 	uint8_t		*content;
 };
 
+struct __attribute__((__packed__)) rsa {
+	unsigned __int128	n;
+	unsigned __int128	e;
+	unsigned __int128	d;
+	unsigned __int128	p;
+	unsigned __int128	q;
+	unsigned __int128	dp;
+	unsigned __int128	dq;
+	unsigned __int128	qinv;
+};
+
 #define		ID_INTEGER			0x2
 #define		ID_OCTET			0x4
 #define		ID_NULL				0x5
@@ -69,5 +80,8 @@ char	*rsa(unsigned char *query, size_t size, size_t *res_len, t_options *options
 
 /* rsautl.c */
 char	*rsautl(unsigned char *query, size_t size, size_t *res_len, t_options *options);
+
+/* asn1.c */
+int		read_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size);
 
 #endif
