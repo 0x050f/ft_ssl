@@ -10,7 +10,6 @@ void		show_options(int fd, char ***options, int nb_options)
 {
 	int		sum;
 
-	printf("nb_options: %d\n", nb_options);
 	for (int i = 0; i < nb_options; i++)
 	{
 		sum = 0;

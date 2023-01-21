@@ -88,6 +88,9 @@ char	*get_text_from_rsa(struct rsa *rsa) {
 			free(str);
 			return (NULL);
 		}
+		str = realloc(str, strlen(str) + strlen(tmp) + 1);
+		strcpy(str + strlen(str), tmp);
+		free(tmp);
 		for (size_t n = 0; n < 8; n++) {
 			if (get_size_in_bits(buff[n]) <= 64) { // decimal (0xhexa) repr
 				ret = asprintf(&tmp, "%s: %lu (%#lx)\n",
@@ -132,19 +135,21 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!result) {
 		return (NULL);
 	}
-	char *start = strstr((char *)query, (char *)header_private);
+	char *start = memmem((char *)query, size, (char *)header_private, strlen(header_private));
 	if (!start)
 		goto could_not_read;
 	start += strlen(header_private);
-	char *end = strstr(start, (char *)footer_private);
+	char *end = memmem(start, size - ((void *)start - (void *)query), (char *)footer_private, strlen(footer_private));
 	if (!end)
 		goto could_not_read;
 	size_t cipher_size;
+	printf("%d\n", end - start);
 	uint8_t *cipher_res = (uint8_t *)base64_decode((unsigned char *)start, end - start, &cipher_size);
 	if (!cipher_res)
 		goto could_not_read;
 	struct rsa rsa;
 	int ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+	free(cipher_res);
 	if (ret)
 		goto could_not_read;
 	if (options->text) {
@@ -162,11 +167,18 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		printf("writing RSA key\n");
 		size_t len_encoded;
 		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, &len_encoded);
-		result = realloc(result, result_size + len_encoded);
-		if (!result)
+		if (!encoded) {
+			free(result);
 			return (NULL);
+		}
+		result = realloc(result, result_size + len_encoded);
+		if (!result) {
+			free(encoded);
+			return (NULL);
+		}
 		memcpy(result + result_size, encoded, len_encoded);
 		result_size += len_encoded;
+		free(encoded);
 	}
 	*res_len = result_size;
 	return (result);

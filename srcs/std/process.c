@@ -154,7 +154,12 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 		dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
 	}
 	if (options->out) {
-		int fd = open(options->out, O_CREAT | O_WRONLY | O_TRUNC);
+		int rights = (options->pubout) ? 0644 : 0600; // Create locked file if private key
+		int fd = open(options->out, O_CREAT | O_WRONLY | O_TRUNC, rights);
+		if (fd < 0) {
+			dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->out, strerror(errno));
+			return ;
+		}
 		dprintf(fd, "%.*s\n", (int)result_size, result);
 		close(fd);
 	}
@@ -206,6 +211,7 @@ int		process_std_stdin(char *cmd, t_options *options) {
 		return (1);
 	}
 	print_std_result(result, ret, cmd, options);
+	free(result);
 	return (0);
 }
 

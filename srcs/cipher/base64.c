@@ -17,7 +17,7 @@ char			*base64_decode(unsigned char *str, size_t size, size_t *res_len)
 	size_t padding = 0;
 	for (size_t i = 0; i < size; i++)
 	{
-		if (!strchr(base, str[i]) && str[i] != '=') /* not a base64 char */
+		if (!memchr(base, str[i], 64) && str[i] != '=') /* not a base64 char */
 			return (NULL);
 		if (str[i] == '=')
 		{
