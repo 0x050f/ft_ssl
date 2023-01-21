@@ -164,6 +164,7 @@ void		show_usage(int fd);
 int			args_error(int error, char *str, int range1, int range2);
 
 /* utils.c */
+char		*add_padding_str(char *str, size_t size_line, char *padd_str);
 void		hex2bytes(uint8_t *result, size_t size, const char *hex);
 uint64_t	hex2int64(const char *hex);
 uint32_t	hex2int32(const char *hex);

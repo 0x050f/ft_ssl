@@ -1,5 +1,28 @@
 #include "ft_ssl.h"
 
+//TODO: make version with no str (mem)
+char	*add_padding_str(char *str, size_t size_line, char *padd_str) {
+	char		*new;
+	size_t		new_len;
+	size_t		i, j;
+
+	new_len = strlen(str) + ((strlen(str) - 1) / size_line) * (strlen(padd_str) + 1) + 1;
+	new = malloc(new_len);
+	if (!new)
+		return (NULL);
+	i = 0;
+	j = 0;
+	while (i < strlen(str) + 1) {
+		if (i && !(i % size_line)) {
+			new[j++] = '\n';
+			memcpy(new + j, padd_str, strlen(padd_str));
+			j += strlen(padd_str);
+		}
+		new[j++] = str[i++];
+	}
+	return (new);
+}
+
 void		hex2bytes(uint8_t *result, size_t size, const char *hex)
 {
 	size_t		i = 0;

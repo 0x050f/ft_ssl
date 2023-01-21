@@ -1,6 +1,138 @@
 #include "ft_ssl.h"
 #include "std.h"
 
+int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
+	unsigned __int128	tmp;
+	size_t				size;
+
+	size = 1;
+	tmp = nb;
+	while (tmp / 0xff) {
+		size++;
+		tmp /= 0xff;
+	}
+	*dst++ = ID_INTEGER;
+	*dst++ = size;
+	for (int i = size - 1; i >= 0; i--) {
+		*dst++ = ((uint8_t *)&nb)[i];
+	}
+	return (2 + size);
+}
+
+struct asn1		create_asn1_rsa_public_key (
+	unsigned __int128 n,
+	unsigned __int128 e
+) {
+	struct asn1		result;
+	uint8_t			tmp[4096];
+	size_t			i = 0;
+
+	// MASTER SEQUENCE
+	tmp[i] = ID_SEQ;
+	// fill sequence size at the end
+	i += 2;
+
+	i += add_integer_asn1(tmp + i, 0);
+
+	// SEQUENCE OBJECT
+	tmp[i++] = ID_SEQ;
+	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(RSA_OBJECTID);
+
+	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
+	i += strlen(RSA_OBJECTID);
+
+//	tmp[i++] = ID_NULL; // not needed but provided by openssl
+//	tmp[i++] = 0x0;
+
+	// BIT STRING + SEQUENCE
+	tmp[i++] = ID_BIT;
+	size_t		idx_octet = i++;
+
+	tmp[i++] = ID_SEQ;
+	size_t		idx_seq = i++;
+
+	i += add_integer_asn1(tmp + i, n);
+	i += add_integer_asn1(tmp + i, e);
+
+	tmp[idx_seq] = i - idx_seq - 1;
+	tmp[idx_octet] = i - idx_octet - 1;
+	tmp[1] = i - 2;
+
+	result.length = i;
+	result.content = malloc(i * sizeof(uint8_t));
+	if (!result.content) {
+		return (result);
+	}
+	memcpy(result.content, tmp, i);
+	return (result);
+}
+
+struct asn1		create_asn1_rsa_private_key(
+	unsigned __int128 n,
+	unsigned __int128 e,
+	unsigned __int128 d,
+	unsigned __int128 p,
+	unsigned __int128 q,
+	unsigned __int128 dp,
+	unsigned __int128 dq,
+	unsigned __int128 qinv
+) {
+	struct asn1		result;
+	uint8_t			tmp[4096];
+	size_t			i = 0;
+
+	// MASTER SEQUENCE
+	tmp[i] = ID_SEQ;
+	// fill sequence size at the end
+	i += 2;
+
+	i += add_integer_asn1(tmp + i, 0);
+
+	// SEQUENCE OBJECT
+	tmp[i++] = ID_SEQ;
+	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(RSA_OBJECTID);
+
+	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
+	i += strlen(RSA_OBJECTID);
+
+//	tmp[i++] = ID_NULL; // not needed but provided by openssl
+//	tmp[i++] = 0x0;
+
+	// OCTET STRING + SEQUENCE
+	tmp[i++] = ID_OCTET;
+	size_t		idx_octet = i++;
+
+	tmp[i++] = ID_SEQ;
+	size_t		idx_seq = i++;
+
+	i += add_integer_asn1(tmp + i, 0);
+	i += add_integer_asn1(tmp + i, n);
+	i += add_integer_asn1(tmp + i, e);
+	i += add_integer_asn1(tmp + i, d);
+	i += add_integer_asn1(tmp + i, p);
+	i += add_integer_asn1(tmp + i, q);
+	i += add_integer_asn1(tmp + i, dp);
+	i += add_integer_asn1(tmp + i, dq);
+	i += add_integer_asn1(tmp + i, qinv);
+	tmp[idx_seq] = i - idx_seq - 1;
+	tmp[idx_octet] = i - idx_octet - 1;
+	tmp[1] = i - 2;
+
+	result.length = i;
+	result.content = malloc(i * sizeof(uint8_t));
+	if (!result.content) {
+		return (result);
+	}
+	memcpy(result.content, tmp, i);
+	return (result);
+}
+
 int		check_asn1_sequence(uint8_t *asn1, size_t size) {
 	if (asn1[0] != ID_SEQ)
 		return (1);

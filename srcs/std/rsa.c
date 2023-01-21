@@ -40,28 +40,6 @@ int		get_size_in_bits(unsigned __int128 n) {
 	return (i);
 }
 
-char	*add_padding_str(char *str, size_t size_line, char *padd_str) {
-	char		*new;
-	size_t		new_len;
-	size_t		i, j;
-
-	new_len = strlen(str) + ((strlen(str) - 1) / size_line) * (strlen(padd_str) + 1) + 1;
-	new = malloc(new_len);
-	if (!new)
-		return (NULL);
-	i = 0;
-	j = 0;
-	while (i < strlen(str) + 1) {
-		if (i && !(i % size_line)) {
-			new[j++] = '\n';
-			memcpy(new + j, padd_str, strlen(padd_str));
-			j += strlen(padd_str);
-		}
-		new[j++] = str[i++];
-	}
-	return (new);
-}
-
 static char *var_name[] = {
 	[0]		= "modulus",
 	[1]		= "publicExponent",
@@ -163,10 +141,25 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		result_size += strlen(str);
 		free(str);
 	}
-	if (!options->noout) {
+	if (!options->noout && !options->pubout && !options->pubin) {
 		printf("writing RSA key\n");
 		size_t len_encoded;
 		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, &len_encoded);
+		if (!encoded) {
+			free(result);
+			return (NULL);
+		}
+		result = realloc(result, result_size + len_encoded);
+		if (!result) {
+			free(encoded);
+			return (NULL);
+		}
+		memcpy(result + result_size, encoded, len_encoded);
+		result_size += len_encoded;
+		free(encoded);
+	} else if (!options->noout) {
+		size_t len_encoded;
+		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, &len_encoded);
 		if (!encoded) {
 			free(result);
 			return (NULL);
