@@ -262,7 +262,7 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 	{
 		char msg[256];
 
-		sprintf(msg, "enter %s encryption password: ", ssl->cmd);
+		snprintf(msg, 256, "enter %s encryption password: ", ssl->cmd);
 		char *tmp = getpass(msg);
 		if (!tmp)
 		{
@@ -278,7 +278,7 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 		if (options->mode == CMODE_ENCODE) // Don't verify password in decode mode
 		{
 			//TODO: ask password when verifying header ?
-			sprintf(msg, "Verifying - enter %s encryption password: ", ssl->cmd);
+			snprintf(msg, 256, "Verifying - enter %s encryption password: ", ssl->cmd);
 			tmp = getpass(msg);
 			if (!tmp)
 			{

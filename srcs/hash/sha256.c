@@ -102,7 +102,7 @@ char		*sha256(uint8_t *str, size_t size)
 		return (NULL);
 	}
 	for (int i = 0; i < 8; i++)
-		sprintf(hash + 8 * i, "%08x", h_array[i]);
+		snprintf(hash + 8 * i, 64, "%08x", h_array[i]);
 	hash[64] = '\0';
 	return (hash);
 }
