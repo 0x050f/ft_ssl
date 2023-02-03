@@ -2,7 +2,7 @@
 #include "std.h"
 
 char	*get_hexa_repr(unsigned __int128 n) {
-	char				buf[3];
+	char				buf[4];
 	char				*hexa;
 	size_t				size_nb;
 	size_t				tmp;
@@ -204,7 +204,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	if (options->modulus) {
 		char buf[256];
-		sprintf(buf, "Modulus=%lX\n", rsa.n);
+		sprintf(buf, "Modulus=%lX\n", (unsigned long)rsa.n);
 		result = realloc(result, result_size + strlen(buf) + 1);
 		strcpy(result + result_size, buf);
 		result_size += strlen(buf);
