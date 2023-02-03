@@ -114,6 +114,10 @@ int			handle_options(
 			ssl->cmd = NULL;
 			return (0);
 		}
+		else if (!strcmp(ssl->cmd, "genrsa") || !strcmp(ssl->cmd, "rsa")) {
+			//TODO add cipher etc..
+			return (0);
+		}
 		while (argv[*i][j]) {
 			char **option = search_short_option(
 				&argv[*i][j], cmd_options->options, cmd_options->nb_options

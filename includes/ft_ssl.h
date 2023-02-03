@@ -95,6 +95,7 @@
 
 # define NB_STD_OPTIONS	18
 # define STD_OPTIONS		{ \
+		{"-v", "-verbose", NULL, "verbose output", NULL}, \
 		{"-i", NULL, NULL, "print in the standard output"}, \
 		{NULL, "-in", "<file>", "input file", NULL}, \
 		{"-o", "-out", "<output>", "output file", NULL}, \

@@ -26,6 +26,7 @@ typedef struct		s_options
 	char			*outform;
 	char			*passin;
 	char			*passout;
+	char			*cipher;
 }					t_options;
 
 struct asn1 {
