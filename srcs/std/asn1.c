@@ -32,8 +32,6 @@ struct asn1		create_asn1_rsa_public_key (
 	// fill sequence size at the end
 	i += 2;
 
-	i += add_integer_asn1(tmp + i, 0);
-
 	// SEQUENCE OBJECT
 	tmp[i++] = ID_SEQ;
 	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
@@ -50,6 +48,7 @@ struct asn1		create_asn1_rsa_public_key (
 	// BIT STRING + SEQUENCE
 	tmp[i++] = ID_BIT;
 	size_t		idx_octet = i++;
+    tmp[i++] = 0x0;
 
 	tmp[i++] = ID_SEQ;
 	size_t		idx_seq = i++;

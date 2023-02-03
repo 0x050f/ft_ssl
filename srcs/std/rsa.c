@@ -121,7 +121,6 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!end)
 		goto could_not_read;
 	size_t cipher_size;
-	printf("%d\n", end - start);
 	uint8_t *cipher_res = (uint8_t *)base64_decode((unsigned char *)start, end - start, &cipher_size);
 	if (!cipher_res)
 		goto could_not_read;
@@ -142,7 +141,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		free(str);
 	}
 	if (!options->noout && !options->pubout && !options->pubin) {
-		printf("writing RSA key\n");
+		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
 		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, &len_encoded);
 		if (!encoded) {
@@ -158,6 +157,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		result_size += len_encoded;
 		free(encoded);
 	} else if (!options->noout) {
+		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
 		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, &len_encoded);
 		if (!encoded) {
