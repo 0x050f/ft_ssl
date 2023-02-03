@@ -151,7 +151,10 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 	if (!result_size)
 		return ;
 	if (options->std_output) {
-		dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
+		if (result[result_size - 1] != '\n')
+			dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
+		else
+			dprintf(STDOUT_FILENO, "%.*s", (int)result_size, result);
 	}
 	if (options->out) {
 		int rights = (options->pubout) ? 0644 : 0600; // Create locked file if private key
@@ -160,7 +163,10 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 			dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->out, strerror(errno));
 			return ;
 		}
-		dprintf(fd, "%.*s\n", (int)result_size, result);
+		if (result[result_size - 1] != '\n')
+			dprintf(fd, "%.*s\n", (int)result_size, result);
+		else
+			dprintf(fd, "%.*s", (int)result_size, result);
 		close(fd);
 	}
 }
