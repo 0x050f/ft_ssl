@@ -53,19 +53,51 @@ static char *var_name[] = {
 };
 
 char	*get_text_from_rsa(struct rsa *rsa, bool public) {
-		unsigned __int128 		buff[sizeof(struct rsa)];
-		int						ret;
-		char					*tmp;
-		char					*str;
+	unsigned __int128 		buff[sizeof(struct rsa)];
+	int						ret;
+	char					*tmp;
+	char					*str;
 
-		memcpy(buff, rsa, sizeof(struct rsa));
-		str = strdup("");
-		if (!str)
-			return (NULL);
-		if (!public)
-			ret = asprintf(&tmp, "Private-Key: (%d bit, %d primes)\n", get_size_in_bits(rsa->n), 2);
-		else
-			ret = asprintf(&tmp, "Public-Key: (%d bit)\n", get_size_in_bits(rsa->n));
+	memcpy(buff, rsa, sizeof(struct rsa));
+	str = strdup("");
+	if (!str)
+		return (NULL);
+	if (!public)
+		ret = asprintf(&tmp, "Private-Key: (%d bit, %d primes)\n", get_size_in_bits(rsa->n), 2);
+	else
+		ret = asprintf(&tmp, "Public-Key: (%d bit)\n", get_size_in_bits(rsa->n));
+	if (ret < 0) {
+		free(str);
+		return (NULL);
+	}
+	str = realloc(str, strlen(str) + strlen(tmp) + 1);
+	strcpy(str + strlen(str), tmp);
+	free(tmp);
+	size_t nb = 8;
+	if (public)
+		nb = 2;
+	for (size_t n = 0; n < nb; n++) {
+		char *name = (char *)var_name[n];
+		if (public && n == 1)
+			name = (char *)var_name[8];
+		if (get_size_in_bits(buff[n]) <= 64) { // decimal (0xhexa) repr
+			ret = asprintf(&tmp, "%s: %lu (%#lx)\n",
+				name, (unsigned long)buff[n], (unsigned long)buff[n]);
+		}
+		else { // hex:hex:hex repr
+			char	*hex = get_hexa_repr(buff[n]);
+			if (!hex) {
+				free(str);
+				return (NULL);
+			}
+			char *new_hex = add_padding_str(hex, 15 * 3, "    ");
+			free(hex);
+			if (!new_hex) {
+				free(str);
+				return (NULL);
+			}
+			ret = asprintf(&tmp, "%s:\n    %s\n", name, new_hex);
+		}
 		if (ret < 0) {
 			free(str);
 			return (NULL);
@@ -73,60 +105,63 @@ char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 		str = realloc(str, strlen(str) + strlen(tmp) + 1);
 		strcpy(str + strlen(str), tmp);
 		free(tmp);
-		size_t nb = 8;
-		if (public)
-			nb = 2;
-		for (size_t n = 0; n < nb; n++) {
-			char *name = (char *)var_name[n];
-			if (public && n == 1)
-				name = (char *)var_name[8];
-			if (get_size_in_bits(buff[n]) <= 64) { // decimal (0xhexa) repr
-				ret = asprintf(&tmp, "%s: %lu (%#lx)\n",
-					name, (unsigned long)buff[n], (unsigned long)buff[n]);
-			}
-			else { // hex:hex:hex repr
-				char	*hex = get_hexa_repr(buff[n]);
-				if (!hex) {
-					free(str);
-					return (NULL);
-				}
-				char *new_hex = add_padding_str(hex, 15 * 3, "    ");
-				free(hex);
-				if (!new_hex) {
-					free(str);
-					return (NULL);
-				}
-				ret = asprintf(&tmp, "%s:\n    %s\n", name, new_hex);
-			}
-			if (ret < 0) {
-				free(str);
-				return (NULL);
-			}
-			str = realloc(str, strlen(str) + strlen(tmp) + 1);
-			strcpy(str + strlen(str), tmp);
-			free(tmp);
-		}
-		return (str);
+	}
+	return (str);
+}
+
+int		check_rsa(
+	unsigned __int128 n,
+	unsigned __int128 e,
+	unsigned __int128 d,
+	unsigned __int128 p,
+	unsigned __int128 q,
+	unsigned __int128 dp,
+	unsigned __int128 dq,
+	unsigned __int128 qinv
+) {
+	unsigned __int128 phi;
+
+	if (!check_prime(p, 1.0))
+		return (1);
+	if (!check_prime(q, 1.0))
+		return (1);
+	if (n != (unsigned __int128)p * q)
+		return (1);
+	phi = ((unsigned __int128)p - 1) * (q - 1);
+	if (pgcd_binary(phi, e) != 1)
+		return (1);
+	if (d != inv_mod(e, phi))
+		return (1);
+	if (dp != d % (p - 1))
+		return (1);
+	if (dq != d % (q - 1))
+		return (1);
+	if (qinv != inv_mod(q, p))
+		return (1);
+	return (0);
 }
 
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
-	char	header_private[] = HEADER_PRIVATE;
-	char	footer_private[] = FOOTER_PRIVATE;
-	char	header_public[] = HEADER_PUBLIC;
-	char	footer_public[] = FOOTER_PUBLIC;
+	char		*header;
+	char		*footer;
+	char		header_private[] = HEADER_PRIVATE;
+	char		footer_private[] = FOOTER_PRIVATE;
+	char		header_public[] = HEADER_PUBLIC;
+	char		footer_public[] = FOOTER_PUBLIC;
 	size_t		result_size;
 	char		*result;
 
-	(void)size;
 	DPRINT("rsa(\"%.*s\", %zu)\n", (int)size, query, size);
+
+	if (options->check && options->pubin) {
+		dprintf(STDERR_FILENO, "Only private keys can be checked\n");
+		return (NULL);
+	}
 
 	result_size = 0;
 	result = malloc(result_size);
-	if (!result) {
+	if (!result)
 		return (NULL);
-	}
-	char *header;
-	char *footer;
 	if (!options->pubin) {
 		header = (char *)header_private;
 		footer = (char *)footer_private;
@@ -134,15 +169,15 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		header = (char *)header_public;
 		footer = (char *)footer_public;
 	}
-	char *start = memmem((char *)query, size, (char *)header, strlen(header));
+	void *start = memmem(query, size, header, strlen(header));
 	if (!start)
 		goto could_not_read;
 	start += strlen(header);
-	char *end = memmem(start, size - ((void *)start - (void *)query), (char *)footer, strlen(footer));
+	void *end = memmem(start, size - (start - (void *)query), footer, strlen(footer));
 	if (!end)
 		goto could_not_read;
 	size_t cipher_size;
-	uint8_t *cipher_res = (uint8_t *)base64_decode((unsigned char *)start, end - start, &cipher_size);
+	uint8_t *cipher_res = (uint8_t *)base64_decode(start, end - start, &cipher_size);
 	if (!cipher_res)
 		goto could_not_read;
 	struct rsa rsa;
@@ -166,6 +201,26 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		strcpy(result + result_size, str);
 		result_size += strlen(str);
 		free(str);
+	}
+	if (options->modulus) {
+		char buf[256];
+		sprintf(buf, "Modulus=%lX\n", rsa.n);
+		result = realloc(result, result_size + strlen(buf) + 1);
+		strcpy(result + result_size, buf);
+		result_size += strlen(buf);
+	}
+	if (options->check) {
+		char buf[256];
+		if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
+			sprintf(buf, "RSA key ok\n");
+			result = realloc(result, result_size + strlen(buf) + 1);
+			strcpy(result + result_size, buf);
+			result_size += strlen(buf);
+		} else {
+			dprintf(STDERR_FILENO, "RSA key not ok\n");
+			*res_len = result_size;
+			return (result);
+		}
 	}
 	if (!options->noout && !options->pubout && !options->pubin) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
