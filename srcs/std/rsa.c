@@ -48,10 +48,11 @@ static char *var_name[] = {
 	[4]		= "prime2",
 	[5]		= "exponent1",
 	[6]		= "exponent2",
-	[7]		= "coefficient"
+	[7]		= "coefficient",
+	[8]		= "Exponent"
 };
 
-char	*get_text_from_rsa(struct rsa *rsa) {
+char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 		unsigned __int128 		buff[sizeof(struct rsa)];
 		int						ret;
 		char					*tmp;
@@ -61,7 +62,10 @@ char	*get_text_from_rsa(struct rsa *rsa) {
 		str = strdup("");
 		if (!str)
 			return (NULL);
-		ret = asprintf(&tmp, "Private-Key: (%d bit, %d primes)\n", get_size_in_bits(rsa->n), 2);
+		if (!public)
+			ret = asprintf(&tmp, "Private-Key: (%d bit, %d primes)\n", get_size_in_bits(rsa->n), 2);
+		else
+			ret = asprintf(&tmp, "Public-Key: (%d bit)\n", get_size_in_bits(rsa->n));
 		if (ret < 0) {
 			free(str);
 			return (NULL);
@@ -69,10 +73,16 @@ char	*get_text_from_rsa(struct rsa *rsa) {
 		str = realloc(str, strlen(str) + strlen(tmp) + 1);
 		strcpy(str + strlen(str), tmp);
 		free(tmp);
-		for (size_t n = 0; n < 8; n++) {
+		size_t nb = 8;
+		if (public)
+			nb = 2;
+		for (size_t n = 0; n < nb; n++) {
+			char *name = (char *)var_name[n];
+			if (public && n == 1)
+				name = (char *)var_name[8];
 			if (get_size_in_bits(buff[n]) <= 64) { // decimal (0xhexa) repr
 				ret = asprintf(&tmp, "%s: %lu (%#lx)\n",
-					var_name[n], (unsigned long)buff[n], (unsigned long)buff[n]);
+					name, (unsigned long)buff[n], (unsigned long)buff[n]);
 			}
 			else { // hex:hex:hex repr
 				char	*hex = get_hexa_repr(buff[n]);
@@ -86,7 +96,7 @@ char	*get_text_from_rsa(struct rsa *rsa) {
 					free(str);
 					return (NULL);
 				}
-				ret = asprintf(&tmp, "%s:\n    %s\n", var_name[n], new_hex);
+				ret = asprintf(&tmp, "%s:\n    %s\n", name, new_hex);
 			}
 			if (ret < 0) {
 				free(str);
@@ -102,6 +112,8 @@ char	*get_text_from_rsa(struct rsa *rsa) {
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	char	header_private[] = HEADER_PRIVATE;
 	char	footer_private[] = FOOTER_PRIVATE;
+	char	header_public[] = HEADER_PUBLIC;
+	char	footer_public[] = FOOTER_PUBLIC;
 	size_t		result_size;
 	char		*result;
 
@@ -113,11 +125,20 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!result) {
 		return (NULL);
 	}
-	char *start = memmem((char *)query, size, (char *)header_private, strlen(header_private));
+	char *header;
+	char *footer;
+	if (!options->pubin) {
+		header = (char *)header_private;
+		footer = (char *)footer_private;
+	} else {
+		header = (char *)header_public;
+		footer = (char *)footer_public;
+	}
+	char *start = memmem((char *)query, size, (char *)header, strlen(header));
 	if (!start)
 		goto could_not_read;
-	start += strlen(header_private);
-	char *end = memmem(start, size - ((void *)start - (void *)query), (char *)footer_private, strlen(footer_private));
+	start += strlen(header);
+	char *end = memmem(start, size - ((void *)start - (void *)query), (char *)footer, strlen(footer));
 	if (!end)
 		goto could_not_read;
 	size_t cipher_size;
@@ -125,12 +146,18 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!cipher_res)
 		goto could_not_read;
 	struct rsa rsa;
-	int ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+	int ret;
+	if (!options->pubin) {
+		ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+	}
+	else {
+		ret = read_public_rsa_asn1(&rsa, cipher_res, cipher_size);
+	}
 	free(cipher_res);
 	if (ret)
 		goto could_not_read;
 	if (options->text) {
-		char *str = get_text_from_rsa(&rsa);
+		char *str = get_text_from_rsa(&rsa, options->pubin);
 		if (!str) {
 			free(result);
 			return (NULL);
@@ -176,10 +203,14 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	*res_len = result_size;
 	return (result);
 	could_not_read:
-		if (options->in)
+		if (options->in && !options->pubin)
 			dprintf(STDERR_FILENO, "Could not read private key from %s\n", options->in);
-		else
+		else if (!options->pubin)
 			dprintf(STDERR_FILENO, "Could not read private key from %s\n", "<stdin>");
+		else if (options->in)
+			dprintf(STDERR_FILENO, "Could not read public key from %s\n", options->in);
+		else
+			dprintf(STDERR_FILENO, "Could not read public key from %s\n", "<stdin>");
 		free(result);
 		return (NULL);
 }
