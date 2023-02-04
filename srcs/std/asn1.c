@@ -43,7 +43,21 @@ void		embed_asn1_elem(struct asn1 *asn1, uint8_t elem) {
 	for (int j = nb_bytes - 1; j >= 0; j--) {
 		asn1->content[i++] = ((uint8_t *)&(asn1->length))[j];
 	}
+	if (elem == ID_BIT)
+		asn1->content[i] = '\x00';
 	asn1->length += add_size;
+}
+
+void		append_asn1_content(struct asn1 *asn1, void *content, size_t size) {
+	if (!asn1->content || !content)
+		return ;
+
+	asn1->content = realloc(asn1->content, asn1->length + size);
+	if (!asn1->content) {
+		return ;
+	}
+	memcpy(asn1->content + asn1->length, content, size);
+	asn1->length += size;
 }
 
 void		append_asn1_elem(struct asn1 *asn1, uint8_t elem,
@@ -66,14 +80,20 @@ void *content, size_t content_size) {
 		asn1->content = NULL;
 		return ;
 	}
-	asn1->content = realloc(asn1->content, asn1->length + copy.length);
+	append_asn1_content(asn1, copy.content, copy.length);
+	free(copy.content);
+}
+
+void		prepend_asn1_content(struct asn1 *asn1, void *content, size_t size) {
+	if (!asn1->content || !content)
+		return ;
+	asn1->content = realloc(asn1->content, asn1->length + size);
 	if (!asn1->content) {
-		free(copy.content);
 		return ;
 	}
-	memcpy(asn1->content + asn1->length, copy.content, copy.length);
-	asn1->length += copy.length;
-	free(copy.content);
+	memmove(asn1->content + size, asn1->content, asn1->length);
+	memcpy(asn1->content, content, size);
+	asn1->length += size;
 }
 
 void		prepend_asn1_elem(struct asn1 *asn1, uint8_t elem,
@@ -96,67 +116,50 @@ void *content, size_t content_size) {
 		asn1->content = NULL;
 		return ;
 	}
-	asn1->content = realloc(asn1->content, asn1->length + copy.length);
-	if (!asn1->content) {
-		free(copy.content);
-		return ;
-	}
-	memmove(asn1->content + copy.length, asn1->content, asn1->length);
-	memcpy(asn1->content, copy.content, copy.length);
-	asn1->length += copy.length;
+	prepend_asn1_content(asn1, copy.content, copy.length);
 	free(copy.content);
 }
 
-/*
 struct asn1		create_asn1_rsa_public_key (
 	unsigned __int128 n,
 	unsigned __int128 e
 ) {
-	struct asn1		result;
-	uint8_t			tmp[4096];
-	size_t			i = 0;
+	unsigned __int128 tmp;
+	struct asn1		asn1;
 
-	// MASTER SEQUENCE
-	tmp[i] = ID_SEQ;
-	// fill sequence size at the end
-	i += 2;
+	bzero(&asn1, sizeof(struct asn1));
+	asn1.content = malloc(0);
+	if (!asn1.content)
+		return (asn1);
 
-	// SEQUENCE OBJECT
-	tmp[i++] = ID_SEQ;
-	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
+	tmp = inv_nb(n);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(n));
+	tmp = inv_nb(e);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(e));
 
-	tmp[i++] = ID_OBJECT;
-	tmp[i++] = strlen(RSA_OBJECTID);
+	embed_asn1_elem(&asn1, ID_SEQ);
+	prepend_asn1_content(&asn1, "\x00", 1);
+	embed_asn1_elem(&asn1, ID_BIT);
 
-	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
-	i += strlen(RSA_OBJECTID);
+	struct asn1		header;
 
-//	tmp[i++] = ID_NULL; // not needed but provided by openssl
-//	tmp[i++] = 0x0;
-
-	// BIT STRING + SEQUENCE
-	tmp[i++] = ID_BIT;
-	size_t		idx_octet = i++;
-    tmp[i++] = 0x0;
-
-	tmp[i++] = ID_SEQ;
-	size_t		idx_seq = i++;
-
-	i += add_integer_asn1(tmp + i, n);
-	i += add_integer_asn1(tmp + i, e);
-
-	tmp[idx_seq] = i - idx_seq - 1;
-	tmp[idx_octet] = i - idx_octet - 1;
-	tmp[1] = i - 2;
-
-	result.length = i;
-	result.content = malloc(i * sizeof(uint8_t));
-	if (!result.content) {
-		return (result);
+	bzero(&header, sizeof(struct asn1));
+	header.content = malloc(0);
+	if (!header.content) {
+		free(asn1.content);
+		asn1.content = NULL;
+		return (asn1);
 	}
-	memcpy(result.content, tmp, i);
-	return (result);
+	append_asn1_elem(&header, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID));
+	//header.content = append_asn1_elem(header.content, &header.length, ID_NULL, "\x00", 1); // not needed but provided by openssl
+
+	prepend_asn1_elem(&asn1, ID_SEQ, header.content, header.length);
+	free(header.content);
+
+	embed_asn1_elem(&asn1, ID_SEQ);
+	return (asn1);
 }
+/*
 
 struct asn1		create_asn1_des_ecb(
 	char		*payload,

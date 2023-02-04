@@ -12,11 +12,7 @@ char		*generate_base64_public_rsa(
 	char footer[] = FOOTER_PUBLIC;
 	char *result;
 
-	(void)e;
-	(void)n;
-	struct asn1 rsa_asn1;
-	bzero(&rsa_asn1, sizeof(struct asn1));
-//	struct asn1 rsa_asn1 = create_asn1_rsa_public_key(n, e);
+	struct asn1 rsa_asn1 = create_asn1_rsa_public_key(n, e);
 	if (!rsa_asn1.content) {
 		return (NULL);
 	}
