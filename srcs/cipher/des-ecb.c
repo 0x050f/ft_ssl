@@ -100,8 +100,15 @@ void		get_salt(uint8_t dest[8], char *salt)
 	b_memcpy(dest, &tmp, 8);
 }
 
-int			get_key_encrypt(uint64_t *key_output, uint8_t *salt_output, char *key, char *salt, uint64_t *iv, char *password, int iter)
-{
+int			get_key_encrypt(
+	uint64_t *key_output,
+	uint8_t *salt_output,
+	char *key,
+	char *salt,
+	uint64_t *iv,
+	char *password,
+	int iter
+) {
 	if (!key)
 	{
 		/* PKBFD */
@@ -142,15 +149,12 @@ int			get_key_encrypt(uint64_t *key_output, uint8_t *salt_output, char *key, cha
 	return (0);
 }
 
-// TODO: opti without key given parameter with Salted__ output size
-// refacto a bit
-char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
-{
-	uint8_t		salt[8];
-	uint64_t	key;
-	if (get_key_encrypt(&key, salt, options->key, options->salt, NULL, options->password, options->iter) < 0)
-		return (NULL);
-
+char			*des_ecb_encrypt_from_key(
+	uint8_t			*str,
+	size_t			size,
+	uint64_t		key,
+	size_t			*res_len
+) {
 	size_t padding = 0;
 	if (size % 8)
 		padding = (8 - (size % 8));
@@ -241,13 +245,36 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(ciphertext + i, &block, 8);
 	}
-	if (!options->key)
+	free(plaintext);
+	return (ciphertext);
+}
+
+// TODO: opti without key given parameter with Salted__ output size
+// refacto a bit
+char			*des_ecb_encrypt(
+	unsigned char	*str,
+	size_t			size,
+	char			*key_input,
+	char			*salt_input,
+	char			*password,
+	int				iter,
+	size_t			*res_len
+) {
+	char		*ciphertext;
+	uint8_t		salt[8];
+	uint64_t	key;
+
+	if (get_key_encrypt(&key, salt, key_input, salt_input, NULL, password, iter) < 0)
+		return (NULL);
+	ciphertext = des_ecb_encrypt_from_key(str, size, key, res_len);
+	if (!ciphertext)
+		return (NULL);
+	if (!key_input)
 	{
 		*res_len += 16;
 		char *new_cipher = malloc(sizeof(char) * *res_len);
 		if (!new_cipher)
 		{
-			free(plaintext);
 			free(ciphertext);
 			return (NULL);
 		}
@@ -257,13 +284,20 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		free(ciphertext);
 		ciphertext = new_cipher;
 	}
-	free(plaintext);
 	return (ciphertext);
 }
 
-int			get_key_decrypt(unsigned char **str, size_t *size, uint64_t *key_output, char *key, uint64_t *iv, char *password, int iter)
-{
+int		get_key_decrypt(
+	unsigned char **str,
+	size_t *size,
+	uint64_t *key_output,
+	char *key,
+	uint64_t *iv,
+	char *password,
+	int iter
+) {
 	uint8_t		salt[8];
+
 	if (!key)
 	{
 		/* PKBDF */
@@ -303,12 +337,12 @@ int			get_key_decrypt(unsigned char **str, size_t *size, uint64_t *key_output, c
 	return (0);
 }
 
-char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
-{
-	uint64_t	key;
-	if (get_key_decrypt(&str, &size, &key, options->key, NULL, options->password, options->iter) < 0)
-		return (NULL);
-
+char			*des_ecb_decrypt_from_key(
+	uint8_t		*str,
+	size_t		size,
+	uint64_t	key,
+	size_t		*res_len
+) {
 	*res_len = 0;
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
 	if (!ciphertext)
@@ -401,6 +435,23 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (plaintext);
 }
 
+char			*des_ecb_decrypt(
+	unsigned char *str,
+	size_t size,
+	char *key_input,
+	char *password,
+	int iter,
+	size_t *res_len
+) {
+	char		*plaintext;
+	uint64_t	key;
+
+	if (get_key_decrypt(&str, &size, &key, key_input, NULL, password, iter) < 0)
+		return (NULL);
+	plaintext = des_ecb_decrypt_from_key(str, size, key, res_len);
+	return (plaintext);
+}
+
 char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	DPRINT("des_ecb(\"%.*s\", %zu)\n", (int)size, str, size);
@@ -409,7 +460,7 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
 	{
-		result = des_ecb_encrypt(str, size, res_len, options);
+		result = des_ecb_encrypt(str, size, options->key, options->salt, options->password, options->iter, res_len);
 			if (options->base64)
 			{
 				char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
@@ -430,7 +481,7 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 				return (NULL);
 			}
 		}
-		result = des_ecb_decrypt(str, size, res_len, options);
+		result = des_ecb_decrypt(str, size, options->key, options->password, options->iter, res_len);
 	}
 	return (result);
 }

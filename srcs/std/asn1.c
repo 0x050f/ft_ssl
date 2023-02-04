@@ -1,24 +1,113 @@
 #include "ft_ssl.h"
 #include "std.h"
 
-int			add_integer_asn1(uint8_t *dst, unsigned __int128 nb) {
-	unsigned __int128	tmp;
-	size_t				size;
+int			get_size_in_byte(unsigned __int128 n) {
+	int count = 1;
 
-	size = 1;
-	tmp = nb;
-	while (tmp / 0xff) {
-		size++;
-		tmp /= 0xff;
+	while (n / 0xff) {
+		count++;
+		n /= 0xff;
 	}
-	*dst++ = ID_INTEGER;
-	*dst++ = size;
-	for (int i = size - 1; i >= 0; i--) {
-		*dst++ = ((uint8_t *)&nb)[i];
-	}
-	return (2 + size);
+	return (count);
 }
 
+unsigned __int128		inv_nb(unsigned __int128 n) {
+	unsigned __int128	ret;
+	int					nb_bytes;
+	int					i;
+
+	i = 0;
+	nb_bytes = get_size_in_byte(n);
+	for (int j = nb_bytes - 1; j >= 0; j--) {
+		((uint8_t *)&ret)[i++] = ((uint8_t *)&n)[j];
+	}
+	return (ret);
+}
+
+void		embed_asn1_elem(struct asn1 *asn1, uint8_t elem) {
+	size_t		add_size;
+	int		nb_bytes;
+
+	if (!asn1->content)
+		return ;
+	nb_bytes = get_size_in_byte(asn1->length);
+	add_size = (nb_bytes > 1) ? nb_bytes + 2 : nb_bytes + 1;
+	asn1->content = realloc(asn1->content, add_size + asn1->length);
+	if (!asn1->content)
+		return ;
+	memmove(asn1->content + add_size, asn1->content, asn1->length);
+	int i = 0;
+	asn1->content[i++] = elem;
+	if (nb_bytes > 1)
+		asn1->content[i++] = 0x80 + nb_bytes;
+	for (int j = nb_bytes - 1; j >= 0; j--) {
+		asn1->content[i++] = ((uint8_t *)&(asn1->length))[j];
+	}
+	asn1->length += add_size;
+}
+
+void		append_asn1_elem(struct asn1 *asn1, uint8_t elem,
+void *content, size_t content_size) {
+	if (!asn1->content || !content)
+		return ;
+	struct asn1 copy;
+
+	copy.content = malloc(content_size);
+	copy.length = content_size;
+	if (!copy.content) {
+		free(asn1->content);
+		asn1->content = NULL;
+		return ;
+	}
+	memcpy(copy.content, content, content_size);
+	embed_asn1_elem(&copy, elem);
+	if (!copy.content) {
+		free(asn1->content);
+		asn1->content = NULL;
+		return ;
+	}
+	asn1->content = realloc(asn1->content, asn1->length + copy.length);
+	if (!asn1->content) {
+		free(copy.content);
+		return ;
+	}
+	memcpy(asn1->content + asn1->length, copy.content, copy.length);
+	asn1->length += copy.length;
+	free(copy.content);
+}
+
+void		prepend_asn1_elem(struct asn1 *asn1, uint8_t elem,
+void *content, size_t content_size) {
+	if (!asn1->content || !content)
+		return ;
+	struct asn1 copy;
+
+	copy.content = malloc(content_size);
+	copy.length = content_size;
+	if (!copy.content) {
+		free(asn1->content);
+		asn1->content = NULL;
+		return ;
+	}
+	memcpy(copy.content, content, content_size);
+	embed_asn1_elem(&copy, elem);
+	if (!copy.content) {
+		free(asn1->content);
+		asn1->content = NULL;
+		return ;
+	}
+	asn1->content = realloc(asn1->content, asn1->length + copy.length);
+	if (!asn1->content) {
+		free(copy.content);
+		return ;
+	}
+	memmove(asn1->content + copy.length, asn1->content, asn1->length);
+	memcpy(asn1->content, copy.content, copy.length);
+	asn1->length += copy.length;
+	free(copy.content);
+}
+
+/*
 struct asn1		create_asn1_rsa_public_key (
 	unsigned __int128 n,
 	unsigned __int128 e
@@ -73,13 +162,120 @@ struct asn1		create_asn1_des_ecb(
 	char		*payload,
 	size_t		size
 ) {
+	int				ret;
 	struct asn1		result;
+	uint8_t			tmp[4096];
+	size_t			i = 0;
+	int				iter = 2048;
+	uint8_t			salt[8];
+	uint64_t		key;
+	char			*password;
+	uint8_t			*cipher;
+	size_t			cipher_size;
 
 	memset(&result, 0, sizeof(struct asn1));
-	(void)payload;
-	(void)size;
+	ret = get_password_stdin("des-ecb", &password, CMODE_ENCRYPT);
+	if (ret)
+		return (result);
+	if (get_key_encrypt(&key, salt, NULL, NULL, NULL, password, iter) < 0) {
+		free(password);
+		return (result);
+	}
+	free(password);
+	cipher = (uint8_t *)des_ecb_encrypt_from_key((unsigned char *)payload, size, key, &cipher_size);
+	if (!cipher)
+		return (result);
+
+	// MASTER SEQUENCE
+	tmp[i] = ID_SEQ;
+	// fill sequence size at the end
+	i += 2;
+
+	// SEQUENCE OBJECT
+	tmp[i] = ID_SEQ;
+	// fill sequence size at the end
+	i += 2;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(PBES2_OBJECTID);
+
+	memcpy(tmp + i, PBES2_OBJECTID, strlen(PBES2_OBJECTID));
+	i += strlen(PBES2_OBJECTID);
+
+	tmp[i++] = ID_SEQ;
+	size_t j = i; // fill sequence size later
+	i++;
+
+	tmp[i++] = ID_SEQ;
+	size_t k = i; // fill sequence size later
+	i++;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(PBKDF2_OBJECTID);
+
+	memcpy(tmp + i, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID));
+	i += strlen(PBKDF2_OBJECTID);
+
+	tmp[i++] = ID_SEQ;
+	size_t l = i; // fill sequence size later
+	i++;
+
+	// OCTET STRING - Salt
+	tmp[i++] = ID_OCTET;
+	tmp[i++] = 0x8;
+
+	for (int j = 0x8 - 1; j >= 0; j--) {
+		tmp[i++] = ((uint8_t *)&salt)[j];
+	}
+
+	i += add_integer_asn1(tmp + i, iter);
+
+	tmp[i++] = ID_SEQ;
+	tmp[i++] = strlen(HASHMACSHA256_OBJECTID);
+
+	memcpy(tmp + i, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID));
+	i += strlen(HASHMACSHA256_OBJECTID);
+
+	tmp[i++] = ID_NULL;
+	tmp[i++] = 0x0;
+
+	tmp[l] = i - l;
+	tmp[k] = i - k;
+
+	tmp[i++] = ID_SEQ;
+	tmp[i++] = strlen(DESECB_OBJECTID) + 2 + 2;
+
+	tmp[i++] = ID_OBJECT;
+	tmp[i++] = strlen(DESECB_OBJECTID);
+
+	memcpy(tmp + i, DESECB_OBJECTID, strlen(DESECB_OBJECTID));
+	i += strlen(DESECB_OBJECTID);
+
+	tmp[i++] = ID_OCTET;
+	tmp[i++] = 0x0;
+
+	tmp[j] = i - j;
+	tmp[3] = i - 4;
+
+	tmp[i++] = ID_OCTET;
+	tmp[i++] = cipher_size;
+
+	memcpy(tmp + i, cipher, cipher_size);
+	i += cipher_size;
+	free(cipher);
+
+	tmp[1] = i - 2;
+
+	result.length = i;
+
+	result.content = malloc(i * sizeof(uint8_t));
+	if (!result.content) {
+		return (result);
+	}
+	memcpy(result.content, tmp, i);
 	return (result);
 }
+*/
 
 struct asn1		create_asn1_rsa_private_key(
 	unsigned __int128 n,
@@ -91,57 +287,54 @@ struct asn1		create_asn1_rsa_private_key(
 	unsigned __int128 dq,
 	unsigned __int128 qinv
 ) {
-	struct asn1		result;
-	uint8_t			tmp[4096];
-	size_t			i = 0;
+	unsigned __int128 tmp;
+	struct asn1		asn1;
 
-	// MASTER SEQUENCE
-	tmp[i] = ID_SEQ;
-	// fill sequence size at the end
-	i += 2;
+	bzero(&asn1, sizeof(struct asn1));
+	asn1.content = malloc(0);
+	if (!asn1.content)
+		return (asn1);
 
-	i += add_integer_asn1(tmp + i, 0);
+	append_asn1_elem(&asn1, ID_INTEGER, "\x00", 1);
 
-	// SEQUENCE OBJECT
-	tmp[i++] = ID_SEQ;
-	tmp[i++] = strlen(RSA_OBJECTID) + 2; // + 4;
+	tmp = inv_nb(n);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(n));
+	tmp = inv_nb(e);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(e));
+	tmp = inv_nb(d);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(d));
+	tmp = inv_nb(p);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(p));
+	tmp = inv_nb(q);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(q));
+	tmp = inv_nb(dp);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(dp));
+	tmp = inv_nb(dq);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(dq));
+	tmp = inv_nb(qinv);
+	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(qinv));
 
-	tmp[i++] = ID_OBJECT;
-	tmp[i++] = strlen(RSA_OBJECTID);
+	embed_asn1_elem(&asn1, ID_SEQ);
+	embed_asn1_elem(&asn1, ID_OCTET);
 
-	memcpy(tmp + i, RSA_OBJECTID, strlen(RSA_OBJECTID));
-	i += strlen(RSA_OBJECTID);
+	struct asn1		header;
 
-//	tmp[i++] = ID_NULL; // not needed but provided by openssl
-//	tmp[i++] = 0x0;
-
-	// OCTET STRING + SEQUENCE
-	tmp[i++] = ID_OCTET;
-	size_t		idx_octet = i++;
-
-	tmp[i++] = ID_SEQ;
-	size_t		idx_seq = i++;
-
-	i += add_integer_asn1(tmp + i, 0);
-	i += add_integer_asn1(tmp + i, n);
-	i += add_integer_asn1(tmp + i, e);
-	i += add_integer_asn1(tmp + i, d);
-	i += add_integer_asn1(tmp + i, p);
-	i += add_integer_asn1(tmp + i, q);
-	i += add_integer_asn1(tmp + i, dp);
-	i += add_integer_asn1(tmp + i, dq);
-	i += add_integer_asn1(tmp + i, qinv);
-	tmp[idx_seq] = i - idx_seq - 1;
-	tmp[idx_octet] = i - idx_octet - 1;
-	tmp[1] = i - 2;
-
-	result.length = i;
-	result.content = malloc(i * sizeof(uint8_t));
-	if (!result.content) {
-		return (result);
+	bzero(&header, sizeof(struct asn1));
+	header.content = malloc(0);
+	if (!header.content) {
+		free(asn1.content);
+		asn1.content = NULL;
+		return (asn1);
 	}
-	memcpy(result.content, tmp, i);
-	return (result);
+	append_asn1_elem(&header, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID));
+	//header.content = append_asn1_elem(header.content, &header.length, ID_NULL, "\x00", 1); // not needed but provided by openssl
+
+	prepend_asn1_elem(&asn1, ID_SEQ, header.content, header.length);
+	free(header.content);
+
+	prepend_asn1_elem(&asn1, ID_INTEGER, "\x00", 1);
+	embed_asn1_elem(&asn1, ID_SEQ);
+	return (asn1);
 }
 
 int		check_asn1_sequence(uint8_t *asn1, size_t size) {

@@ -12,7 +12,11 @@ char		*generate_base64_public_rsa(
 	char footer[] = FOOTER_PUBLIC;
 	char *result;
 
-	struct asn1 rsa_asn1 = create_asn1_rsa_public_key(n, e);
+	(void)e;
+	(void)n;
+	struct asn1 rsa_asn1;
+	bzero(&rsa_asn1, sizeof(struct asn1));
+//	struct asn1 rsa_asn1 = create_asn1_rsa_public_key(n, e);
 	if (!rsa_asn1.content) {
 		return (NULL);
 	}
@@ -66,6 +70,16 @@ char		*generate_base64_private_rsa(
 	if (!rsa_asn1.content) {
 		return (NULL);
 	}
+
+	/*
+	if (options->cipher) {
+		struct asn1 cipher_asn1;
+		if (!strcmp(options->cipher, "des-ecb"))
+			cipher_asn1 = create_asn1_des_ecb((char *)rsa_asn1.content, rsa_asn1.length);
+		free(rsa_asn1.content);
+		rsa_asn1 = cipher_asn1;
+	}
+	*/
 
 	size_t	len_encoded;
 	char	*encoded = base64_encode(rsa_asn1.content, rsa_asn1.length, &len_encoded);
@@ -132,10 +146,6 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	unsigned __int128 dp = d % (p - 1);
 	unsigned __int128 dq = d % (q - 1);
 	unsigned __int128 qinv = inv_mod(q, p);
-
-	if (options->cipher) {
-		
-	}
 
 	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, options, res_len));
 }
