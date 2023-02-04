@@ -52,7 +52,13 @@ struct __attribute__((__packed__)) rsa {
 #define		ID_OBJECT			0x6
 #define		ID_SEQ				0x30
 
-#define		RSA_OBJECTID		"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01"
+#define		RSA_OBJECTID				"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01"
+#define		DESCBC_OBJECTID				"\x2b\x0e\x03\x02\x07"
+#define		DESECB_OBJECTID				"\x2b\x0e\x03\x02\x06"
+#define		PBKDF2_OBJECTID				"\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0c"
+#define		PBES2_OBJECTID				"\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0d"
+#define		HASHMACSHA256_OBJECTID		"\x2a\x86\x48\x86\xf7\x0d\x02\x09"
+
 #define		INTEGER_0			"\x02\x01\x00"
 
 #define		PUBLIC_EXPONENT		65537
@@ -78,8 +84,8 @@ char	*base64(uint8_t *str, size_t size, size_t *res_len, t_options *options);
 
 /* genrsa.c */
 char	*genrsa(unsigned char *query, size_t size, size_t *res_len, t_options *options);
-char	*generate_base64_public_rsa(unsigned __int128 n, unsigned __int128 e, size_t *res_len);
-char	*generate_base64_private_rsa(unsigned __int128 n, unsigned __int128 e, unsigned __int128 d, unsigned __int128 p, unsigned __int128 q, unsigned __int128 dp, unsigned __int128 dq, unsigned __int128 qinv, size_t *res_len);
+char	*generate_base64_public_rsa(unsigned __int128 n, unsigned __int128 e, t_options *options, size_t *res_len);
+char	*generate_base64_private_rsa(unsigned __int128 n, unsigned __int128 e, unsigned __int128 d, unsigned __int128 p, unsigned __int128 q, unsigned __int128 dp, unsigned __int128 dq, unsigned __int128 qinv, t_options *options, size_t *res_len);
 
 /* rsa.c */
 char	*rsa(unsigned char *query, size_t size, size_t *res_len, t_options *options);

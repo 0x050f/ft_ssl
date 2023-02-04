@@ -225,7 +225,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!options->noout && !options->pubout && !options->pubin) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, &len_encoded);
+		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
 		if (!encoded) {
 			free(result);
 			return (NULL);
@@ -241,7 +241,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	} else if (!options->noout) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, &len_encoded);
+		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, options, &len_encoded);
 		if (!encoded) {
 			free(result);
 			return (NULL);

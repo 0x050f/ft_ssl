@@ -63,6 +63,9 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 		if (!(str = get_string_arg(argc, argv, i, j, name)))
 			return (ERR_REQ_ARG);
 		if (option[INDEX_CHECK] &&
+			!strcmp(option[INDEX_CHECK], "INT") && (!isint(str))) // should be int
+			return (args_error(ERR_INT_ARG, name, 0, 0) + 1);
+		if (option[INDEX_CHECK] &&
 			!strcmp(option[INDEX_CHECK], "HEX") && (!ishexa(str))) // should be hexa
 			return (args_error(ERR_HEX_ARG, name, 0, 0) + 1);
 		else if (option[INDEX_CHECK] &&

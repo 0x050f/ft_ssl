@@ -115,6 +115,22 @@ void		ft_toupper(char *str)
 	}
 }
 
+int			isint(char *str)
+{
+	size_t i;
+
+	i = 0;
+	if (!(str[i] == '-'))
+		i++;
+	while (str[i])
+	{
+		if (!(str[i] >= '0' && str[i] <= '9'))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 int			ishexa(char *str)
 {
 	size_t i;

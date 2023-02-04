@@ -4,8 +4,10 @@
 char		*generate_base64_public_rsa(
 	unsigned __int128	n,
 	unsigned __int128	e,
+	t_options			*options,
 	size_t				*res_len
 ) {
+	(void)options;
 	char header[] = HEADER_PUBLIC;
 	char footer[] = FOOTER_PUBLIC;
 	char *result;
@@ -52,8 +54,10 @@ char		*generate_base64_private_rsa(
 	unsigned __int128	dp,
 	unsigned __int128	dq,
 	unsigned __int128	qinv,
+	t_options			*options,
 	size_t				*res_len
 ) {
+	(void)options;
 	char	header[] = HEADER_PRIVATE;
 	char	footer[] = FOOTER_PRIVATE;
 	char	*result;
@@ -98,10 +102,9 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 
 	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
+	// Unused variable but important for std fn format
 	(void)query;
 	(void)size;
-	(void)res_len;
-	(void)options;
 
 	/* 1. choose two large prime numbers p and q */
 	uint64_t p = custom_rand();
@@ -130,5 +133,9 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	unsigned __int128 dq = d % (q - 1);
 	unsigned __int128 qinv = inv_mod(q, p);
 
-	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, res_len));
+	if (options->cipher) {
+		
+	}
+
+	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, options, res_len));
 }

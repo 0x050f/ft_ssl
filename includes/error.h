@@ -7,7 +7,8 @@
 # define ERR_OOR_ARG		4 /* OUT OF RANGE */
 # define ERR_HEX_ARG		5
 # define ERR_PRINT_ARG		6
-# define ERR_REQ_ARG		7
+# define ERR_INT_ARG		7
+# define ERR_REQ_ARG		8
 
 # define ERR_MALLOC			8
 # define ERR_BADCMD			9

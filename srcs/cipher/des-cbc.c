@@ -11,7 +11,7 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_encrypt(options, &key, salt, &iv) < 0)
+	if (get_key_encrypt(&key, salt, options->key, options->salt, &iv, options->password, options->iter) < 0)
 		return (NULL);
 	if (options->iv)
 	{
@@ -155,7 +155,7 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_decrypt(&str, &size, options, &key, &iv) < 0)
+	if (get_key_decrypt(&str, &size, &key, options->key, &iv, options->password, options->iter) < 0)
 		return (NULL);
 	*res_len = 0;
 	if (options->iv)

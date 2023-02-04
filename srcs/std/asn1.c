@@ -69,6 +69,18 @@ struct asn1		create_asn1_rsa_public_key (
 	return (result);
 }
 
+struct asn1		create_asn1_des_ecb(
+	char		*payload,
+	size_t		size
+) {
+	struct asn1		result;
+
+	memset(&result, 0, sizeof(struct asn1));
+	(void)payload;
+	(void)size;
+	return (result);
+}
+
 struct asn1		create_asn1_rsa_private_key(
 	unsigned __int128 n,
 	unsigned __int128 e,

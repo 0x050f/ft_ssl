@@ -251,6 +251,11 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 	options->infile = get_last_content(ssl->opt_args, "i");
 	options->outfile = get_last_content(ssl->opt_args, "o");
 	options->key = get_last_content(ssl->opt_args, "k");
+	arg = get_last_arg(ssl->opt_args, "t");
+	options->iter = arg ? atoi(arg->content) : 10000;
+	if (options->iter < 0 || options->iter > 10000) {
+		return (args_error(ERR_OOR_ARG, "-t", 0, 10000));
+	}
 	char *tmp;
 	if ((tmp = get_last_content(ssl->opt_args, "p")))
 	{

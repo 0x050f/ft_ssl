@@ -66,6 +66,8 @@ int			args_error(int error, char *str, int range1, int range2)
 		dprintf(STDERR_FILENO, "invalid argument: '%s'", str);
 		if (error == ERR_OOR_ARG)
 			dprintf(STDERR_FILENO, ": out of range: %d <= value <= %d", range1, range2);
+		else if (error == ERR_INT_ARG)
+			dprintf(STDERR_FILENO, ": must be a integer");
 		else if (error == ERR_HEX_ARG)
 			dprintf(STDERR_FILENO, ": must be in lowercase hexadecimal ([0-9a-f])");
 		else if (error == ERR_PRINT_ARG)

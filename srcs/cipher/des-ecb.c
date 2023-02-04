@@ -100,14 +100,14 @@ void		get_salt(uint8_t dest[8], char *salt)
 	b_memcpy(dest, &tmp, 8);
 }
 
-int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t *iv)
+int			get_key_encrypt(uint64_t *key_output, uint8_t *salt_output, char *key, char *salt, uint64_t *iv, char *password, int iter)
 {
-	if (!options->key)
+	if (!key)
 	{
 		/* PKBFD */
-		memset(salt, 0, 8);
-		if (options->salt)
-			get_salt(salt, options->salt);
+		memset(salt_output, 0, 8);
+		if (salt)
+			get_salt(salt_output, salt);
 		else
 		{
 			time_t	t;
@@ -115,29 +115,29 @@ int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t
 			srand((unsigned) time(&t)); /* Initialize rand */
 			/* Random salt */
 			for (size_t i = 0; i < 8; i++)
-				salt[i] = rand() % 256;
+				salt_output[i] = rand() % 256;
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, password, strlen(password), (char *)salt_output, 8, iter, 16);
 		if (!key_uint)
 			return (-1);
-		b_memcpy(key, key_uint, 8);
+		b_memcpy(key_output, key_uint, 8);
 		if (iv)
 			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
 	{
-		uint64_t tmp_key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) < 16)
+		if (strlen(key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(key)) * 4);
 		}
-		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+		else if (strlen(key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		memcpy(key, &tmp_key, 8);
+		memcpy(key_output, &tmp_key, 8);
 	}
 	return (0);
 }
@@ -148,7 +148,7 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 {
 	uint8_t		salt[8];
 	uint64_t	key;
-	if (get_key_encrypt(options, &key, salt, NULL) < 0)
+	if (get_key_encrypt(&key, salt, options->key, options->salt, NULL, options->password, options->iter) < 0)
 		return (NULL);
 
 	size_t padding = 0;
@@ -261,10 +261,10 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (ciphertext);
 }
 
-int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key, uint64_t *iv)
+int			get_key_decrypt(unsigned char **str, size_t *size, uint64_t *key_output, char *key, uint64_t *iv, char *password, int iter)
 {
 	uint8_t		salt[8];
-	if (!options->key)
+	if (!key)
 	{
 		/* PKBDF */
 		memset(salt, 0, 8);
@@ -279,26 +279,26 @@ int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uin
 		*str += 16;
 		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, password, strlen(password), (char *)salt, 8, iter, 16);
 		if (!key_uint)
 			return (-1);
-		b_memcpy(key, key_uint, 8);
+		b_memcpy(key_output, key_uint, 8);
 		if (iv)
 			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
 	{
-		uint64_t tmp_key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) < 16)
+		if (strlen(key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(key)) * 4);
 		}
-		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+		else if (strlen(key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		memcpy(key, &tmp_key, 8);
+		memcpy(key_output, &tmp_key, 8);
 	}
 	return (0);
 }
@@ -306,7 +306,7 @@ int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uin
 char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	uint64_t	key;
-	if (get_key_decrypt(&str, &size, options, &key, NULL) < 0)
+	if (get_key_decrypt(&str, &size, &key, options->key, NULL, options->password, options->iter) < 0)
 		return (NULL);
 
 	*res_len = 0;
