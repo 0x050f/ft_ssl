@@ -29,10 +29,10 @@ uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
 
 	while (n) {
 		if (n % 2) {
-			z = (z * (__int128_t)x) % p;
+			z = ((unsigned __int128)z * x) % p;
 		}
 		n /= 2;
-		x = ((__int128_t)x * x) % p;
+		x = ((unsigned __int128)x * x) % p;
 	}
 	return (z);
 }
@@ -48,12 +48,14 @@ bool		miller(uint64_t n, uint64_t a) {
 		d /= 2;
 	}
 	x = power_mod(a, d, n);
-	if (x == 1 || x == n - 1)
+	if (x == 1 || x == n - 1) {
 		return (false);
+	}
 	while (s-- > 0) {
 		x = power_mod(x, 2, n);
-		if (x == n - 1)
+		if (x == n - 1) {
 			return (false);
+		}
 	}
 	return (true);
 }
@@ -70,8 +72,9 @@ bool		miller_rabin(uint64_t n, int k) {
 
 	while (k-- > 0) {
 		a = rand_range(2, n - 2);
-		if (miller(n, a))
+		if (miller(n, a)) {
 			return (false);
+		}
 	}
 	return (true);
 }

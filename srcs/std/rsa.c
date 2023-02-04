@@ -2,7 +2,7 @@
 #include "std.h"
 
 char	*get_hexa_repr(unsigned __int128 n) {
-	char				buf[3];
+	char				buf[4];
 	char				*hexa;
 	size_t				size_nb;
 	size_t				tmp;
@@ -97,6 +97,7 @@ char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 				return (NULL);
 			}
 			ret = asprintf(&tmp, "%s:\n    %s\n", name, new_hex);
+			free(new_hex);
 		}
 		if (ret < 0) {
 			free(str);
@@ -108,6 +109,8 @@ char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 	}
 	return (str);
 }
+
+// TODO: fix 128bit check
 
 int		check_rsa(
 	unsigned __int128 n,
@@ -121,22 +124,24 @@ int		check_rsa(
 ) {
 	unsigned __int128 phi;
 
-	if (!check_prime(p, 1.0))
+	if (!check_prime(p, 1.0)) {
 		return (1);
-	if (!check_prime(q, 1.0))
+	}
+	if (!check_prime(q, 1.0)) {
 		return (1);
+	}
 	if (n != (unsigned __int128)p * q)
 		return (1);
 	phi = ((unsigned __int128)p - 1) * (q - 1);
 	if (pgcd_binary(phi, e) != 1)
 		return (1);
-	if (d != inv_mod(e, phi))
+	if ((e * d) % phi != 1) // check inv_mod // TODO: not good
 		return (1);
 	if (dp != d % (p - 1))
 		return (1);
 	if (dq != d % (q - 1))
 		return (1);
-	if (qinv != inv_mod(q, p))
+	if ((q * qinv) % p != 1)
 		return (1);
 	return (0);
 }
