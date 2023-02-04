@@ -98,7 +98,7 @@ int			handle_options(
 	int		j;
 
 	j = 0;
-	if (!strcmp(&argv[*i][j], "--help")) {
+	if (!strcmp(first_nonchar(&argv[*i][j], '-'), "help")) {
 		show_cmd(STDOUT_FILENO, ssl->cmd, cmd_options);
 		ssl->cmd = NULL;
 		return (0);
