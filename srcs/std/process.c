@@ -196,6 +196,24 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	options->pubin = get_last_arg(ssl->opt_args, "pubin") ? true : false;
 	options->pubout = get_last_arg(ssl->opt_args, "pubout") ? true : false;
 	options->hexdump = get_last_arg(ssl->opt_args, "hexdump") ? true : false;
+	// Get last cipher if exist (for 'genrsa' and 'rsa' cmds)
+	char *cipher[NB_CIPHER_CMDS][2] = CMD_CIPHER;
+	int idx[NB_CIPHER_CMDS];
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++)
+		idx[i] = -1;
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++) {
+		arg = get_last_arg(ssl->opt_args, cipher[i][0]);
+		if (arg) {
+			idx[i] = arg->index;
+		}
+	}
+	int max_idx = -1;
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++) {
+		if ((max_idx == -1 && idx[i] != -1) || (max_idx != -1 && idx[i] > idx[max_idx]))
+			max_idx = i;
+	}
+	if (max_idx != -1)
+		options->cipher = cipher[max_idx][0];
 	return (0);
 }
 

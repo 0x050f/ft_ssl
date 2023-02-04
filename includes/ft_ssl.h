@@ -93,7 +93,7 @@
 }
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
-# define NB_STD_OPTIONS	18
+# define NB_STD_OPTIONS		21
 # define STD_OPTIONS		{ \
 		{"-v", "-verbose", NULL, "verbose output", NULL}, \
 		{"-i", NULL, NULL, "print in the standard output"}, \
@@ -104,7 +104,6 @@
 		{NULL, "-outform", "<pem>", "output format", NULL}, \
 		{NULL, "-passin", "<arg>", "input file pass phrase source", NULL}, \
 		{NULL, "-passout", "<arg>", "output file pass phrase source", NULL}, \
-		{NULL, "-des", NULL, "encrypt the private key with the specifed cipher", NULL}, \
 		{NULL, "-text", NULL, "print the key in text", NULL}, \
 		{NULL, "-noout", NULL, "don't print key out", NULL}, \
 		{NULL, "-modulus", NULL, "print the RSA key modulus", NULL}, \
@@ -113,12 +112,15 @@
 		{NULL, "-pubout", NULL, "output a public key", NULL}, \
 		{NULL, "-encrypt", NULL, "encrypt with public key", NULL}, \
 		{NULL, "-decrypt", NULL, "decrypt with private key", NULL}, \
-		{NULL, "-hexdump", NULL, "hex dump output", NULL} \
+		{NULL, "-hexdump", NULL, "hex dump output", NULL}, \
+		{NULL, "-des", NULL, "encrypt the private key with the specifed cipher", NULL}, \
+		{NULL, "-des-ecb", NULL, "encrypt the private key with the specifed cipher", NULL}, \
+		{NULL, "-des-cbc", NULL, "encrypt the private key with the specifed cipher", NULL} \
 }
 # define NB_STD_CMDS		3
 # define CMD_STD		{ \
-		{"genrsa", "i,o"}, \
-		{"rsa", "in,out,inform,outform,passin,passout,des,text,noout,modulus,check,pubin,pubout"}, \
+		{"genrsa", "i,o,des,des-ecb,des-cbc"}, \
+		{"rsa", "in,out,inform,outform,passin,passout,text,noout,modulus,check,pubin,pubout,des,des-ecb,des-cbc"}, \
 		{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
 }
 # define FUNC_STD		{&genrsa, &rsa, &rsautl}
@@ -175,6 +177,7 @@ void		ft_toupper(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);
 char		*read_query(int fd, size_t *size);
+char		*first_nonchar(char *str, char c);
 
 /* process.c */
 int			process_cipher(t_ssl *ssl);

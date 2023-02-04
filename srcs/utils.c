@@ -175,3 +175,12 @@ char		*read_query(int fd, size_t *size)
 	}
 	return (query);
 }
+
+char	*first_nonchar(char *str, char c) {
+	while (*str) {
+		if (*str != c)
+			return (str);
+		str++;
+	}
+	return (str);
+}
