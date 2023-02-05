@@ -65,6 +65,8 @@ struct __attribute__((__packed__)) rsa {
 
 # define HEADER_PRIVATE "-----BEGIN PRIVATE KEY-----\n"
 # define FOOTER_PRIVATE "-----END PRIVATE KEY-----"
+# define HEADER_ENC_PRIVATE "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+# define FOOTER_ENC_PRIVATE "-----END ENCRYPTED PRIVATE KEY-----"
 
 # define HEADER_PUBLIC "-----BEGIN PUBLIC KEY-----\n"
 # define FOOTER_PUBLIC "-----END PUBLIC KEY-----"

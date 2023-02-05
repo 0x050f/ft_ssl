@@ -58,9 +58,16 @@ char		*generate_base64_private_rsa(
 	size_t				*res_len
 ) {
 	(void)options;
-	char	header[] = HEADER_PRIVATE;
-	char	footer[] = FOOTER_PRIVATE;
+	char	*header;
+	char	*footer;
+	char	header_private[] = HEADER_PRIVATE;
+	char	footer_private[] = FOOTER_PRIVATE;
+	char	header_enc_priv[] = HEADER_ENC_PRIVATE;
+	char	footer_enc_priv[] = FOOTER_ENC_PRIVATE;
 	char	*result;
+
+	header = (char *)header_private;
+	footer = (char *)footer_private;
 
 	struct asn1 rsa_asn1 = create_asn1_rsa_private_key(n, e, d, p, q, dp, dq, qinv);
 	if (!rsa_asn1.content) {
@@ -75,6 +82,8 @@ char		*generate_base64_private_rsa(
 			cipher_asn1 = create_asn1_des_cbc((char *)rsa_asn1.content, rsa_asn1.length);
 		free(rsa_asn1.content);
 		rsa_asn1 = cipher_asn1;
+		header = (char *)header_enc_priv;
+		footer = (char *)footer_enc_priv;
 	}
 
 	size_t	len_encoded;

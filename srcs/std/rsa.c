@@ -142,13 +142,35 @@ int		check_rsa(
 	return (0);
 }
 
+uint8_t		*get_rsa_between_header_footer(
+	uint8_t *query,
+	size_t size,
+	char *header,
+	char *footer,
+	size_t *cipher_size
+) {
+	void *start = memmem(query, size, header, strlen(header));
+	if (!start)
+		return (NULL);
+	start += strlen(header);
+	void *end = memmem(start, size - (start - (void *)query), footer, strlen(footer));
+	if (!end)
+		return (NULL);
+	uint8_t *cipher_res = (uint8_t *)base64_decode(start, end - start, cipher_size);
+	if (!cipher_res)
+		return (NULL);
+	return (cipher_res);
+}
+
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
-	char		*header;
-	char		*footer;
 	char		header_private[] = HEADER_PRIVATE;
 	char		footer_private[] = FOOTER_PRIVATE;
+	char		header_enc_priv[] = HEADER_ENC_PRIVATE;
+	char		footer_enc_priv[] = FOOTER_ENC_PRIVATE;
 	char		header_public[] = HEADER_PUBLIC;
 	char		footer_public[] = FOOTER_PUBLIC;
+	uint8_t		*cipher_res;
+	size_t		cipher_size;
 	size_t		result_size;
 	char		*result;
 
@@ -163,22 +185,13 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	result = malloc(result_size);
 	if (!result)
 		return (NULL);
-	if (!options->pubin) {
-		header = (char *)header_private;
-		footer = (char *)footer_private;
-	} else {
-		header = (char *)header_public;
-		footer = (char *)footer_public;
+	if (options->pubin)
+		cipher_res = get_rsa_between_header_footer(query, size, header_public, footer_public, &cipher_size);
+	else {
+		cipher_res = get_rsa_between_header_footer(query, size, header_private, footer_private, &cipher_size);
+		if (!cipher_res)
+			cipher_res = get_rsa_between_header_footer(query, size, header_enc_priv, footer_enc_priv, &cipher_size);
 	}
-	void *start = memmem(query, size, header, strlen(header));
-	if (!start)
-		goto could_not_read;
-	start += strlen(header);
-	void *end = memmem(start, size - (start - (void *)query), footer, strlen(footer));
-	if (!end)
-		goto could_not_read;
-	size_t cipher_size;
-	uint8_t *cipher_res = (uint8_t *)base64_decode(start, end - start, &cipher_size);
 	if (!cipher_res)
 		goto could_not_read;
 	struct rsa rsa;
