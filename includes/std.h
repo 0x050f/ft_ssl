@@ -91,6 +91,10 @@ int		get_key_decrypt(unsigned char **str, size_t *size, uint64_t *key_output, ch
 char	*des_ecb_encrypt_from_key(uint8_t *str, size_t size, uint64_t key, size_t *res_len);
 char	*des_ecb_decrypt_from_key(uint8_t *str, size_t size, uint64_t key, size_t *res_len);
 
+/* ../cipher/des-cbc.c */
+char	*des_cbc_encrypt_from_key_iv(uint8_t *str, size_t size, uint64_t key, uint64_t iv, size_t *res_len);
+char	*des_cbc_decrypt_from_key_iv(uint8_t *str, size_t size, uint64_t key, uint64_t iv, size_t *res_len);
+
 /* genrsa.c */
 char	*genrsa(unsigned char *query, size_t size, size_t *res_len, t_options *options);
 char	*generate_base64_public_rsa(unsigned __int128 n, unsigned __int128 e, t_options *options, size_t *res_len);
@@ -103,6 +107,7 @@ char	*rsa(unsigned char *query, size_t size, size_t *res_len, t_options *options
 char	*rsautl(unsigned char *query, size_t size, size_t *res_len, t_options *options);
 
 /* asn1.c */
+struct asn1		create_asn1_des_cbc(char *payload, size_t size);
 struct asn1		create_asn1_des_ecb(char *payload, size_t size);
 struct asn1		create_asn1_rsa_public_key (unsigned __int128 n, unsigned __int128 e);
 struct asn1		create_asn1_rsa_private_key(unsigned __int128 n, unsigned __int128 e, unsigned __int128 d, unsigned __int128 p, unsigned __int128 q, unsigned __int128 dp, unsigned __int128 dq, unsigned __int128 qinv);

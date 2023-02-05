@@ -71,6 +71,8 @@ char		*generate_base64_private_rsa(
 		struct asn1 cipher_asn1;
 		if (!strcmp(options->cipher, "des-ecb"))
 			cipher_asn1 = create_asn1_des_ecb((char *)rsa_asn1.content, rsa_asn1.length);
+		else if (!strcmp(options->cipher, "des-cbc") || !strcmp(options->cipher, "des"))
+			cipher_asn1 = create_asn1_des_cbc((char *)rsa_asn1.content, rsa_asn1.length);
 		free(rsa_asn1.content);
 		rsa_asn1 = cipher_asn1;
 	}

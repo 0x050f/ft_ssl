@@ -162,6 +162,87 @@ struct asn1		create_asn1_rsa_public_key (
 	return (asn1);
 }
 
+struct asn1		create_asn1_des_cbc(
+	char		*payload,
+	size_t		size
+) {
+	int						ret;
+	struct asn1				asn1;
+	int						iter = 2048;
+	uint8_t					salt[8];
+	uint64_t				key;
+	uint64_t				iv;
+	char					*password;
+	unsigned __int128		tmp;
+	uint8_t					*cipher;
+	size_t					cipher_size;
+
+	// Compute cipher
+	memset(&asn1, 0, sizeof(struct asn1));
+	ret = get_password_stdin("des-cbc", &password, CMODE_ENCRYPT);
+	if (ret)
+		return (asn1);
+	if (get_key_encrypt(&key, salt, NULL, NULL, &iv, password, iter) < 0) {
+		free(password);
+		return (asn1);
+	}
+	free(password);
+	cipher = (uint8_t *)des_cbc_encrypt_from_key_iv((unsigned char *)payload, size, key, iv, &cipher_size);
+	if (!cipher)
+		return (asn1);
+
+	asn1.content = malloc(0);
+	if (!asn1.content) {
+		free(cipher);
+		return (asn1);
+	}
+
+	// DESECB SEQUENCE
+	append_asn1_elem(&asn1, ID_OBJECT, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID));
+	tmp = inv_nb(iv);
+	append_asn1_elem(&asn1, ID_OCTET, &tmp, get_size_in_byte(iv));
+	embed_asn1_elem(&asn1, ID_SEQ);
+
+	struct asn1 header;
+
+	bzero(&header, sizeof(struct asn1));
+	header.content = malloc(0);
+	if (!header.content) {
+		free(cipher);
+		free(asn1.content);
+		asn1.content = NULL;
+		return (asn1);
+	}
+	// HASHMAC_SHA256
+	append_asn1_elem(&header, ID_OBJECT, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID));
+	append_asn1_elem(&header, ID_NULL, "", 0);
+	embed_asn1_elem(&header, ID_SEQ);
+
+	// PBKDF2 PARAMS
+	tmp = inv_nb(iter);
+	prepend_asn1_elem(&header, ID_INTEGER, &tmp, get_size_in_byte(iter));
+	prepend_asn1_elem(&header, ID_OCTET, salt, 8);
+	embed_asn1_elem(&header, ID_SEQ);
+
+	// PBKDF2
+	prepend_asn1_elem(&header, ID_OBJECT, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID));
+	embed_asn1_elem(&header, ID_SEQ);
+
+	prepend_asn1_content(&asn1, header.content, header.length);
+	free(header.content);
+	embed_asn1_elem(&asn1, ID_SEQ);
+
+	// PBES2
+	prepend_asn1_elem(&asn1, ID_OBJECT, PBES2_OBJECTID, strlen(PBES2_OBJECTID));
+	embed_asn1_elem(&asn1, ID_SEQ);
+
+	append_asn1_elem(&asn1, ID_OCTET, cipher, cipher_size);
+	free(cipher);
+
+	embed_asn1_elem(&asn1, ID_SEQ);
+	return (asn1);
+}
+
 struct asn1		create_asn1_des_ecb(
 	char		*payload,
 	size_t		size

@@ -3,34 +3,13 @@
 
 #define NB_ROUND 16
 
-// TODO: opti without key given parameter with Salted__ output size
-// refacto a bit
-char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
-{
-	uint8_t		salt[8];
-	uint64_t	iv;
-	uint64_t	key;
-
-	if (get_key_encrypt(&key, salt, options->key, options->salt, &iv, options->password, options->iter) < 0)
-		return (NULL);
-	if (options->iv)
-	{
-		uint64_t tmp = hex2int64(options->iv);
-		if (strlen(options->iv) < 16)
-		{
-			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			tmp = tmp << ((16 - strlen(options->iv)) * 4);
-		}
-		else if (strlen(options->iv) > 16) // removing 8 bytes + auto with hex2int64 but print it
-			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		memcpy(&iv, &tmp, 8);
-	}
-	else if (!options->password)
-	{
-		dprintf(STDERR_FILENO, "iv undefined\n");
-		return (NULL);
-	}
-
+char			*des_cbc_encrypt_from_key_iv(
+	uint8_t		*str,
+	size_t		size,
+	uint64_t	key,
+	uint64_t	iv,
+	size_t		*res_len
+) {
 	size_t padding = 0;
 	if (size % 8)
 		padding = (8 - (size % 8));
@@ -130,34 +109,21 @@ char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		b_memcpy(ciphertext + i, &block, 8);
 		prev_block = block;
 	}
-	if (!options->key)
-	{
-		*res_len += 16;
-		char *new_cipher = malloc(sizeof(char) * *res_len);
-		if (!new_cipher)
-		{
-			free(plaintext);
-			free(ciphertext);
-			return (NULL);
-		}
-		memcpy(new_cipher, "Salted__", 8);
-		memcpy(new_cipher + 8, salt, 8);
-		memcpy(new_cipher + 16, ciphertext, *res_len - 16);
-		free(ciphertext);
-		ciphertext = new_cipher;
-	}
 	free(plaintext);
 	return (ciphertext);
 }
 
-char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+// TODO: opti without key given parameter with Salted__ output size
+// refacto a bit
+char			*des_cbc_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
+	char		*ciphertext;
+	uint8_t		salt[8];
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_decrypt(&str, &size, &key, options->key, &iv, options->password, options->iter) < 0)
+	if (get_key_encrypt(&key, salt, options->key, options->salt, &iv, options->password, options->iter) < 0)
 		return (NULL);
-	*res_len = 0;
 	if (options->iv)
 	{
 		uint64_t tmp = hex2int64(options->iv);
@@ -170,12 +136,39 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
 		memcpy(&iv, &tmp, 8);
 	}
-	else if (!options->password)// ko
+	else if (!options->password)
 	{
 		dprintf(STDERR_FILENO, "iv undefined\n");
 		return (NULL);
 	}
+	ciphertext = des_cbc_encrypt_from_key_iv(str, size, key, iv, res_len);
+	if (!ciphertext)
+		return (NULL);
+	if (!options->key)
+	{
+		*res_len += 16;
+		char *new_cipher = malloc(sizeof(char) * *res_len);
+		if (!new_cipher)
+		{
+			free(ciphertext);
+			return (NULL);
+		}
+		memcpy(new_cipher, "Salted__", 8);
+		memcpy(new_cipher + 8, salt, 8);
+		memcpy(new_cipher + 16, ciphertext, *res_len - 16);
+		free(ciphertext);
+		ciphertext = new_cipher;
+	}
+	return (ciphertext);
+}
 
+char			*des_cbc_decrypt_from_key_iv(
+	uint8_t		*str,
+	size_t		size,
+	uint64_t	key,
+	uint64_t	iv,
+	size_t		*res_len
+) {
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
 	if (!ciphertext)
 		return (NULL);
@@ -273,6 +266,36 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	if (size % 8)
 		dprintf(STDERR_FILENO, "bad decrypt\n");
 	free(ciphertext);
+	return (plaintext);
+}
+
+char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
+{
+	char		*plaintext;
+	uint64_t	iv;
+	uint64_t	key;
+
+	if (get_key_decrypt(&str, &size, &key, options->key, &iv, options->password, options->iter) < 0)
+		return (NULL);
+	*res_len = 0;
+	if (options->iv)
+	{
+		uint64_t tmp = hex2int64(options->iv);
+		if (strlen(options->iv) < 16)
+		{
+			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
+			tmp = tmp << ((16 - strlen(options->iv)) * 4);
+		}
+		else if (strlen(options->iv) > 16) // removing 8 bytes + auto with hex2int64 but print it
+			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
+		memcpy(&iv, &tmp, 8);
+	}
+	else if (!options->password)// ko
+	{
+		dprintf(STDERR_FILENO, "iv undefined\n");
+		return (NULL);
+	}
+	plaintext = des_cbc_decrypt_from_key_iv(str, size, key, iv, res_len);
 	return (plaintext);
 }
 
