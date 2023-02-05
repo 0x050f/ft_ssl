@@ -16,6 +16,7 @@ unsigned __int128		inv_nb(unsigned __int128 n) {
 	int					nb_bytes;
 	int					i;
 
+	ret = 0;
 	i = 0;
 	nb_bytes = get_size_in_byte(n);
 	for (int j = nb_bytes - 1; j >= 0; j--) {
@@ -32,17 +33,18 @@ void		embed_asn1_elem(struct asn1 *asn1, uint8_t elem) {
 		return ;
 	nb_bytes = get_size_in_byte(asn1->length);
 	add_size = (nb_bytes > 1) ? nb_bytes + 2 : nb_bytes + 1;
+	if (nb_bytes == 1 && asn1->length >= 0x80) // if need 0x80 byte
+		add_size += 1;
 	asn1->content = realloc(asn1->content, add_size + asn1->length);
 	if (!asn1->content)
 		return ;
 	memmove(asn1->content + add_size, asn1->content, asn1->length);
 	int i = 0;
 	asn1->content[i++] = elem;
-	if (nb_bytes > 1)
+	if (nb_bytes > 1 || asn1->length >= 0x80)
 		asn1->content[i++] = 0x80 + nb_bytes;
-	for (int j = nb_bytes - 1; j >= 0; j--) {
+	for (int j = nb_bytes - 1; j >= 0; j--)
 		asn1->content[i++] = ((uint8_t *)&(asn1->length))[j];
-	}
 	if (elem == ID_BIT)
 		asn1->content[i] = '\x00';
 	asn1->length += add_size;
@@ -151,7 +153,7 @@ struct asn1		create_asn1_rsa_public_key (
 		return (asn1);
 	}
 	append_asn1_elem(&header, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID));
-	//header.content = append_asn1_elem(header.content, &header.length, ID_NULL, "\x00", 1); // not needed but provided by openssl
+//	append_asn1_elem(&header, ID_NULL, "", 0); // not needed but provided by openssl
 
 	prepend_asn1_elem(&asn1, ID_SEQ, header.content, header.length);
 	free(header.content);
@@ -159,126 +161,85 @@ struct asn1		create_asn1_rsa_public_key (
 	embed_asn1_elem(&asn1, ID_SEQ);
 	return (asn1);
 }
-/*
 
 struct asn1		create_asn1_des_ecb(
 	char		*payload,
 	size_t		size
 ) {
-	int				ret;
-	struct asn1		result;
-	uint8_t			tmp[4096];
-	size_t			i = 0;
-	int				iter = 2048;
-	uint8_t			salt[8];
-	uint64_t		key;
-	char			*password;
-	uint8_t			*cipher;
-	size_t			cipher_size;
+	int						ret;
+	struct asn1				asn1;
+	int						iter = 2048;
+	uint8_t					salt[8];
+	uint64_t				key;
+	char					*password;
+	unsigned __int128		tmp;
+	uint8_t					*cipher;
+	size_t					cipher_size;
 
-	memset(&result, 0, sizeof(struct asn1));
+	// Compute cipher
+	memset(&asn1, 0, sizeof(struct asn1));
 	ret = get_password_stdin("des-ecb", &password, CMODE_ENCRYPT);
 	if (ret)
-		return (result);
+		return (asn1);
 	if (get_key_encrypt(&key, salt, NULL, NULL, NULL, password, iter) < 0) {
 		free(password);
-		return (result);
+		return (asn1);
 	}
 	free(password);
 	cipher = (uint8_t *)des_ecb_encrypt_from_key((unsigned char *)payload, size, key, &cipher_size);
 	if (!cipher)
-		return (result);
+		return (asn1);
 
-	// MASTER SEQUENCE
-	tmp[i] = ID_SEQ;
-	// fill sequence size at the end
-	i += 2;
-
-	// SEQUENCE OBJECT
-	tmp[i] = ID_SEQ;
-	// fill sequence size at the end
-	i += 2;
-
-	tmp[i++] = ID_OBJECT;
-	tmp[i++] = strlen(PBES2_OBJECTID);
-
-	memcpy(tmp + i, PBES2_OBJECTID, strlen(PBES2_OBJECTID));
-	i += strlen(PBES2_OBJECTID);
-
-	tmp[i++] = ID_SEQ;
-	size_t j = i; // fill sequence size later
-	i++;
-
-	tmp[i++] = ID_SEQ;
-	size_t k = i; // fill sequence size later
-	i++;
-
-	tmp[i++] = ID_OBJECT;
-	tmp[i++] = strlen(PBKDF2_OBJECTID);
-
-	memcpy(tmp + i, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID));
-	i += strlen(PBKDF2_OBJECTID);
-
-	tmp[i++] = ID_SEQ;
-	size_t l = i; // fill sequence size later
-	i++;
-
-	// OCTET STRING - Salt
-	tmp[i++] = ID_OCTET;
-	tmp[i++] = 0x8;
-
-	for (int j = 0x8 - 1; j >= 0; j--) {
-		tmp[i++] = ((uint8_t *)&salt)[j];
+	asn1.content = malloc(0);
+	if (!asn1.content) {
+		free(cipher);
+		return (asn1);
 	}
 
-	i += add_integer_asn1(tmp + i, iter);
+	// DESECB SEQUENCE
+	append_asn1_elem(&asn1, ID_OBJECT, DESECB_OBJECTID, strlen(DESECB_OBJECTID));
+	append_asn1_elem(&asn1, ID_OCTET, "", 0);
+	embed_asn1_elem(&asn1, ID_SEQ);
 
-	tmp[i++] = ID_SEQ;
-	tmp[i++] = strlen(HASHMACSHA256_OBJECTID);
+	struct asn1 header;
 
-	memcpy(tmp + i, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID));
-	i += strlen(HASHMACSHA256_OBJECTID);
+	bzero(&header, sizeof(struct asn1));
+	header.content = malloc(0);
+	if (!header.content) {
+		free(cipher);
+		free(asn1.content);
+		asn1.content = NULL;
+		return (asn1);
+	}
+	// HASHMAC_SHA256
+	append_asn1_elem(&header, ID_OBJECT, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID));
+	append_asn1_elem(&header, ID_NULL, "", 0);
+	embed_asn1_elem(&header, ID_SEQ);
 
-	tmp[i++] = ID_NULL;
-	tmp[i++] = 0x0;
+	// PBKDF2 PARAMS
+	tmp = inv_nb(iter);
+	prepend_asn1_elem(&header, ID_INTEGER, &tmp, get_size_in_byte(iter));
+	prepend_asn1_elem(&header, ID_OCTET, salt, 8);
+	embed_asn1_elem(&header, ID_SEQ);
 
-	tmp[l] = i - l;
-	tmp[k] = i - k;
+	// PBKDF2
+	prepend_asn1_elem(&header, ID_OBJECT, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID));
+	embed_asn1_elem(&header, ID_SEQ);
 
-	tmp[i++] = ID_SEQ;
-	tmp[i++] = strlen(DESECB_OBJECTID) + 2 + 2;
+	prepend_asn1_content(&asn1, header.content, header.length);
+	free(header.content);
+	embed_asn1_elem(&asn1, ID_SEQ);
 
-	tmp[i++] = ID_OBJECT;
-	tmp[i++] = strlen(DESECB_OBJECTID);
+	// PBES2
+	prepend_asn1_elem(&asn1, ID_OBJECT, PBES2_OBJECTID, strlen(PBES2_OBJECTID));
+	embed_asn1_elem(&asn1, ID_SEQ);
 
-	memcpy(tmp + i, DESECB_OBJECTID, strlen(DESECB_OBJECTID));
-	i += strlen(DESECB_OBJECTID);
-
-	tmp[i++] = ID_OCTET;
-	tmp[i++] = 0x0;
-
-	tmp[j] = i - j;
-	tmp[3] = i - 4;
-
-	tmp[i++] = ID_OCTET;
-	tmp[i++] = cipher_size;
-
-	memcpy(tmp + i, cipher, cipher_size);
-	i += cipher_size;
+	append_asn1_elem(&asn1, ID_OCTET, cipher, cipher_size);
 	free(cipher);
 
-	tmp[1] = i - 2;
-
-	result.length = i;
-
-	result.content = malloc(i * sizeof(uint8_t));
-	if (!result.content) {
-		return (result);
-	}
-	memcpy(result.content, tmp, i);
-	return (result);
+	embed_asn1_elem(&asn1, ID_SEQ);
+	return (asn1);
 }
-*/
 
 struct asn1		create_asn1_rsa_private_key(
 	unsigned __int128 n,
@@ -330,7 +291,7 @@ struct asn1		create_asn1_rsa_private_key(
 		return (asn1);
 	}
 	append_asn1_elem(&header, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID));
-	//header.content = append_asn1_elem(header.content, &header.length, ID_NULL, "\x00", 1); // not needed but provided by openssl
+//	append_asn1_elem(&header, ID_NULL, "", 0); // not needed but provided by openssl
 
 	prepend_asn1_elem(&asn1, ID_SEQ, header.content, header.length);
 	free(header.content);

@@ -110,8 +110,6 @@ char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 	return (str);
 }
 
-// TODO: fix 128bit check
-
 int		check_rsa(
 	unsigned __int128 n,
 	unsigned __int128 e,
@@ -124,18 +122,16 @@ int		check_rsa(
 ) {
 	unsigned __int128 phi;
 
-	if (!check_prime(p, 1.0)) {
+	if (!check_prime(p, 1.0))
 		return (1);
-	}
-	if (!check_prime(q, 1.0)) {
+	if (!check_prime(q, 1.0))
 		return (1);
-	}
 	if (n != (unsigned __int128)p * q)
 		return (1);
 	phi = ((unsigned __int128)p - 1) * (q - 1);
 	if (pgcd_binary(phi, e) != 1)
 		return (1);
-	if ((e * d) % phi != 1) // check inv_mod // TODO: not good
+	if ((e * d) % phi != 1) // check inv_mod
 		return (1);
 	if (dp != d % (p - 1))
 		return (1);
@@ -216,7 +212,10 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	if (options->check) {
 		char buf[256];
-		if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
+		if (get_size_in_bits(rsa.n) > 64 || get_size_in_bits(rsa.e) > 64) {
+			dprintf(STDERR_FILENO, "Can't check a key larger than 64 bits\n");
+		}
+		else if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
 			sprintf(buf, "RSA key ok\n");
 			result = realloc(result, result_size + strlen(buf) + 1);
 			strcpy(result + result_size, buf);
