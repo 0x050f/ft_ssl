@@ -196,12 +196,10 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		goto could_not_read;
 	struct rsa rsa;
 	int ret;
-	if (!options->pubin) {
+	if (!options->pubin)
 		ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
-	}
-	else {
+	else
 		ret = read_public_rsa_asn1(&rsa, cipher_res, cipher_size);
-	}
 	free(cipher_res);
 	if (ret)
 		goto could_not_read;
@@ -227,8 +225,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		char buf[256];
 		if (get_size_in_bits(rsa.n) > 64 || get_size_in_bits(rsa.e) > 64) {
 			dprintf(STDERR_FILENO, "Can't check a key larger than 64 bits\n");
-		}
-		else if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
+		} else if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
 			sprintf(buf, "RSA key ok\n");
 			result = realloc(result, result_size + strlen(buf) + 1);
 			strcpy(result + result_size, buf);

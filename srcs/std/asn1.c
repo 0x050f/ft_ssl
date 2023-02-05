@@ -11,18 +11,17 @@ int			get_size_in_byte(unsigned __int128 n) {
 	return (count);
 }
 
-unsigned __int128		inv_nb(unsigned __int128 n) {
-	unsigned __int128	ret;
-	int					nb_bytes;
-	int					i;
+void	*swap_bytes(void *dst, size_t len) {
+	size_t		i;
+	uint8_t		*in, tmp;
 
-	ret = 0;
-	i = 0;
-	nb_bytes = get_size_in_byte(n);
-	for (int j = nb_bytes - 1; j >= 0; j--) {
-		((uint8_t *)&ret)[i++] = ((uint8_t *)&n)[j];
+	in = dst;
+	for (size_t i = 0; i < len / 2; i++) {
+		tmp = in[i];
+		in[i] = in[len - i - 1];
+		in[len - i - 1] = tmp;
 	}
-	return (ret);
+	return (dst);
 }
 
 void		embed_asn1_elem(struct asn1 *asn1, uint8_t elem) {
@@ -134,6 +133,7 @@ struct asn1		create_asn1_rsa_public_key (
 	if (!asn1.content)
 		return (asn1);
 
+	// TODO: CHANGE
 	tmp = inv_nb(n);
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(n));
 	tmp = inv_nb(e);
@@ -536,6 +536,66 @@ uint8_t		*check_rsa_asn1_pub_header(uint8_t *asn1, size_t size) {
 	return (asn1 + asn1[1] + 2);
 }
 
+uint8_t		*check_elem(uint8_t *asn1, size_t size, uint8_t elem, uint8_t *value) {
+	int		size = 0;
+	int		i = 0;
+
+	if (size < 2)
+		return (NULL);
+	if (asn1[i++] != elem)
+		return (NULL);
+	if (asn1[i] & 0x80)
+		i += (asn1[i] ^ 0x80) + 1;
+	else
+		i++;
+	if (size <= i)
+		return (NULL);
+	if (value) {
+		
+	}
+	return (&asn1[i]);
+}
+
+uint8_t		*check_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size) {
+	uint8_t		*tmp;
+
+	tmp = check_elem(asn1, size, ID_SEQ);
+	if (!tmp)
+		return (NULL);
+	size -= tmp - asn1;
+	asn1 = tmp;
+
+	tmp = check_elem(asn1, size, ID_SEQ);
+	if (!tmp)
+		return (NULL);
+	size -= tmp - asn1;
+	asn1 = tmp;
+
+	if (asn1[i++] != ID_SEQ)
+		return (NULL);
+	if (asn1[i] & 0x80)
+		i += (asn1[i] ^ 0x80) + 1;
+	else
+		i++;
+	if (asn1[i++] != ID_OBJECT)
+		return (NULL);
+	if (!memcmp(&asn1[i], PBES2_OBJECTID, strlen(PBES2_OBJECTID)))
+		return (NULL);
+	i += strlen(PBES2_OBJECTID);
+	if (asn1[i++] != ID_SEQ)
+		return (NULL);
+	if (asn1[i] & 0x80)
+		i += (asn1[i] ^ 0x80) + 1
+	else
+		i++;
+	if (asn1[i++] != ID_SEQ)
+		return (NULL);
+	if (asn1[i] & 0x80)
+		i += (asn1[i] ^ 0x80) + 1
+	else
+		i++;
+}
+
 uint8_t		*check_rsa_asn1_priv_header(uint8_t *asn1, size_t size) {
 	if (size < 18)
 		return (NULL);
@@ -570,6 +630,12 @@ int		read_public_rsa_asn1(struct rsa *pub, uint8_t *asn1, size_t size) {
 	if (parse_rsa_asn1_bit(pub, tmp, 2))
 		return (1);
 	return (0);
+}
+
+int		read_private_encrypted_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
+	uint8_t *tmp;
+
+	tmp = check_rsa_asn1_encrypted_priv_header(asn1, size);
 }
 
 int		read_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
