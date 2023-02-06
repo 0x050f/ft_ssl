@@ -1,9 +1,10 @@
 name: Testing Deployement
 
 on:
+  pull_request:
   push:
     branches:
-      - github-ci
+      - main
 
 env:
   CARGO_TERM_COLOR: always
