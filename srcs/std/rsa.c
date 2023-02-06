@@ -259,9 +259,15 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	// Generate and write private rsa key
 	if (!options->noout && !options->pubout && !options->pubin) {
-		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
+		char *encoded;
+		if (!options->outform || !strcmp(options->outform, "PEM")) {
+			encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
+		} else if (!strcmp(options->outform, "DER")) {
+			struct asn1 rsa_asn1 = create_asn1_rsa_private_key(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv);
+			encoded = (char *)rsa_asn1.content;
+			len_encoded = rsa_asn1.length;
+		}
 		if (!encoded) {
 			free(result);
 			return (NULL);
@@ -271,18 +277,26 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 			free(encoded);
 			return (NULL);
 		}
+		dprintf(STDERR_FILENO, "writing RSA key\n");
 		memcpy(result + result_size, encoded, len_encoded);
 		result_size += len_encoded;
 		free(encoded);
 	// Generate and write public rsa key
 	} else if (!options->noout) {
-		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, options, &len_encoded);
+		char *encoded;
+		if (!options->outform || !strcmp(options->outform, "PEM")) {
+			encoded = generate_base64_public_rsa(rsa.n, rsa.e, options, &len_encoded);
+		} else if (!strcmp(options->outform, "DER")) {
+			struct asn1 rsa_asn1 = create_asn1_rsa_public_key(rsa.n, rsa.e);
+			encoded = (char *)rsa_asn1.content;
+			len_encoded = rsa_asn1.length;
+		}
 		if (!encoded) {
 			free(result);
 			return (NULL);
 		}
+		dprintf(STDERR_FILENO, "writing RSA key\n");
 		result = realloc(result, result_size + len_encoded);
 		if (!result) {
 			free(encoded);
