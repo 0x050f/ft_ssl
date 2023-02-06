@@ -271,8 +271,9 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	// Generate and write private rsa key
 	if (!options->noout && !options->pubout && !options->pubin) {
-		size_t len_encoded;
-		char *encoded;
+		size_t len_encoded = 0;
+		char *encoded = NULL;
+
 		if (!options->outform || !strcmp(options->outform, "PEM")) {
 			encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
 		} else if (!strcmp(options->outform, "DER")) {
@@ -305,8 +306,9 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		free(encoded);
 	// Generate and write public rsa key
 	} else if (!options->noout) {
-		size_t len_encoded;
-		char *encoded;
+		size_t len_encoded = 0;
+		char *encoded = NULL;
+
 		if (!options->outform || !strcmp(options->outform, "PEM")) {
 			encoded = generate_base64_public_rsa(rsa.n, rsa.e, options, &len_encoded);
 		} else if (!strcmp(options->outform, "DER")) {

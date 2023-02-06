@@ -2,18 +2,18 @@
 # define HASH_H
 
 /* sha384.c */
-char		*sha384(uint8_t *str, size_t size);
+uint8_t		*sha384(uint8_t *str, size_t size, size_t *res_len);
 
 /* sha512.c */
-char		*sha512(uint8_t *str, size_t size);
+uint8_t		*sha512(uint8_t *str, size_t size, size_t *res_len);
 
 /* sha224.c */
-char		*sha224(uint8_t *str, size_t size);
+uint8_t		*sha224(uint8_t *str, size_t size, size_t *res_len);
 
 /* sha256.c */
-char		*sha256(uint8_t *str, size_t size);
+uint8_t		*sha256(uint8_t *str, size_t size, size_t *res_len);
 
 /* md5.c */
-char		*md5(uint8_t *str, size_t size);
+uint8_t		*md5(uint8_t *str, size_t size, size_t *res_len);
 
 #endif

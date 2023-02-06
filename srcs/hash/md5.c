@@ -1,7 +1,7 @@
 #include "ft_ssl.h"
 
 // https://en.wikipedia.org/wiki/MD5
-char			*md5(uint8_t *str, size_t size)
+uint8_t		*md5(uint8_t *str, size_t size, size_t *res_len)
 {
 	DPRINT("md5(\"%.*s\", %zu)\n", (int)size, str, size);
 	int padding_zeroes;
@@ -89,20 +89,13 @@ char			*md5(uint8_t *str, size_t size)
 		d0 += D;
 	}
 	free(msg);
-	char *hash = malloc(sizeof(char) * 33);
+	uint8_t *hash = malloc(sizeof(uint8_t) * 16);
 	if (!hash)
-	{
-		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 		return (NULL);
-	}
-	for (int i = 0; i < 4; i++)
-		snprintf(hash + i * 2, 32, "%02x", ((uint8_t *)&a0)[i]);
-	for (int i = 0; i < 4; i++)
-		snprintf(hash + 8 + i * 2, 32, "%02x", ((uint8_t *)&b0)[i]);
-	for (int i = 0; i < 4; i++)
-		snprintf(hash + 16 + i * 2, 32, "%02x", ((uint8_t *)&c0)[i]);
-	for (int i = 0; i < 4; i++)
-		snprintf(hash + 24 + i * 2, 32, "%02x", ((uint8_t *)&d0)[i]);
-	hash[32] = '\0';
+	b_memcpy(hash, &a0, sizeof(uint32_t));
+	b_memcpy(hash + sizeof(uint32_t) * 4, &b0, sizeof(uint32_t));
+	b_memcpy(hash + sizeof(uint32_t) * 8, &c0, sizeof(uint32_t));
+	b_memcpy(hash + sizeof(uint32_t) * 12, &d0, sizeof(uint32_t));
+	*res_len = 16;
 	return (hash);
 }

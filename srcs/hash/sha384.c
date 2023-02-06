@@ -3,7 +3,7 @@
 #define RIGHTROTATE(x, y) (((x) >> (y)) | ((x) << (64 - (y))))
 
 // https://en.wikipedia.org/wiki/SHA-2
-char		*sha384(uint8_t *str, size_t size)
+uint8_t		*sha384(uint8_t *str, size_t size, size_t *res_len)
 {
 	DPRINT("sha384(\"%.*s\", %zu)\n", (int)size, str, size);
 	uint64_t padding_zeroes;
@@ -108,14 +108,11 @@ char		*sha384(uint8_t *str, size_t size)
 		h_array[7] += h;
 	}
 	free(msg);
-	char *hash = malloc(sizeof(char) * 97);
+	uint8_t *hash = malloc(sizeof(uint8_t) * 48);
 	if (!hash)
-	{
-		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
 		return (NULL);
-	}
 	for (int i = 0; i < 6; i++)
-		snprintf(hash + 16 * i, 96, "%016lx", h_array[i]);
-	hash[96] = '\0';
+		b_memcpy(hash + sizeof(uint64_t) * i, &h_array[i], sizeof(uint64_t));
+	*res_len = 48;
 	return (hash);
 }

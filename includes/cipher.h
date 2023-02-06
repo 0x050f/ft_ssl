@@ -20,8 +20,8 @@ typedef struct		s_options
 }					t_options;
 
 /* Cipher functions are located in the cipher/ directory */
-char			*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len);
-uint8_t			*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen);
+uint8_t			*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len);
+uint8_t			*pbkdf2(uint8_t *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen);
 
 /* base64.c */
 char			*base64_decode(unsigned char *str, size_t size, size_t *res_len);

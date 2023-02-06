@@ -2,8 +2,8 @@
 #include "cipher.h"
 #include "hash.h"
 
-#define SHA256_BLOCK_SIZE 64
-#define SHA256_HASH_SIZE 32
+# define SHA256_BLOCK_SIZE 64
+# define SHA256_HASH_SIZE 32
 
 int		get_password_stdin(char *cmd, char **password, int mode) {
 	char msg[256];
@@ -47,8 +47,9 @@ int		get_password_stdin(char *cmd, char **password, int mode) {
 }
 
 // hash(text || key)
-char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
+uint8_t		*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
 {
+	size_t		res_len;
 	size_t		buflen = text_len + key_len;
 	uint8_t		*buf = malloc(buflen);
 
@@ -56,7 +57,7 @@ char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
 		return (NULL);
 	memcpy(buf, text, text_len);
 	memcpy(buf + text_len, key, key_len);
-	char *ret = sha256(buf, buflen);
+	uint8_t		*ret = sha256(buf, buflen, &res_len);
 	free(buf);
 	return (ret);
 }
@@ -65,26 +66,29 @@ char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
   RFC 2104
   https://en.wikipedia.org/wiki/HMAC
 */
-char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
+uint8_t		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 {
 	uint8_t		k[SHA256_BLOCK_SIZE];
 	uint8_t		k_ipad[SHA256_BLOCK_SIZE];
 	uint8_t		k_opad[SHA256_BLOCK_SIZE];
 	uint8_t		tmp[SHA256_HASH_SIZE];
-	char		*ihash;
-	char		*ohash;
+	uint8_t		*ihash;
+	uint8_t		*ohash;
 
 	/* Compute the block_size key */
-	memset(k, 0, SHA256_BLOCK_SIZE);
+	bzero(k, SHA256_BLOCK_SIZE);
 	/* start out by storing key in pads */
 	memset(k_ipad, 0x36, SHA256_BLOCK_SIZE);
 	memset(k_opad, 0x5c, SHA256_BLOCK_SIZE);
 	if (key_len > SHA256_BLOCK_SIZE) /* key = hash(key) */
 	{
-		uint8_t *digest = (uint8_t *)sha256(key, key_len);
+		size_t	digest_len;
+		uint8_t *digest;
+
+		digest = sha256(key, key_len, &digest_len);
 		if (!digest)
 			return (NULL);
-		hex2bytes(k, SHA256_BLOCK_SIZE, (char *)digest);
+		memcpy(k, digest, SHA256_HASH_SIZE);
 		free(digest);
 	}
 	else /* pad key */
@@ -100,8 +104,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
 	ihash = h(k_ipad, SHA256_BLOCK_SIZE, text, text_len); // hash(k_ipad || text)
 	if (!ihash)
 		return (NULL);
-	 /* translate to 32 bytes non-ascii */
-	hex2bytes(tmp, SHA256_BLOCK_SIZE, (char *)ihash);
+	memcpy(tmp, ihash, SHA256_HASH_SIZE);
 	free(ihash);
 	ohash = h(k_opad, SHA256_BLOCK_SIZE, tmp, SHA256_HASH_SIZE); // hash(k_opad || ihash);
 	if (!ohash)
@@ -120,7 +123,7 @@ char		*hmac_sha256(uint8_t *text, int text_len, uint8_t *key, int key_len)
   c: iteration count
   dklen: length of the derived key
 */
-uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen)
+uint8_t		*pbkdf2(uint8_t *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t psize, char *s, size_t ssize, size_t c, size_t dklen)
 {
 	if (dklen > 4294967295 * HLEN) // dklen > (2 ^ 32 - 1) * hlen
 	{
@@ -140,7 +143,7 @@ uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t ps
 		// U_j = PRF (P, u_{j-1})
 		for (size_t j = 1; j <= c; j++)
 		{
-			char *hash;
+			uint8_t *hash;
 			if (j == 1)
 			{
 				uint8_t		tmp[ssize + sizeof(int)];
@@ -152,7 +155,7 @@ uint8_t		*pbkdf2(char *(prf(uint8_t *, int, uint8_t *, int)), char *p, size_t ps
 				hash = prf(u, HLEN, (uint8_t *)p, psize);
 			if (!hash)
 				return (NULL);
-			hex2bytes(u, HLEN, hash);
+			memcpy(u, hash, HLEN);
 			free(hash);
 			for (size_t k = 0; k < HLEN; k++)
 				t[i - 1][k] ^= u[k];
