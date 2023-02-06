@@ -9,7 +9,7 @@ char		**search_long_option(char *to_search, char ***options, int nb_options)
 	{
 		if (options[i][INDEX_FULLNAME]) {
 			str = options[i][INDEX_FULLNAME];
-			if (!strncmp(to_search, str, strlen(str)))
+			if (!strcmp(to_search, str))
 				break;
 		}
 	}
@@ -26,7 +26,7 @@ char		**search_short_option(char *to_search, char ***options, int nb_options)
 	for (i = 0; i < nb_options; i++)
 	{
 		if (options[i][INDEX_NAME]) {
-			str = strrchr(options[i][INDEX_NAME], '-') + 1;
+			str = first_nonchar(options[i][INDEX_NAME], '-');
 			if (!strncmp(to_search, str, strlen(str)))
 				break;
 		}
@@ -63,15 +63,18 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 		if (!(str = get_string_arg(argc, argv, i, j, name)))
 			return (ERR_REQ_ARG);
 		if (option[INDEX_CHECK] &&
+			!strcmp(option[INDEX_CHECK], "INT") && (!isint(str))) // should be int
+			return (args_error(ERR_INT_ARG, name, 0, 0) + 1);
+		if (option[INDEX_CHECK] &&
 			!strcmp(option[INDEX_CHECK], "HEX") && (!ishexa(str))) // should be hexa
 			return (args_error(ERR_HEX_ARG, name, 0, 0) + 1);
 		else if (option[INDEX_CHECK] &&
 			!strcmp(option[INDEX_CHECK], "PRINT") && !isprintable(str)) // should be printable
 			return (args_error(ERR_PRINT_ARG, name, 0, 0) + 1);
 		if (option[INDEX_NAME])
-			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_NAME], '-') + 1, str);
+			ret = append_opt_arg(&ssl->opt_args, first_nonchar(option[INDEX_NAME], '-'), str);
 		else
-			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_FULLNAME], '-') + 1, str);
+			ret = append_opt_arg(&ssl->opt_args, first_nonchar(option[INDEX_FULLNAME], '-'), str);
 		if (!ret)
 		{
 			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
@@ -80,9 +83,9 @@ int			append_option(int argc, char *argv[], int *i, int j, t_ssl *ssl, char **op
 		return (1);
 	} else {
 		if (option[INDEX_NAME])
-			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_NAME], '-') + 1, NULL);
+			ret = append_opt_arg(&ssl->opt_args, first_nonchar(option[INDEX_NAME], '-'), NULL);
 		else
-			ret = append_opt_arg(&ssl->opt_args, strrchr(option[INDEX_FULLNAME], '-') + 1, NULL);
+			ret = append_opt_arg(&ssl->opt_args, first_nonchar(option[INDEX_FULLNAME], '-'), NULL);
 	}
 	return (0);
 }
@@ -98,7 +101,7 @@ int			handle_options(
 	int		j;
 
 	j = 0;
-	if (!strcmp(&argv[*i][j], "--help")) {
+	if (!strcmp(first_nonchar(&argv[*i][j], '-'), "help")) {
 		show_cmd(STDOUT_FILENO, ssl->cmd, cmd_options);
 		ssl->cmd = NULL;
 		return (0);
@@ -128,7 +131,7 @@ int			handle_options(
 				return (2);
 			} else {
 				j++;
-				ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_NAME] + 1);
+				ret = append_option(argc, argv, i, j, ssl, option, first_nonchar(option[INDEX_NAME], '-'));
 				if (ret > 1)
 					return (ret);
 				else if (ret == 1)
@@ -138,7 +141,7 @@ int			handle_options(
 		return (0);
 	}
 	j = strlen(option[INDEX_FULLNAME]);
-	if ((ret = append_option(argc, argv, i, j, ssl, option, option[INDEX_FULLNAME] + 2)) > 1)
+	if ((ret = append_option(argc, argv, i, j, ssl, option, first_nonchar(option[INDEX_FULLNAME], '-'))) > 1)
 		return (ret);
 	return (0);
 }
@@ -171,8 +174,8 @@ int			setup_cmd_options(
 	k = 0;
 	while (ptr) {
 		for (i = 0; i < nb_options; i++) {
-			if ((options[i][INDEX_NAME] && !strcmp(ptr, strrchr(options[i][INDEX_NAME], '-') + 1)) ||
-			(options[i][INDEX_FULLNAME] &&!strcmp(ptr, strrchr(options[i][INDEX_FULLNAME], '-') + 1))) {
+			if ((options[i][INDEX_NAME] && !strcmp(ptr, first_nonchar(options[i][INDEX_NAME], '-'))) ||
+			(options[i][INDEX_FULLNAME] &&!strcmp(ptr, first_nonchar(options[i][INDEX_FULLNAME], '-')))) {
 				cmd_options->options[k] = malloc(sizeof(char *) * NB_COLUMNS_OPTIONS);
 				if (!cmd_options->options[k])
 					goto free_everything;

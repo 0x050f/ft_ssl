@@ -100,14 +100,21 @@ void		get_salt(uint8_t dest[8], char *salt)
 	b_memcpy(dest, &tmp, 8);
 }
 
-int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t *iv)
-{
-	if (!options->key)
+int			get_key_encrypt(
+	uint64_t *key_output,
+	uint8_t *salt_output,
+	char *key,
+	char *salt,
+	uint64_t *iv,
+	char *password,
+	int iter
+) {
+	if (!key)
 	{
 		/* PKBFD */
-		memset(salt, 0, 8);
-		if (options->salt)
-			get_salt(salt, options->salt);
+		memset(salt_output, 0, 8);
+		if (salt)
+			get_salt(salt_output, salt);
 		else
 		{
 			time_t	t;
@@ -115,42 +122,39 @@ int			get_key_encrypt(t_options *options, uint64_t *key, uint8_t *salt, uint64_t
 			srand((unsigned) time(&t)); /* Initialize rand */
 			/* Random salt */
 			for (size_t i = 0; i < 8; i++)
-				salt[i] = rand() % 256;
+				salt_output[i] = rand() % 256;
 		}
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, password, strlen(password), (char *)salt_output, 8, iter, 16);
 		if (!key_uint)
 			return (-1);
-		b_memcpy(key, key_uint, 8);
+		b_memcpy(key_output, key_uint, 8);
 		if (iv)
 			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
 	{
-		uint64_t tmp_key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) < 16)
+		if (strlen(key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(key)) * 4);
 		}
-		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+		else if (strlen(key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		memcpy(key, &tmp_key, 8);
+		memcpy(key_output, &tmp_key, 8);
 	}
 	return (0);
 }
 
-// TODO: opti without key given parameter with Salted__ output size
-// refacto a bit
-char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
-{
-	uint8_t		salt[8];
-	uint64_t	key;
-	if (get_key_encrypt(options, &key, salt, NULL) < 0)
-		return (NULL);
-
+char			*des_ecb_encrypt_from_key(
+	uint8_t			*str,
+	size_t			size,
+	uint64_t		key,
+	size_t			*res_len
+) {
 	size_t padding = 0;
 	if (size % 8)
 		padding = (8 - (size % 8));
@@ -241,13 +245,36 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		DPRINT("res block: %llx\n",block);
 		b_memcpy(ciphertext + i, &block, 8);
 	}
-	if (!options->key)
+	free(plaintext);
+	return (ciphertext);
+}
+
+// TODO: opti without key given parameter with Salted__ output size
+// refacto a bit
+char			*des_ecb_encrypt(
+	unsigned char	*str,
+	size_t			size,
+	char			*key_input,
+	char			*salt_input,
+	char			*password,
+	int				iter,
+	size_t			*res_len
+) {
+	char		*ciphertext;
+	uint8_t		salt[8];
+	uint64_t	key;
+
+	if (get_key_encrypt(&key, salt, key_input, salt_input, NULL, password, iter) < 0)
+		return (NULL);
+	ciphertext = des_ecb_encrypt_from_key(str, size, key, res_len);
+	if (!ciphertext)
+		return (NULL);
+	if (!key_input)
 	{
 		*res_len += 16;
 		char *new_cipher = malloc(sizeof(char) * *res_len);
 		if (!new_cipher)
 		{
-			free(plaintext);
 			free(ciphertext);
 			return (NULL);
 		}
@@ -257,58 +284,69 @@ char			*des_ecb_encrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 		free(ciphertext);
 		ciphertext = new_cipher;
 	}
-	free(plaintext);
 	return (ciphertext);
 }
 
-int			get_key_decrypt(unsigned char **str, size_t *size, t_options *options, uint64_t *key, uint64_t *iv)
-{
-	uint8_t		salt[8];
-	if (!options->key)
+int		get_key_decrypt(
+	unsigned char **str,
+	size_t *size,
+	uint64_t *key_output,
+	char *key,
+	uint8_t *salt,
+	uint64_t *iv,
+	char *password,
+	int iter
+) {
+	uint8_t		new_salt[8];
+
+	if (!key)
 	{
 		/* PKBDF */
-		memset(salt, 0, 8);
-		/* ignore salt on decrypt */
-		/* Get salt */
-		if (*size < 16 || memcmp(*str, "Salted__", 8))
-		{
-			dprintf(STDERR_FILENO, "bad magic number\n");
-			return (-1);
+		if (!salt) {
+			memset(new_salt, 0, 8);
+			/* ignore salt on decrypt */
+			/* Get salt */
+			if (*size < 16 || memcmp(*str, "Salted__", 8))
+			{
+				dprintf(STDERR_FILENO, "bad magic number\n");
+				return (-1);
+			}
+			memcpy(new_salt, *str + 8, 8);
+			*str += 16;
+			*size -= 16;
+			salt = new_salt;
 		}
-		memcpy(salt, *str + 8, 8);
-		*str += 16;
-		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
-		uint8_t *key_uint = pbkdf2(hmac_sha256, options->password, strlen(options->password), (char *)salt, 8, 10000, 16);
+		uint8_t *key_uint = pbkdf2(hmac_sha256, password, strlen(password), (char *)salt, 8, iter, 16);
 		if (!key_uint)
 			return (-1);
-		b_memcpy(key, key_uint, 8);
+		b_memcpy(key_output, key_uint, 8);
 		if (iv)
 			b_memcpy(iv, key_uint + 8, 8);
 		free(key_uint);
 	}
 	else
 	{
-		uint64_t tmp_key = hex2int64(options->key);
+		uint64_t tmp_key = hex2int64(key);
 		/* if key was not provided with 8 bytes */
-		if (strlen(options->key) < 16)
+		if (strlen(key) < 16)
 		{
 			dprintf(STDERR_FILENO, "hex string is too short, padding with zero bytes to length\n");
-			tmp_key = tmp_key << ((16 - strlen(options->key)) * 4);
+			tmp_key = tmp_key << ((16 - strlen(key)) * 4);
 		}
-		else if (strlen(options->key) > 16) // removing 8 bytes + auto with hex2int64 but print it
+		else if (strlen(key) > 16) // removing 8 bytes + auto with hex2int64 but print it
 			dprintf(STDERR_FILENO, "hex string is too long, ignoring excess\n");
-		memcpy(key, &tmp_key, 8);
+		memcpy(key_output, &tmp_key, 8);
 	}
 	return (0);
 }
 
-char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_options *options)
-{
-	uint64_t	key;
-	if (get_key_decrypt(&str, &size, options, &key, NULL) < 0)
-		return (NULL);
-
+char			*des_ecb_decrypt_from_key(
+	uint8_t		*str,
+	size_t		size,
+	uint64_t	key,
+	size_t		*res_len
+) {
 	*res_len = 0;
 	unsigned char *ciphertext = malloc(sizeof(char) * size);
 	if (!ciphertext)
@@ -401,6 +439,23 @@ char			*des_ecb_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	return (plaintext);
 }
 
+char			*des_ecb_decrypt(
+	unsigned char *str,
+	size_t size,
+	char *key_input,
+	char *password,
+	int iter,
+	size_t *res_len
+) {
+	char		*plaintext;
+	uint64_t	key;
+
+	if (get_key_decrypt(&str, &size, &key, key_input, NULL, NULL, password, iter) < 0)
+		return (NULL);
+	plaintext = des_ecb_decrypt_from_key(str, size, key, res_len);
+	return (plaintext);
+}
+
 char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *options)
 {
 	DPRINT("des_ecb(\"%.*s\", %zu)\n", (int)size, str, size);
@@ -409,7 +464,7 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 	char *result = NULL;
 	if (options->mode == CMODE_ENCODE)
 	{
-		result = des_ecb_encrypt(str, size, res_len, options);
+		result = des_ecb_encrypt(str, size, options->key, options->salt, options->password, options->iter, res_len);
 			if (options->base64)
 			{
 				char *new_result = base64_encode((unsigned char *)result, *res_len, res_len);
@@ -430,7 +485,7 @@ char			*des_ecb(unsigned char *str, size_t size, size_t *res_len, t_options *opt
 				return (NULL);
 			}
 		}
-		result = des_ecb_decrypt(str, size, res_len, options);
+		result = des_ecb_decrypt(str, size, options->key, options->password, options->iter, res_len);
 	}
 	return (result);
 }

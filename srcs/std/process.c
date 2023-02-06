@@ -29,10 +29,10 @@ uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
 
 	while (n) {
 		if (n % 2) {
-			z = (z * (__int128_t)x) % p;
+			z = ((unsigned __int128)z * x) % p;
 		}
 		n /= 2;
-		x = ((__int128_t)x * x) % p;
+		x = ((unsigned __int128)x * x) % p;
 	}
 	return (z);
 }
@@ -48,12 +48,14 @@ bool		miller(uint64_t n, uint64_t a) {
 		d /= 2;
 	}
 	x = power_mod(a, d, n);
-	if (x == 1 || x == n - 1)
+	if (x == 1 || x == n - 1) {
 		return (false);
+	}
 	while (s-- > 0) {
 		x = power_mod(x, 2, n);
-		if (x == n - 1)
+		if (x == n - 1) {
 			return (false);
+		}
 	}
 	return (true);
 }
@@ -70,8 +72,9 @@ bool		miller_rabin(uint64_t n, int k) {
 
 	while (k-- > 0) {
 		a = rand_range(2, n - 2);
-		if (miller(n, a))
+		if (miller(n, a)) {
 			return (false);
+		}
 	}
 	return (true);
 }
@@ -80,12 +83,12 @@ bool		miller_rabin(uint64_t n, int k) {
 unsigned __int128	inv_mod(unsigned __int128 a, unsigned __int128 n) {
 	__int128 t = 0;
 	__int128 newt = 1;
-	__int128 r = n;
-	__int128 newr = a;
+	unsigned __int128 r = n;
+	unsigned __int128 newr = a;
 
 	while (newr) {
 		__int128 tmp;
-		__int128 quotient = r / newr;
+		unsigned __int128 quotient = r / newr;
 		// (t, newt) := (newt, t - quotient * newt)
 		tmp = newt;
 		newt = t - quotient * newt;
@@ -196,6 +199,24 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	options->pubin = get_last_arg(ssl->opt_args, "pubin") ? true : false;
 	options->pubout = get_last_arg(ssl->opt_args, "pubout") ? true : false;
 	options->hexdump = get_last_arg(ssl->opt_args, "hexdump") ? true : false;
+	// Get last cipher if exist (for 'genrsa' and 'rsa' cmds)
+	char *cipher[NB_CIPHER_CMDS][2] = CMD_CIPHER;
+	int idx[NB_CIPHER_CMDS];
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++)
+		idx[i] = -1;
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++) {
+		arg = get_last_arg(ssl->opt_args, cipher[i][0]);
+		if (arg) {
+			idx[i] = arg->index;
+		}
+	}
+	int max_idx = -1;
+	for (size_t i = 0; i < NB_CIPHER_CMDS; i++) {
+		if ((max_idx == -1 && idx[i] != -1) || (max_idx != -1 && idx[i] > idx[max_idx]))
+			max_idx = i;
+	}
+	if (max_idx != -1)
+		options->cipher = cipher[max_idx][0];
 	return (0);
 }
 

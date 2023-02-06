@@ -4,8 +4,10 @@
 char		*generate_base64_public_rsa(
 	unsigned __int128	n,
 	unsigned __int128	e,
+	t_options			*options,
 	size_t				*res_len
 ) {
+	(void)options;
 	char header[] = HEADER_PUBLIC;
 	char footer[] = FOOTER_PUBLIC;
 	char *result;
@@ -52,15 +54,36 @@ char		*generate_base64_private_rsa(
 	unsigned __int128	dp,
 	unsigned __int128	dq,
 	unsigned __int128	qinv,
+	t_options			*options,
 	size_t				*res_len
 ) {
-	char	header[] = HEADER_PRIVATE;
-	char	footer[] = FOOTER_PRIVATE;
+	(void)options;
+	char	*header;
+	char	*footer;
+	char	header_private[] = HEADER_PRIVATE;
+	char	footer_private[] = FOOTER_PRIVATE;
+	char	header_enc_priv[] = HEADER_ENC_PRIVATE;
+	char	footer_enc_priv[] = FOOTER_ENC_PRIVATE;
 	char	*result;
+
+	header = (char *)header_private;
+	footer = (char *)footer_private;
 
 	struct asn1 rsa_asn1 = create_asn1_rsa_private_key(n, e, d, p, q, dp, dq, qinv);
 	if (!rsa_asn1.content) {
 		return (NULL);
+	}
+
+	if (options->cipher) {
+		struct asn1 cipher_asn1;
+		if (!strcmp(options->cipher, "des-ecb"))
+			cipher_asn1 = create_asn1_des_ecb((char *)rsa_asn1.content, rsa_asn1.length);
+		else if (!strcmp(options->cipher, "des-cbc") || !strcmp(options->cipher, "des"))
+			cipher_asn1 = create_asn1_des_cbc((char *)rsa_asn1.content, rsa_asn1.length);
+		free(rsa_asn1.content);
+		rsa_asn1 = cipher_asn1;
+		header = (char *)header_enc_priv;
+		footer = (char *)footer_enc_priv;
 	}
 
 	size_t	len_encoded;
@@ -98,10 +121,9 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 
 	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
+	// Unused variable but important for std fn format
 	(void)query;
 	(void)size;
-	(void)res_len;
-	(void)options;
 
 	/* 1. choose two large prime numbers p and q */
 	uint64_t p = custom_rand();
@@ -130,5 +152,5 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	unsigned __int128 dq = d % (q - 1);
 	unsigned __int128 qinv = inv_mod(q, p);
 
-	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, res_len));
+	return (generate_base64_private_rsa(n, e, d, p, q, dp, dq, qinv, options, res_len));
 }

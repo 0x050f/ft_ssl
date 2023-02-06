@@ -97,6 +97,7 @@ char	*get_text_from_rsa(struct rsa *rsa, bool public) {
 				return (NULL);
 			}
 			ret = asprintf(&tmp, "%s:\n    %s\n", name, new_hex);
+			free(new_hex);
 		}
 		if (ret < 0) {
 			free(str);
@@ -130,58 +131,49 @@ int		check_rsa(
 	phi = ((unsigned __int128)p - 1) * (q - 1);
 	if (pgcd_binary(phi, e) != 1)
 		return (1);
-	if (d != inv_mod(e, phi))
+	if ((e * d) % phi != 1) // check inv_mod
 		return (1);
 	if (dp != d % (p - 1))
 		return (1);
 	if (dq != d % (q - 1))
 		return (1);
-	if (qinv != inv_mod(q, p))
+	if ((q * qinv) % p != 1)
 		return (1);
 	return (0);
 }
 
-uint8_t		*locate_decode_b64_rsa(uint8_t *query, size_t size, t_options *options, size_t *cipher_size) {
-	char	*header;
-	char	*footer;
-	char	header_private[] = HEADER_PRIVATE;
-	char	footer_private[] = FOOTER_PRIVATE;
-	char	header_public[] = HEADER_PUBLIC;
-	char	footer_public[] = FOOTER_PUBLIC;
-	void	*start;
-	void	*end;
-	uint8_t *cipher_res;
-
-	// Public or private
-	if (!options->pubin) {
-		header = (char *)header_private;
-		footer = (char *)footer_private;
-	} else {
-		header = (char *)header_public;
-		footer = (char *)footer_public;
-	}
-	// Locate b64 rsa
-	start = memmem(query, size, header, strlen(header));
+uint8_t		*get_rsa_between_header_footer(
+	uint8_t *query,
+	size_t size,
+	char *header,
+	char *footer,
+	size_t *cipher_size
+) {
+	void *start = memmem(query, size, header, strlen(header));
 	if (!start)
 		return (NULL);
 	start += strlen(header);
-	end = memmem(start, size - (start - (void *)query), footer, strlen(footer));
+	void *end = memmem(start, size - (start - (void *)query), footer, strlen(footer));
 	if (!end)
 		return (NULL);
-	// Decode rsa
-	cipher_res = (uint8_t *)base64_decode(start, end - start, cipher_size);
+	uint8_t *cipher_res = (uint8_t *)base64_decode(start, end - start, cipher_size);
 	if (!cipher_res)
 		return (NULL);
 	return (cipher_res);
 }
 
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
-	struct rsa	rsa;
-	int			ret;
-	size_t		result_size = 0;
-	char		*result;
-	size_t		cipher_size;
 	void		*tmp;
+	char		header_private[] = HEADER_PRIVATE;
+	char		footer_private[] = FOOTER_PRIVATE;
+	char		header_enc_priv[] = HEADER_ENC_PRIVATE;
+	char		footer_enc_priv[] = FOOTER_ENC_PRIVATE;
+	char		header_public[] = HEADER_PUBLIC;
+	char		footer_public[] = FOOTER_PUBLIC;
+	uint8_t		*cipher_res;
+	size_t		cipher_size;
+	size_t		result_size;
+	char		*result;
 
 	DPRINT("rsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
@@ -189,19 +181,30 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		dprintf(STDERR_FILENO, "Only private keys can be checked\n");
 		return (NULL);
 	}
+
+	result_size = 0;
 	result = malloc(result_size);
 	if (!result)
 		return (NULL);
-	// Locate and decode base64 rsa key
-	tmp = locate_decode_b64_rsa(query, size, options, &cipher_size);
-	if (!tmp)
+	if (options->pubin)
+		cipher_res = get_rsa_between_header_footer(query, size, header_public, footer_public, &cipher_size);
+	else {
+		cipher_res = get_rsa_between_header_footer(query, size, header_private, footer_private, &cipher_size);
+		if (!cipher_res)
+			cipher_res = get_rsa_between_header_footer(query, size, header_enc_priv, footer_enc_priv, &cipher_size);
+	}
+	if (!cipher_res)
 		goto could_not_read;
-	// Read public or private key
-	if (!options->pubin)
-		ret = read_private_rsa_asn1(&rsa, tmp, cipher_size);
-	else
-		ret = read_public_rsa_asn1(&rsa, tmp, cipher_size);
-	free(tmp);
+	struct rsa rsa;
+	int ret;
+	if (!options->pubin) {
+		ret = read_encrypted_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+		if (ret)
+			ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+	} else {
+		ret = read_public_rsa_asn1(&rsa, cipher_res, cipher_size);
+	}
+	free(cipher_res);
 	if (ret)
 		goto could_not_read;
 	// Get text from rsa
@@ -238,20 +241,16 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	// Check the given rsa key
 	if (options->check) {
-		if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
-			asprintf((char **)&tmp, "RSA key ok\n");
-			if (!tmp) {
-				free(result);
+		char buf[256];
+		if (get_size_in_bits(rsa.n) > 64 || get_size_in_bits(rsa.e) > 64) {
+			dprintf(STDERR_FILENO, "Can't check a key larger than 64 bits\n");
+		} else if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
+			sprintf(buf, "RSA key ok\n");
+			result = realloc(result, result_size + strlen(buf) + 1);
+			if (!result)
 				return (NULL);
-			}
-			result = realloc(result, result_size + strlen(tmp) + 1);
-			if (!result) {
-				free(tmp);
-				return (NULL);
-			}
-			strcpy(result + result_size, tmp);
-			result_size += strlen(tmp);
-			free(tmp);
+			strcpy(result + result_size, buf);
+			result_size += strlen(buf);
 		} else {
 			dprintf(STDERR_FILENO, "RSA key not ok\n");
 			*res_len = result_size;
@@ -262,7 +261,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!options->noout && !options->pubout && !options->pubin) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, &len_encoded);
+		char *encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
 		if (!encoded) {
 			free(result);
 			return (NULL);
@@ -279,7 +278,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	} else if (!options->noout) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
-		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, &len_encoded);
+		char *encoded = generate_base64_public_rsa(rsa.n, rsa.e, options, &len_encoded);
 		if (!encoded) {
 			free(result);
 			return (NULL);

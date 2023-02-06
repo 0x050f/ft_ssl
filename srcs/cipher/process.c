@@ -5,6 +5,47 @@
 #define SHA256_BLOCK_SIZE 64
 #define SHA256_HASH_SIZE 32
 
+int		get_password_stdin(char *cmd, char **password, int mode) {
+	char msg[256];
+
+	if (mode == CMODE_ENCODE)
+		sprintf(msg, "enter %s encryption password: ", cmd);
+	else
+		sprintf(msg, "enter %s decryption password: ", cmd);
+	char *tmp = getpass(msg);
+	if (!tmp)
+	{
+		dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, cmd, strerror(errno));
+		return (-1);
+	}
+	*password = strdup(tmp);
+	if (!*password)
+	{
+		dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
+		return (ERR_MALLOC);
+	}
+	if (mode == CMODE_ENCODE) // Don't verify password in decode mode
+	{
+		//TODO: ask password when verifying header ?
+		sprintf(msg, "Verifying - enter %s encryption password: ", cmd);
+		tmp = getpass(msg);
+		if (!tmp)
+		{
+			free(*password);
+			dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, cmd, strerror(errno));
+			return (1);
+		}
+		if (strcmp(tmp, *password))
+		{
+			free(*password);
+			printf("Verify failure\n");
+			dprintf(STDERR_FILENO, "bad password read\n");
+			return (2);
+		}
+	}
+	return (0);
+}
+
 // hash(text || key)
 char	*h(unsigned char *text, int text_len, uint8_t *key, int key_len)
 {
@@ -241,6 +282,8 @@ int			process_cipher_stdin(char *cmd, t_options *options)
 
 int			fill_cipher_options(t_options *options, t_ssl *ssl)
 {
+	int ret;
+
 	/* set options to the last arg recv */
 	t_opt_arg *arg = get_last_arg(ssl->opt_args, "d");
 	int pos_d = arg ? arg->index : -1;
@@ -251,6 +294,11 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 	options->infile = get_last_content(ssl->opt_args, "i");
 	options->outfile = get_last_content(ssl->opt_args, "o");
 	options->key = get_last_content(ssl->opt_args, "k");
+	arg = get_last_arg(ssl->opt_args, "t");
+	options->iter = arg ? atoi(arg->content) : 10000;
+	if (options->iter < 0 || options->iter > 10000) {
+		return (args_error(ERR_OOR_ARG, "-t", 0, 10000));
+	}
 	char *tmp;
 	if ((tmp = get_last_content(ssl->opt_args, "p")))
 	{
@@ -260,40 +308,10 @@ int			fill_cipher_options(t_options *options, t_ssl *ssl)
 	}
 	if (!options->key && !options->password && strcmp(ssl->cmd, "base64"))
 	{
-		char msg[256];
-
-		snprintf(msg, 256, "enter %s encryption password: ", ssl->cmd);
-		char *tmp = getpass(msg);
-		if (!tmp)
-		{
-			dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
-			return (-1);
-		}
-		char *password = strdup(tmp);
-		if (!password)
-		{
-			dprintf(STDERR_FILENO, "%s: malloc error\n", PRG_NAME);
-			return (ERR_MALLOC);
-		}
-		if (options->mode == CMODE_ENCODE) // Don't verify password in decode mode
-		{
-			//TODO: ask password when verifying header ?
-			snprintf(msg, 256, "Verifying - enter %s encryption password: ", ssl->cmd);
-			tmp = getpass(msg);
-			if (!tmp)
-			{
-				free(password);
-				dprintf(STDERR_FILENO, "%s: %s: getpass: %s\n", PRG_NAME, ssl->cmd, strerror(errno));
-				return (1);
-			}
-			if (strcmp(tmp, password))
-			{
-				free(password);
-				printf("Verify failure\n");
-				dprintf(STDERR_FILENO, "bad password read\n");
-				return (2);
-			}
-		}
+		char *password;
+		ret = get_password_stdin(ssl->cmd, &password, options->mode);
+		if (ret)
+			return (ret);
 		options->password = password;
 	}
 	options->salt = get_last_content(ssl->opt_args, "s");

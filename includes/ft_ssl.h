@@ -56,69 +56,73 @@
 
 # define NB_HASH_OPTIONS	4
 # define HASH_OPTIONS		{ \
-		{"-p", "--pipe", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT", NULL}, \
-		{"-q", "--quiet", NULL, "quiet mode", NULL}, \
-		{"-r", "--reverse", NULL, "reverse the format of the output", NULL}, \
-		{"-s", "--string", "<string>", "print the sum of the given string", NULL} \
+	{"-p", "--pipe", NULL, "pipe STDIN to STDOUT and append the checksum to STDOUT", NULL}, \
+	{"-q", "--quiet", NULL, "quiet mode", NULL}, \
+	{"-r", "--reverse", NULL, "reverse the format of the output", NULL}, \
+	{"-s", "--string", "<string>", "print the sum of the given string", NULL} \
 }
 
 # define NB_HASH_CMDS		5
 # define CMD_HASH	{ \
-		{"md5", "p,q,r,s"}, \
-		{"sha256", "p,q,r,s"}, \
-		{"sha224", "p,q,r,s"}, \
-		{"sha512", "p,q,r,s"}, \
-		{"sha384", "p,q,r,s"} \
+	{"md5", "p,q,r,s"}, \
+	{"sha256", "p,q,r,s"}, \
+	{"sha224", "p,q,r,s"}, \
+	{"sha512", "p,q,r,s"}, \
+	{"sha384", "p,q,r,s"} \
 }
 # define FUNC_HASH			{&md5, &sha256, &sha224, &sha512, &sha384}
 
-# define NB_CIPHER_OPTIONS	9
+# define NB_CIPHER_OPTIONS	10
 # define CIPHER_OPTIONS		{ \
-		{"-d", "--decode", NULL, "decode/decrypt mode", NULL}, \
-		{"-e", "--encode", NULL, "encode/encrypt mode (default)", NULL}, \
-		{"-i", "--input", "<file>", "input file for message", NULL}, \
-		{"-o", "--output", "<file>", "output file for message", NULL}, \
-		{"-a", "--base64", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
-		{"-k", "--key", "<key>", "key in hex", "HEX"}, \
-		{"-p", "--password", "<password>", "password in ascii", "PRINT"}, \
-		{"-s", "--salt", "<salt>", "salt in hex", "HEX"}, \
-		{"-v", "--iv", "<iv>", "initialization vector in hex", "HEX"} \
+	{"-d", "--decode", NULL, "decode/decrypt mode", NULL}, \
+	{"-e", "--encode", NULL, "encode/encrypt mode (default)", NULL}, \
+	{"-i", "--input", "<file>", "input file for message", NULL}, \
+	{"-o", "--output", "<file>", "output file for message", NULL}, \
+	{"-a", "--base64", NULL, "decode/encode the input/output in base64, depending on the encrypt mode", NULL}, \
+	{"-k", "--key", "<key>", "key in hex", "HEX"}, \
+	{"-p", "--password", "<password>", "password in ascii", "PRINT"}, \
+	{"-s", "--salt", "<salt>", "salt in hex", "HEX"}, \
+	{"-v", "--iv", "<iv>", "initialization vector in hex", "HEX"}, \
+	{"-t", "--iter", "<iter>", "number of iteration of pbkdf2 (default: 10000)", "INT"} \
 }
 # define NB_CIPHER_CMDS		4
 # define CMD_CIPHER		{ \
-		{"base64", "d,e,i,o"}, \
-		{"des", "d,e,i,o,a,k,p,s,v"}, \
-		{"des-ecb", "d,e,i,o,a,k,p,s,v"}, \
-		{"des-cbc", "d,e,i,o,a,k,p,s,v"} \
+	{"base64", "d,e,i,o"}, \
+	{"des", "d,e,i,o,a,k,p,s,v,t"}, \
+	{"des-ecb", "d,e,i,o,a,k,p,s,v,t"}, \
+	{"des-cbc", "d,e,i,o,a,k,p,s,v,t"} \
 }
 # define FUNC_CIPHER		{&base64, &des_cbc, &des_ecb, &des_cbc}
 
-# define NB_STD_OPTIONS	18
+# define NB_STD_OPTIONS		21
 # define STD_OPTIONS		{ \
-		{"-i", NULL, NULL, "print in the standard output"}, \
-		{NULL, "-in", "<file>", "input file", NULL}, \
-		{"-o", "-out", "<output>", "output file", NULL}, \
-		{NULL, "-inkey", "<file>", "input file", NULL}, \
-		{NULL, "-inform", "<pem>", "input format", NULL}, \
-		{NULL, "-outform", "<pem>", "output format", NULL}, \
-		{NULL, "-passin", "<arg>", "input file pass phrase source", NULL}, \
-		{NULL, "-passout", "<arg>", "output file pass phrase source", NULL}, \
-		{NULL, "-des", NULL, "encrypt the private key with the specifed cipher", NULL}, \
-		{NULL, "-text", NULL, "print the key in text", NULL}, \
-		{NULL, "-noout", NULL, "don't print key out", NULL}, \
-		{NULL, "-modulus", NULL, "print the RSA key modulus", NULL}, \
-		{NULL, "-check", NULL, "verify key consistency", NULL}, \
-		{NULL, "-pubin", NULL, "expect a public key in input file", NULL}, \
-		{NULL, "-pubout", NULL, "output a public key", NULL}, \
-		{NULL, "-encrypt", NULL, "encrypt with public key", NULL}, \
-		{NULL, "-decrypt", NULL, "decrypt with private key", NULL}, \
-		{NULL, "-hexdump", NULL, "hex dump output", NULL} \
+	{"-v", "-verbose", NULL, "verbose output", NULL}, \
+	{"-i", NULL, NULL, "print in the standard output"}, \
+	{NULL, "-in", "<file>", "input file", NULL}, \
+	{"-o", "-out", "<output>", "output file", NULL}, \
+	{NULL, "-inkey", "<file>", "input file", NULL}, \
+	{NULL, "-inform", "<pem>", "input format", NULL}, \
+	{NULL, "-outform", "<pem>", "output format", NULL}, \
+	{NULL, "-passin", "<arg>", "input file pass phrase source", NULL}, \
+	{NULL, "-passout", "<arg>", "output file pass phrase source", NULL}, \
+	{NULL, "-text", NULL, "print the key in text", NULL}, \
+	{NULL, "-noout", NULL, "don't print key out", NULL}, \
+	{NULL, "-modulus", NULL, "print the RSA key modulus", NULL}, \
+	{NULL, "-check", NULL, "verify key consistency", NULL}, \
+	{NULL, "-pubin", NULL, "expect a public key in input file", NULL}, \
+	{NULL, "-pubout", NULL, "output a public key", NULL}, \
+	{NULL, "-encrypt", NULL, "encrypt with public key", NULL}, \
+	{NULL, "-decrypt", NULL, "decrypt with private key", NULL}, \
+	{NULL, "-hexdump", NULL, "hex dump output", NULL}, \
+	{NULL, "-des", NULL, "encrypt the private key with the specifed cipher", NULL}, \
+	{NULL, "-des-ecb", NULL, "encrypt the private key with the specifed cipher", NULL}, \
+	{NULL, "-des-cbc", NULL, "encrypt the private key with the specifed cipher", NULL} \
 }
 # define NB_STD_CMDS		3
 # define CMD_STD		{ \
-		{"genrsa", "i,o"}, \
-		{"rsa", "in,out,inform,outform,passin,passout,des,text,noout,modulus,check,pubin,pubout"}, \
-		{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
+	{"genrsa", "i,o,des,des-ecb,des-cbc"}, \
+	{"rsa", "in,out,inform,outform,passin,passout,text,noout,modulus,check,pubin,pubout,des,des-ecb,des-cbc"}, \
+	{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
 }
 # define FUNC_STD		{&genrsa, &rsa, &rsautl}
 
@@ -171,9 +175,11 @@ uint32_t	hex2int32(const char *hex);
 void		*b_memcpy(void *dest, const void *src, size_t n);
 size_t		ft_strlen_special(char *str, size_t max);
 void		ft_toupper(char *str);
+int			isint(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);
 char		*read_query(int fd, size_t *size);
+char		*first_nonchar(char *str, char c);
 
 /* process.c */
 int			process_cipher(t_ssl *ssl);
