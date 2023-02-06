@@ -101,8 +101,8 @@
 	{NULL, "-in", "<file>", "input file", NULL}, \
 	{"-o", "-out", "<output>", "output file", NULL}, \
 	{NULL, "-inkey", "<file>", "input file", NULL}, \
-	{NULL, "-inform", "<pem>", "input format", NULL}, \
-	{NULL, "-outform", "<pem>", "output format", NULL}, \
+	{NULL, "-inform", "DER|PEM", "input format", NULL}, \
+	{NULL, "-outform", "DER|PEM", "output format", NULL}, \
 	{NULL, "-passin", "<arg>", "input file pass phrase source", NULL}, \
 	{NULL, "-passout", "<arg>", "output file pass phrase source", NULL}, \
 	{NULL, "-text", NULL, "print the key in text", NULL}, \
