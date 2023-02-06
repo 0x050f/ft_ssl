@@ -196,10 +196,13 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		goto could_not_read;
 	struct rsa rsa;
 	int ret;
-	if (!options->pubin)
-		ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
-	else
+	if (!options->pubin) {
+		ret = read_encrypted_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+		if (ret)
+			ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+	} else {
 		ret = read_public_rsa_asn1(&rsa, cipher_res, cipher_size);
+	}
 	free(cipher_res);
 	if (ret)
 		goto could_not_read;

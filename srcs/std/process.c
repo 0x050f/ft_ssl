@@ -83,12 +83,12 @@ bool		miller_rabin(uint64_t n, int k) {
 unsigned __int128	inv_mod(unsigned __int128 a, unsigned __int128 n) {
 	__int128 t = 0;
 	__int128 newt = 1;
-	__int128 r = n;
-	__int128 newr = a;
+	unsigned __int128 r = n;
+	unsigned __int128 newr = a;
 
 	while (newr) {
 		__int128 tmp;
-		__int128 quotient = r / newr;
+		unsigned __int128 quotient = r / newr;
 		// (t, newt) := (newt, t - quotient * newt)
 		tmp = newt;
 		newt = t - quotient * newt;

@@ -292,26 +292,30 @@ int		get_key_decrypt(
 	size_t *size,
 	uint64_t *key_output,
 	char *key,
+	uint8_t *salt,
 	uint64_t *iv,
 	char *password,
 	int iter
 ) {
-	uint8_t		salt[8];
+	uint8_t		new_salt[8];
 
 	if (!key)
 	{
 		/* PKBDF */
-		memset(salt, 0, 8);
-		/* ignore salt on decrypt */
-		/* Get salt */
-		if (*size < 16 || memcmp(*str, "Salted__", 8))
-		{
-			dprintf(STDERR_FILENO, "bad magic number\n");
-			return (-1);
+		if (!salt) {
+			memset(new_salt, 0, 8);
+			/* ignore salt on decrypt */
+			/* Get salt */
+			if (*size < 16 || memcmp(*str, "Salted__", 8))
+			{
+				dprintf(STDERR_FILENO, "bad magic number\n");
+				return (-1);
+			}
+			memcpy(new_salt, *str + 8, 8);
+			*str += 16;
+			*size -= 16;
+			salt = new_salt;
 		}
-		memcpy(salt, *str + 8, 8);
-		*str += 16;
-		*size -= 16;
 		// default openssl -pbkdf2:  -iter 10000 -md sha256
 		uint8_t *key_uint = pbkdf2(hmac_sha256, password, strlen(password), (char *)salt, 8, iter, 16);
 		if (!key_uint)
@@ -446,7 +450,7 @@ char			*des_ecb_decrypt(
 	char		*plaintext;
 	uint64_t	key;
 
-	if (get_key_decrypt(&str, &size, &key, key_input, NULL, password, iter) < 0)
+	if (get_key_decrypt(&str, &size, &key, key_input, NULL, NULL, password, iter) < 0)
 		return (NULL);
 	plaintext = des_ecb_decrypt_from_key(str, size, key, res_len);
 	return (plaintext);

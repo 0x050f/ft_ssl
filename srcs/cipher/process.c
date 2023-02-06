@@ -8,7 +8,10 @@
 int		get_password_stdin(char *cmd, char **password, int mode) {
 	char msg[256];
 
-	sprintf(msg, "enter %s encryption password: ", cmd);
+	if (mode == CMODE_ENCODE)
+		sprintf(msg, "enter %s encryption password: ", cmd);
+	else
+		sprintf(msg, "enter %s decryption password: ", cmd);
 	char *tmp = getpass(msg);
 	if (!tmp)
 	{

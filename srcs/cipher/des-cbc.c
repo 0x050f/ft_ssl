@@ -275,7 +275,7 @@ char			*des_cbc_decrypt(unsigned char *str, size_t size, size_t *res_len, t_opti
 	uint64_t	iv;
 	uint64_t	key;
 
-	if (get_key_decrypt(&str, &size, &key, options->key, &iv, options->password, options->iter) < 0)
+	if (get_key_decrypt(&str, &size, &key, options->key, NULL, &iv, options->password, options->iter) < 0)
 		return (NULL);
 	*res_len = 0;
 	if (options->iv)

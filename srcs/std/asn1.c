@@ -12,7 +12,6 @@ int			get_size_in_byte(unsigned __int128 n) {
 }
 
 void	*swap_bytes(void *dst, size_t len) {
-	size_t		i;
 	uint8_t		*in, tmp;
 
 	in = dst;
@@ -133,10 +132,11 @@ struct asn1		create_asn1_rsa_public_key (
 	if (!asn1.content)
 		return (asn1);
 
-	// TODO: CHANGE
-	tmp = inv_nb(n);
+	tmp = n;
+	swap_bytes(&tmp, get_size_in_byte(n));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(n));
-	tmp = inv_nb(e);
+	tmp = e;
+	swap_bytes(&tmp, get_size_in_byte(e));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(e));
 
 	embed_asn1_elem(&asn1, ID_SEQ);
@@ -172,8 +172,8 @@ struct asn1		create_asn1_des_cbc(
 	uint8_t					salt[8];
 	uint64_t				key;
 	uint64_t				iv;
+	uint64_t				tmp;
 	char					*password;
-	unsigned __int128		tmp;
 	uint8_t					*cipher;
 	size_t					cipher_size;
 
@@ -199,7 +199,9 @@ struct asn1		create_asn1_des_cbc(
 
 	// DESECB SEQUENCE
 	append_asn1_elem(&asn1, ID_OBJECT, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID));
-	tmp = inv_nb(iv);
+	
+	tmp = iv;
+	swap_bytes(&tmp, get_size_in_byte(iv));
 	append_asn1_elem(&asn1, ID_OCTET, &tmp, get_size_in_byte(iv));
 	embed_asn1_elem(&asn1, ID_SEQ);
 
@@ -219,7 +221,8 @@ struct asn1		create_asn1_des_cbc(
 	embed_asn1_elem(&header, ID_SEQ);
 
 	// PBKDF2 PARAMS
-	tmp = inv_nb(iter);
+	tmp = iter;
+	swap_bytes(&tmp, get_size_in_byte(iter));
 	prepend_asn1_elem(&header, ID_INTEGER, &tmp, get_size_in_byte(iter));
 	prepend_asn1_elem(&header, ID_OCTET, salt, 8);
 	embed_asn1_elem(&header, ID_SEQ);
@@ -250,10 +253,10 @@ struct asn1		create_asn1_des_ecb(
 	int						ret;
 	struct asn1				asn1;
 	int						iter = 2048;
+	uint64_t				tmp;
 	uint8_t					salt[8];
 	uint64_t				key;
 	char					*password;
-	unsigned __int128		tmp;
 	uint8_t					*cipher;
 	size_t					cipher_size;
 
@@ -298,7 +301,8 @@ struct asn1		create_asn1_des_ecb(
 	embed_asn1_elem(&header, ID_SEQ);
 
 	// PBKDF2 PARAMS
-	tmp = inv_nb(iter);
+	tmp = iter;
+	swap_bytes(&tmp, get_size_in_byte(iter));
 	prepend_asn1_elem(&header, ID_INTEGER, &tmp, get_size_in_byte(iter));
 	prepend_asn1_elem(&header, ID_OCTET, salt, 8);
 	embed_asn1_elem(&header, ID_SEQ);
@@ -342,21 +346,29 @@ struct asn1		create_asn1_rsa_private_key(
 
 	append_asn1_elem(&asn1, ID_INTEGER, "\x00", 1);
 
-	tmp = inv_nb(n);
+	tmp = n;
+	swap_bytes(&tmp, get_size_in_byte(n));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(n));
-	tmp = inv_nb(e);
+	tmp = e;
+	swap_bytes(&tmp, get_size_in_byte(e));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(e));
-	tmp = inv_nb(d);
+	tmp = d;
+	swap_bytes(&tmp, get_size_in_byte(d));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(d));
-	tmp = inv_nb(p);
+	tmp = p;
+	swap_bytes(&tmp, get_size_in_byte(p));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(p));
-	tmp = inv_nb(q);
+	tmp = q;
+	swap_bytes(&tmp, get_size_in_byte(q));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(q));
-	tmp = inv_nb(dp);
+	tmp = dp;
+	swap_bytes(&tmp, get_size_in_byte(dp));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(dp));
-	tmp = inv_nb(dq);
+	tmp = dq;
+	swap_bytes(&tmp, get_size_in_byte(dq));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(dq));
-	tmp = inv_nb(qinv);
+	tmp = qinv;
+	swap_bytes(&tmp, get_size_in_byte(qinv));
 	append_asn1_elem(&asn1, ID_INTEGER, &tmp, get_size_in_byte(qinv));
 
 	embed_asn1_elem(&asn1, ID_SEQ);
@@ -536,64 +548,155 @@ uint8_t		*check_rsa_asn1_pub_header(uint8_t *asn1, size_t size) {
 	return (asn1 + asn1[1] + 2);
 }
 
-uint8_t		*check_elem(uint8_t *asn1, size_t size, uint8_t elem, uint8_t *value) {
-	int		size = 0;
+uint8_t		*check_asn1_elem(uint8_t *asn1, size_t *size, uint8_t elem, void *value, size_t value_size, bool skip) {
+	size_t	elem_size = 0;
 	int		i = 0;
 
+	if (!asn1)
+		return (NULL);
+	if (*size < 2)
+		return (NULL);
+	if (asn1[i++] != elem)
+		return (NULL);
+	if (asn1[i] & 0x80) {
+		size_t nb_size = (asn1[i++] ^ 0x80);
+		if (nb_size + 2 >= *size)
+			return (NULL);
+		memcpy(&elem_size, &asn1[i], nb_size);
+		swap_bytes(&elem_size, nb_size);
+		i += nb_size;
+	} else {
+		elem_size = asn1[i++];
+	}
+	if (elem_size + i > *size)
+		return (NULL);
+	if (value) {
+		if (elem_size != value_size)
+			return (NULL);
+		if (memcmp(&asn1[i], value, elem_size))
+			return (NULL);
+	}
+	if (skip)
+		i += elem_size;
+	*size -= i;
+	return (&asn1[i]);
+}
+
+void		*get_asn1_elem(uint8_t *asn1, size_t size, uint8_t elem, size_t *size_content) {
+	void		*content;
+	size_t		elem_size = 0;
+	int			i = 0;
+
+	if (!asn1)
+		return (NULL);
 	if (size < 2)
 		return (NULL);
 	if (asn1[i++] != elem)
 		return (NULL);
-	if (asn1[i] & 0x80)
-		i += (asn1[i] ^ 0x80) + 1;
-	else
-		i++;
-	if (size <= i)
-		return (NULL);
-	if (value) {
-		
+	if (asn1[i] & 0x80) {
+		size_t nb_size = (asn1[i++] ^ 0x80);
+		if (nb_size + 2 >= size)
+			return (NULL);
+		memcpy(&elem_size, &asn1[i], nb_size);
+		swap_bytes(&elem_size, nb_size);
+		i += nb_size;
+	} else {
+		elem_size = asn1[i++];
 	}
-	return (&asn1[i]);
+	if (elem_size + i > size)
+		return (NULL);
+	content = malloc(elem_size);
+	if (!content)
+		return (NULL);
+	memcpy(content, &asn1[i], elem_size);
+	*size_content = elem_size;
+	return (content);
+}
+
+uint8_t		*parse_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size, uint8_t salt[8], int *iter, uint64_t *iv) {
+	void		*res;
+	size_t		elem_size;
+	size_t		tmp_size;
+	uint8_t		*tmp;
+	uint8_t		*type;
+
+	tmp = asn1;
+	tmp_size = size;
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, PBES2_OBJECTID, strlen(PBES2_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	res = get_asn1_elem(tmp, tmp_size, ID_OCTET, &elem_size);
+	if (!res)
+		return (NULL);
+	bzero(salt, 8);
+	memcpy(salt, res, elem_size);
+	free(res);
+
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OCTET, NULL, 0, true);
+	*iter = 0;
+	res = get_asn1_elem(tmp, tmp_size, ID_INTEGER, &elem_size);
+	if (!res)
+		return (NULL);
+	b_memcpy(iter, res, elem_size);
+	free(res);
+
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_INTEGER, NULL, 0, true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_NULL, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	size_t copy_size = tmp_size;
+	type = check_asn1_elem(tmp, &copy_size, ID_OBJECT, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID), false);
+	if (!type) {
+		size_t copy_size = tmp_size;
+		type = check_asn1_elem(tmp, &copy_size, ID_OBJECT, DESECB_OBJECTID, strlen(DESECB_OBJECTID), false);
+		if (type)
+			tmp = type + strlen(DESECB_OBJECTID);
+		else
+			tmp = NULL;
+	} else {
+		tmp = type + strlen(DESCBC_OBJECTID);
+	}
+	tmp_size = copy_size;
+	res = get_asn1_elem(tmp, tmp_size, ID_OCTET, &elem_size);
+	*iv = 0;
+	if (!res)
+		return (NULL);
+	b_memcpy(iv, res, elem_size);
+	free(res);
+	return (type);
 }
 
 uint8_t		*check_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size) {
+	size_t		tmp_size;
 	uint8_t		*tmp;
 
-	tmp = check_elem(asn1, size, ID_SEQ);
-	if (!tmp)
-		return (NULL);
-	size -= tmp - asn1;
-	asn1 = tmp;
-
-	tmp = check_elem(asn1, size, ID_SEQ);
-	if (!tmp)
-		return (NULL);
-	size -= tmp - asn1;
-	asn1 = tmp;
-
-	if (asn1[i++] != ID_SEQ)
-		return (NULL);
-	if (asn1[i] & 0x80)
-		i += (asn1[i] ^ 0x80) + 1;
-	else
-		i++;
-	if (asn1[i++] != ID_OBJECT)
-		return (NULL);
-	if (!memcmp(&asn1[i], PBES2_OBJECTID, strlen(PBES2_OBJECTID)))
-		return (NULL);
-	i += strlen(PBES2_OBJECTID);
-	if (asn1[i++] != ID_SEQ)
-		return (NULL);
-	if (asn1[i] & 0x80)
-		i += (asn1[i] ^ 0x80) + 1
-	else
-		i++;
-	if (asn1[i++] != ID_SEQ)
-		return (NULL);
-	if (asn1[i] & 0x80)
-		i += (asn1[i] ^ 0x80) + 1
-	else
-		i++;
+	tmp = asn1;
+	tmp_size = size;
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, PBES2_OBJECTID, strlen(PBES2_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, PBKDF2_OBJECTID, strlen(PBKDF2_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OCTET, NULL, 0, true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_INTEGER, NULL, 0, true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, HASHMACSHA256_OBJECTID, strlen(HASHMACSHA256_OBJECTID), true);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_NULL, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	uint8_t *test;
+	test = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, DESECB_OBJECTID, strlen(DESECB_OBJECTID), true);
+	if (!test)
+		test = check_asn1_elem(tmp, &tmp_size, ID_OBJECT, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID), true);
+	tmp = test;
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_OCTET, NULL, 0, true);
+	return (tmp);
 }
 
 uint8_t		*check_rsa_asn1_priv_header(uint8_t *asn1, size_t size) {
@@ -632,10 +735,57 @@ int		read_public_rsa_asn1(struct rsa *pub, uint8_t *asn1, size_t size) {
 	return (0);
 }
 
-int		read_private_encrypted_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
-	uint8_t *tmp;
+int		read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
+	int			ret = 1;
+	uint8_t		*type;
+	uint8_t		*tmp;
+	uint64_t	key;
+	int			iter = 0;
+	uint8_t		salt[8];
+	char		*password;
+	uint64_t	iv = 0;
 
+	bzero(salt, 8);
+	(void)prv;
 	tmp = check_rsa_asn1_encrypted_priv_header(asn1, size);
+	if (!tmp)
+		return (1);
+	type = parse_rsa_asn1_encrypted_priv_header(asn1, size, salt, &iter, &iv);
+	if (!memcmp(type, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID))) {
+		if (get_password_stdin("des-cbc", &password, CMODE_DECRYPT))
+			return (1);
+		if (get_key_decrypt(NULL, NULL, &key, NULL, salt, NULL, password, iter))
+			return (1);
+		size_t cipher_size;
+		void *ciphertext = get_asn1_elem(tmp, size - (tmp - asn1), ID_OCTET, &cipher_size);
+		if (!ciphertext)
+			return (1);
+		size_t plain_size;
+		void *plaintext = des_cbc_decrypt_from_key_iv(ciphertext, cipher_size, key, iv, &plain_size);
+		free(ciphertext);
+		if (!plaintext)
+			return (1);
+		ret = read_private_rsa_asn1(prv, plaintext, plain_size);
+		free(plaintext);
+	}
+	else if (!memcmp(type, DESECB_OBJECTID, strlen(DESECB_OBJECTID))) {
+		if (get_password_stdin("des-ecb", &password, CMODE_DECRYPT))
+			return (1);
+		if (get_key_decrypt(NULL, NULL, &key, NULL, salt, NULL, password, iter))
+			return (1);
+		size_t cipher_size;
+		void *ciphertext = get_asn1_elem(tmp, size - (tmp - asn1), ID_OCTET, &cipher_size);
+		if (!ciphertext)
+			return (1);
+		size_t plain_size;
+		void *plaintext = des_ecb_decrypt_from_key(ciphertext, cipher_size, key, &plain_size);
+		free(ciphertext);
+		if (!plaintext)
+			return (1);
+		ret = read_private_rsa_asn1(prv, plaintext, plain_size);
+		free(plaintext);
+	}
+	return (ret);
 }
 
 int		read_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
