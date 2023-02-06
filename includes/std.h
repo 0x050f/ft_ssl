@@ -109,12 +109,12 @@ char	*rsa(unsigned char *query, size_t size, size_t *res_len, t_options *options
 char	*rsautl(unsigned char *query, size_t size, size_t *res_len, t_options *options);
 
 /* asn1.c */
-struct asn1		create_asn1_des_cbc(char *payload, size_t size);
-struct asn1		create_asn1_des_ecb(char *payload, size_t size);
+struct asn1		create_asn1_des_cbc(char *payload, size_t size, char *password);
+struct asn1		create_asn1_des_ecb(char *payload, size_t size, char *password);
 struct asn1		create_asn1_rsa_public_key (unsigned __int128 n, unsigned __int128 e);
 struct asn1		create_asn1_rsa_private_key(unsigned __int128 n, unsigned __int128 e, unsigned __int128 d, unsigned __int128 p, unsigned __int128 q, unsigned __int128 dp, unsigned __int128 dq, unsigned __int128 qinv);
 int				read_public_rsa_asn1(struct rsa *pub, uint8_t *asn1, size_t size);
-int				read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size);
+int				read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size, char *password);
 int				read_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size);
 
 #endif

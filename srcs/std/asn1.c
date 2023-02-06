@@ -164,7 +164,8 @@ struct asn1		create_asn1_rsa_public_key (
 
 struct asn1		create_asn1_des_cbc(
 	char		*payload,
-	size_t		size
+	size_t		size,
+	char		*password
 ) {
 	int						ret;
 	struct asn1				asn1;
@@ -173,20 +174,23 @@ struct asn1		create_asn1_des_cbc(
 	uint64_t				key;
 	uint64_t				iv;
 	uint64_t				tmp;
-	char					*password;
+	char					*passwd = NULL;
 	uint8_t					*cipher;
 	size_t					cipher_size;
 
 	// Compute cipher
 	memset(&asn1, 0, sizeof(struct asn1));
-	ret = get_password_stdin("des-cbc", &password, CMODE_ENCRYPT);
-	if (ret)
-		return (asn1);
+	if (!password) {
+		ret = get_password_stdin("des-cbc", &passwd, CMODE_ENCRYPT);
+		if (ret)
+			return (asn1);
+		password = passwd;
+	}
 	if (get_key_encrypt(&key, salt, NULL, NULL, &iv, password, iter) < 0) {
-		free(password);
+		free(passwd);
 		return (asn1);
 	}
-	free(password);
+	free(passwd);
 	cipher = (uint8_t *)des_cbc_encrypt_from_key_iv((unsigned char *)payload, size, key, iv, &cipher_size);
 	if (!cipher)
 		return (asn1);
@@ -248,7 +252,8 @@ struct asn1		create_asn1_des_cbc(
 
 struct asn1		create_asn1_des_ecb(
 	char		*payload,
-	size_t		size
+	size_t		size,
+	char		*password
 ) {
 	int						ret;
 	struct asn1				asn1;
@@ -256,20 +261,23 @@ struct asn1		create_asn1_des_ecb(
 	uint64_t				tmp;
 	uint8_t					salt[8];
 	uint64_t				key;
-	char					*password;
+	char					*passwd = NULL;
 	uint8_t					*cipher;
 	size_t					cipher_size;
 
 	// Compute cipher
 	memset(&asn1, 0, sizeof(struct asn1));
-	ret = get_password_stdin("des-ecb", &password, CMODE_ENCRYPT);
-	if (ret)
-		return (asn1);
+	if (!password) {
+		ret = get_password_stdin("des-ecb", &passwd, CMODE_ENCRYPT);
+		if (ret)
+			return (asn1);
+		password = passwd;
+	}
 	if (get_key_encrypt(&key, salt, NULL, NULL, NULL, password, iter) < 0) {
-		free(password);
+		free(passwd);
 		return (asn1);
 	}
-	free(password);
+	free(passwd);
 	cipher = (uint8_t *)des_ecb_encrypt_from_key((unsigned char *)payload, size, key, &cipher_size);
 	if (!cipher)
 		return (asn1);
@@ -724,14 +732,19 @@ int		read_public_rsa_asn1(struct rsa *pub, uint8_t *asn1, size_t size) {
 	return (0);
 }
 
-int		read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size) {
+int		read_encrypted_private_rsa_asn1(
+	struct rsa *prv,
+	uint8_t *asn1,
+	size_t size,
+	char *password
+) {
 	int			ret = 1;
 	uint8_t		*type;
 	uint8_t		*tmp;
 	uint64_t	key;
 	int			iter = 0;
 	uint8_t		salt[8];
-	char		*password;
+	char		*passwd = NULL;
 	uint64_t	iv = 0;
 
 	bzero(salt, 8);
@@ -741,10 +754,14 @@ int		read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size
 		return (1);
 	type = parse_rsa_asn1_encrypted_priv_header(asn1, size, salt, &iter, &iv);
 	if (!memcmp(type, DESCBC_OBJECTID, strlen(DESCBC_OBJECTID))) {
-		if (get_password_stdin("des-cbc", &password, CMODE_DECRYPT))
-			return (1);
+		if (!passwd) {
+			if (get_password_stdin("des-cbc", &passwd, CMODE_DECRYPT))
+				return (1);
+			password = passwd;
+		}
 		if (get_key_decrypt(NULL, NULL, &key, NULL, salt, NULL, password, iter))
 			return (1);
+		free(passwd);
 		size_t cipher_size;
 		void *ciphertext = get_asn1_elem(tmp, size - (tmp - asn1), ID_OCTET, &cipher_size);
 		if (!ciphertext)
@@ -758,10 +775,14 @@ int		read_encrypted_private_rsa_asn1(struct rsa *prv, uint8_t *asn1, size_t size
 		free(plaintext);
 	}
 	else if (!memcmp(type, DESECB_OBJECTID, strlen(DESECB_OBJECTID))) {
-		if (get_password_stdin("des-ecb", &password, CMODE_DECRYPT))
-			return (1);
+		if (!passwd) {
+			if (get_password_stdin("des-ecb", &passwd, CMODE_DECRYPT))
+				return (1);
+			password = passwd;
+		}
 		if (get_key_decrypt(NULL, NULL, &key, NULL, salt, NULL, password, iter))
 			return (1);
+		free(passwd);
 		size_t cipher_size;
 		void *ciphertext = get_asn1_elem(tmp, size - (tmp - asn1), ID_OCTET, &cipher_size);
 		if (!ciphertext)

@@ -120,7 +120,7 @@
 }
 # define NB_STD_CMDS		3
 # define CMD_STD		{ \
-	{"genrsa", "i,o,des,des-ecb,des-cbc"}, \
+	{"genrsa", "i,o,passout,des,des-ecb,des-cbc"}, \
 	{"rsa", "in,out,inform,outform,passin,passout,text,noout,modulus,check,pubin,pubout,des,des-ecb,des-cbc"}, \
 	{"rsautl", "in,out,inkey,pubin,decrypt,encrypt,hexdump"} \
 }

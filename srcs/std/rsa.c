@@ -210,7 +210,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	struct rsa rsa;
 	int ret;
 	if (!options->pubin) {
-		ret = read_encrypted_private_rsa_asn1(&rsa, cipher_res, cipher_size);
+		ret = read_encrypted_private_rsa_asn1(&rsa, cipher_res, cipher_size, options->passin);
 		if (ret)
 			ret = read_private_rsa_asn1(&rsa, cipher_res, cipher_size);
 	} else {
@@ -277,8 +277,18 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 			encoded = generate_base64_private_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv, options, &len_encoded);
 		} else if (!strcmp(options->outform, "DER")) {
 			struct asn1 rsa_asn1 = create_asn1_rsa_private_key(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv);
-			encoded = (char *)rsa_asn1.content;
+			encoded =(char *)rsa_asn1.content;
 			len_encoded = rsa_asn1.length;
+			if (options->cipher) {
+				struct asn1 cipher_asn1;
+				if (!strcmp(options->cipher, "des-ecb"))
+					cipher_asn1 = create_asn1_des_ecb(encoded, len_encoded, options->passout);
+				else if (!strcmp(options->cipher, "des-cbc") || !strcmp(options->cipher, "des"))
+					cipher_asn1 = create_asn1_des_cbc(encoded, len_encoded, options->passout);
+				free(encoded);
+				encoded = (char *)cipher_asn1.content;
+				len_encoded = cipher_asn1.length;
+			}
 		}
 		if (!encoded) {
 			free(result);
