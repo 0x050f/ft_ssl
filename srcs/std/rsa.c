@@ -170,10 +170,10 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	char		footer_enc_priv[] = FOOTER_ENC_PRIVATE;
 	char		header_public[] = HEADER_PUBLIC;
 	char		footer_public[] = FOOTER_PUBLIC;
-	uint8_t		*cipher_res;
-	size_t		cipher_size;
-	size_t		result_size;
-	char		*result;
+	uint8_t		*cipher_res = NULL;
+	size_t		cipher_size = 0;
+	size_t		result_size = 0;
+	char		*result = NULL;
 
 	DPRINT("rsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
@@ -186,15 +186,27 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	result = malloc(result_size);
 	if (!result)
 		return (NULL);
-	if (options->pubin)
-		cipher_res = get_rsa_between_header_footer(query, size, header_public, footer_public, &cipher_size);
-	else {
-		cipher_res = get_rsa_between_header_footer(query, size, header_private, footer_private, &cipher_size);
-		if (!cipher_res)
-			cipher_res = get_rsa_between_header_footer(query, size, header_enc_priv, footer_enc_priv, &cipher_size);
+	if (!options->inform || !strcmp(options->inform, "PEM")) {
+		if (options->pubin)
+			cipher_res = get_rsa_between_header_footer(query, size, header_public, footer_public, &cipher_size);
+		else {
+			cipher_res = get_rsa_between_header_footer(query, size, header_private, footer_private, &cipher_size);
+			if (!cipher_res) {
+				cipher_res = get_rsa_between_header_footer(query, size, header_enc_priv, footer_enc_priv, &cipher_size);
+			}
+		}
 	}
-	if (!cipher_res)
+	if (!cipher_res && options->inform && !strcmp(options->inform, "PEM")) {
 		goto could_not_read;
+	} else if (!cipher_res) { // test as DER
+		cipher_size = size;
+		cipher_res = malloc(cipher_size);
+		if (!cipher_res) {
+			free(result);
+			return (NULL);
+		}
+		memcpy(cipher_res, query, cipher_size);
+	}
 	struct rsa rsa;
 	int ret;
 	if (!options->pubin) {
