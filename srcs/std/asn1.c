@@ -529,25 +529,6 @@ int			check_asn1_octet(uint8_t *asn1, size_t size) {
 	return (0);
 }
 
-uint8_t		*check_rsa_asn1_pub_header(uint8_t *asn1, size_t size) {
-	if (size < 18)
-		return (NULL);
-	if (asn1[0] != ID_SEQ)
-		return (NULL);
-	if (asn1[1] & 0x80 && asn1[1] > size - 2)
-		return (NULL);
-	asn1 += 2;
-	if (asn1[0] != ID_SEQ)
-		return (NULL);
-	if (asn1[2] != ID_OBJECT)
-		return (NULL);
-	if (memcmp(&asn1[4], RSA_OBJECTID, strlen(RSA_OBJECTID)))
-		return (NULL);
-	if (asn1[1] > size - 2)
-		return (NULL);
-	return (asn1 + asn1[1] + 2);
-}
-
 uint8_t		*check_asn1_elem(uint8_t *asn1, size_t *size, uint8_t elem, void *value, size_t value_size, bool skip) {
 	size_t	elem_size = 0;
 	int		i = 0;
@@ -671,6 +652,21 @@ uint8_t		*parse_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size, uint8
 	return (type);
 }
 
+uint8_t		*check_rsa_asn1_pub_header(uint8_t *asn1, size_t size) {
+	size_t		tmp_size;
+	uint8_t		*tmp;
+
+	tmp = asn1;
+	tmp_size = size;
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	uint8_t *check_rsa = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	check_rsa = check_asn1_elem(check_rsa, &tmp_size, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID), true);
+	if (!check_rsa)
+		return (NULL);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, true);
+	return (tmp);
+}
+
 uint8_t		*check_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size) {
 	size_t		tmp_size;
 	uint8_t		*tmp;
@@ -700,26 +696,19 @@ uint8_t		*check_rsa_asn1_encrypted_priv_header(uint8_t *asn1, size_t size) {
 }
 
 uint8_t		*check_rsa_asn1_priv_header(uint8_t *asn1, size_t size) {
-	if (size < 18)
+	size_t		tmp_size;
+	uint8_t		*tmp;
+
+	tmp = asn1;
+	tmp_size = size;
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_INTEGER, "\x00", 1, true);
+	uint8_t *check_rsa = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, false);
+	check_rsa = check_asn1_elem(check_rsa, &tmp_size, ID_OBJECT, RSA_OBJECTID, strlen(RSA_OBJECTID), true);
+	if (!check_rsa)
 		return (NULL);
-	if (asn1[0] != ID_SEQ)
-		return (NULL);
-	if (asn1[1] & 0x80 && asn1[1] > size - 2)
-		return (NULL);
-	uint8_t *tmp;
-	tmp = memmem(asn1, size, INTEGER_0, 3);
-	if (!tmp || size - (tmp - asn1) < strlen(RSA_OBJECTID) + 4)
-		return (NULL);
-	asn1 = tmp + 3;
-	if (asn1[0] != ID_SEQ)
-		return (NULL);
-	if (asn1[2] != ID_OBJECT)
-		return (NULL);
-	if (memcmp(&asn1[4], RSA_OBJECTID, strlen(RSA_OBJECTID)))
-		return (NULL);
-	if (asn1[1] > size - 4)
-		return (NULL);
-	return (asn1 + asn1[1] + 2);
+	tmp = check_asn1_elem(tmp, &tmp_size, ID_SEQ, NULL, 0, true);
+	return (tmp);
 }
 
 int		read_public_rsa_asn1(struct rsa *pub, uint8_t *asn1, size_t size) {

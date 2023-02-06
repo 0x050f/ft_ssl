@@ -154,10 +154,10 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 	if (!result_size)
 		return ;
 	if (options->std_output) {
-		if (result[result_size - 1] != '\n')
-			dprintf(STDOUT_FILENO, "%.*s\n", (int)result_size, result);
-		else
-			dprintf(STDOUT_FILENO, "%.*s", (int)result_size, result);
+		write(STDOUT_FILENO, result, result_size);
+		if (result[result_size - 1] != '\n' && (!strcmp(cmd, "genrsa") ||
+(!strcmp(cmd, "rsa") && (!options->outform || !strcmp(options->outform, "PEM")))))
+			write(STDOUT_FILENO, "\n", 1);
 	}
 	if (options->out) {
 		int rights = (options->pubout) ? 0644 : 0600; // Create locked file if private key
@@ -166,10 +166,10 @@ void	print_std_result(char *result, size_t result_size, char *cmd, t_options *op
 			dprintf(STDERR_FILENO, "%s: %s: %s: %s\n", PRG_NAME, cmd, options->out, strerror(errno));
 			return ;
 		}
-		if (result[result_size - 1] != '\n')
-			dprintf(fd, "%.*s\n", (int)result_size, result);
-		else
-			dprintf(fd, "%.*s", (int)result_size, result);
+		write(fd, result, result_size);
+		if (result[result_size - 1] != '\n' && (!strcmp(cmd, "genrsa") ||
+(!strcmp(cmd, "rsa") && (!options->outform || !strcmp(options->outform, "PEM")))))
+			write(fd, "\n", 1);
 		close(fd);
 	}
 }
@@ -217,6 +217,14 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	}
 	if (max_idx != -1)
 		options->cipher = cipher[max_idx][0];
+	if (options->outform && strcmp(options->outform, "PEM") && strcmp(options->outform, "DER")) {
+		dprintf(STDERR_FILENO, "%s: Invalid format \"%s\" for option -outform\n", ssl->cmd, options->outform);
+		return (1);
+	}
+	if (options->inform && strcmp(options->inform, "PEM") && strcmp(options->inform, "DER")) {
+		dprintf(STDERR_FILENO, "%s: Invalid format \"%s\" for option -inform\n", ssl->cmd, options->inform);
+		return (1);
+	}
 	return (0);
 }
 
