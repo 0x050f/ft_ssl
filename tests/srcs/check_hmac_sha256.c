@@ -7,9 +7,11 @@
 
 void	test_vector_hmac(char *data, int data_len, char *key, int key_len, char *expected_output)
 {
-	char *digest = hmac_sha256((uint8_t *)data, data_len, (uint8_t *)key, key_len);
-	ck_assert_mem_eq(digest, expected_output, sizeof(expected_output));
+	uint8_t	*digest = hmac_sha256((uint8_t *)data, data_len, (uint8_t *)key, key_len);
+	char *hex = bytes2hex(digest, 32);
 	free(digest);
+	ck_assert_mem_eq(hex, expected_output, sizeof(expected_output));
+	free(hex);
 }
 
 START_TEST (hmac_sha256_test_vectors_1)

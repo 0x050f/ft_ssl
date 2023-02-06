@@ -25,7 +25,7 @@ all:			$(NAME)
 
 $(NAME):		$(OBJS) $(addprefix $(DIR_HEADERS), $(INCLUDES))
 				@printf "\033[2K\r$(_BLUE) All files compiled into '$(DIR_OBJS)'. $(_END)✅\n"
-				$(CC) $(CC_FLAGS) -L.. -I $(DIR_HEADERS) -I../$(DIR_HEADERS) $(OBJS) -lft_ssl -lcheck -lm -lpthread -lrt -lsubunit -o $(NAME)
+				@$(CC) $(CC_FLAGS) -L.. -I $(DIR_HEADERS) -I../$(DIR_HEADERS) $(OBJS) -lft_ssl -lcheck -lm -lpthread -lrt -lsubunit -o $(NAME)
 				@printf "\033[2K\r$(_GREEN) Executable '$(NAME)' created. $(_END)✅\n"
 
 $(OBJS):		| $(DIR_OBJS)
@@ -33,7 +33,7 @@ $(OBJS):		| $(DIR_OBJS)
 $(DIR_OBJS)%.o: $(DIR_SRCS)%.c Makefile # Recompile if Makefile change
 				@mkdir -p $(dir $@)
 				@printf "\033[2K\r $(_YELLOW)Compiling $< $(_END)⌛ "
-				$(CC) $(CC_FLAGS) -MMD -MP -I $(DIR_HEADERS) -I../$(DIR_HEADERS) -c $< -o $@
+				@$(CC) $(CC_FLAGS) -MMD -MP -I $(DIR_HEADERS) -I../$(DIR_HEADERS) -c $< -o $@
 -include		$(DEPS)
 
 $(DIR_OBJS):

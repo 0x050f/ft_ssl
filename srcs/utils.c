@@ -32,10 +32,10 @@ char		*bytes2hex(uint8_t *bytes, size_t size) {
 		return (NULL);
 	}
 	for (size_t i = 0; i < size; i++) {
-		byte = bytes[i] & 0x0f;
-		hex[i * 2] = (byte > 9) ? byte + 'a' : byte + '0';
 		byte = (bytes[i] & 0xf0) >> 4;
-		hex[i * 2 + 1] = (byte > 9) ? byte + 'a' : byte + '0';
+		hex[i * 2] = (byte > 9) ? byte - 10 + 'a' : byte + '0';
+		byte = bytes[i] & 0x0f;
+		hex[i * 2 + 1] = (byte > 9) ? byte - 10 + 'a' : byte + '0';
 	}
 	hex[size * 2 - 1] = '\0';
 	return (hex);
