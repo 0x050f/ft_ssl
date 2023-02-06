@@ -96,13 +96,13 @@ char			*md5(uint8_t *str, size_t size)
 		return (NULL);
 	}
 	for (int i = 0; i < 4; i++)
-		sprintf(hash + i * 2, "%02x", ((uint8_t *)&a0)[i]);
+		snprintf(hash + i * 2, 32, "%02x", ((uint8_t *)&a0)[i]);
 	for (int i = 0; i < 4; i++)
-		sprintf(hash + 8 + i * 2, "%02x", ((uint8_t *)&b0)[i]);
+		snprintf(hash + 8 + i * 2, 32, "%02x", ((uint8_t *)&b0)[i]);
 	for (int i = 0; i < 4; i++)
-		sprintf(hash + 16 + i * 2, "%02x", ((uint8_t *)&c0)[i]);
+		snprintf(hash + 16 + i * 2, 32, "%02x", ((uint8_t *)&c0)[i]);
 	for (int i = 0; i < 4; i++)
-		sprintf(hash + 24 + i * 2, "%02x", ((uint8_t *)&d0)[i]);
+		snprintf(hash + 24 + i * 2, 32, "%02x", ((uint8_t *)&d0)[i]);
 	hash[32] = '\0';
 	return (hash);
 }

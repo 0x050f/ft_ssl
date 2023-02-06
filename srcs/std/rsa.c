@@ -21,7 +21,7 @@ char	*get_hexa_repr(unsigned __int128 n) {
 		return (NULL);
 	tmp = size_nb;
 	while (tmp--) {
-		sprintf(buf, "%02x:", ((uint8_t *)&nbis)[0]);
+		snprintf(buf, 4, "%02x:", ((uint8_t *)&nbis)[0]);
 		memcpy(&hexa[tmp * 3], buf, 3);
 		nbis /= 256;
 	}
@@ -163,6 +163,7 @@ uint8_t		*get_rsa_between_header_footer(
 }
 
 char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
+	void		*tmp;
 	char		header_private[] = HEADER_PRIVATE;
 	char		footer_private[] = FOOTER_PRIVATE;
 	char		header_enc_priv[] = HEADER_ENC_PRIVATE;
@@ -206,24 +207,39 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	free(cipher_res);
 	if (ret)
 		goto could_not_read;
+	// Get text from rsa
 	if (options->text) {
-		char *str = get_text_from_rsa(&rsa, options->pubin);
-		if (!str) {
+		tmp = get_text_from_rsa(&rsa, options->pubin);
+		if (!tmp) {
 			free(result);
 			return (NULL);
 		}
-		result = realloc(result, result_size + strlen(str) + 1);
-		strcpy(result + result_size, str);
-		result_size += strlen(str);
-		free(str);
+		result = realloc(result, result_size + strlen(tmp) + 1);
+		if (!result) {
+			free(tmp);
+			return (NULL);
+		}
+		strcpy(result + result_size, tmp);
+		result_size += strlen(tmp);
+		free(tmp);
 	}
+	// Print modulus (n)
 	if (options->modulus) {
-		char buf[256];
-		sprintf(buf, "Modulus=%lX\n", rsa.n);
-		result = realloc(result, result_size + strlen(buf) + 1);
-		strcpy(result + result_size, buf);
-		result_size += strlen(buf);
+		asprintf((char **)&tmp, "Modulus=%lX\n", (unsigned long)rsa.n);
+		if (!tmp) {
+			free(result);
+			return (NULL);
+		}
+		result = realloc(result, result_size + strlen(tmp) + 1);
+		if (!result) {
+			free(tmp);
+			return (NULL);
+		}
+		strcpy(result + result_size, tmp);
+		result_size += strlen(tmp);
+		free(tmp);
 	}
+	// Check the given rsa key
 	if (options->check) {
 		char buf[256];
 		if (get_size_in_bits(rsa.n) > 64 || get_size_in_bits(rsa.e) > 64) {
@@ -231,6 +247,8 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		} else if (!check_rsa(rsa.n, rsa.e, rsa.d, rsa.p, rsa.q, rsa.dp, rsa.dq, rsa.qinv)) {
 			sprintf(buf, "RSA key ok\n");
 			result = realloc(result, result_size + strlen(buf) + 1);
+			if (!result)
+				return (NULL);
 			strcpy(result + result_size, buf);
 			result_size += strlen(buf);
 		} else {
@@ -239,6 +257,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 			return (result);
 		}
 	}
+	// Generate and write private rsa key
 	if (!options->noout && !options->pubout && !options->pubin) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
@@ -255,6 +274,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		memcpy(result + result_size, encoded, len_encoded);
 		result_size += len_encoded;
 		free(encoded);
+	// Generate and write public rsa key
 	} else if (!options->noout) {
 		dprintf(STDERR_FILENO, "writing RSA key\n");
 		size_t len_encoded;
@@ -272,6 +292,7 @@ char	*rsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		result_size += len_encoded;
 		free(encoded);
 	}
+	// Update result size
 	*res_len = result_size;
 	return (result);
 	could_not_read:
