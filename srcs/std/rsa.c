@@ -122,9 +122,9 @@ int		check_rsa(
 ) {
 	unsigned __int128 phi;
 
-	if (!check_prime(p, 1.0))
+	if (!check_prime(p, 1.0, false))
 		return (1);
-	if (!check_prime(q, 1.0))
+	if (!check_prime(q, 1.0, false))
 		return (1);
 	if (n != (unsigned __int128)p * q)
 		return (1);

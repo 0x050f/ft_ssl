@@ -10,13 +10,13 @@
 typedef struct		s_options
 {
 	int				mode;
-	bool			des;
 	bool			text;
 	bool			noout;
 	bool			modulus;
 	bool			check;
 	bool			pubin;
 	bool			pubout;
+	bool			verbose;
 	bool			hexdump;
 	bool			std_output;
 	char			*in;
@@ -77,7 +77,7 @@ uint64_t			rand_range(uint64_t min, uint64_t max);
 uint64_t			power_mod(uint64_t x, uint64_t n, uint64_t p);
 unsigned __int128	pgcd_binary(unsigned __int128 a, unsigned __int128 b);
 unsigned __int128	inv_mod(unsigned __int128 a, unsigned __int128 n);
-bool				check_prime(uint64_t n, double proba);
+bool				check_prime(uint64_t n, double proba, bool verbose);
 
 /* ../cipher/process.c */
 int		get_password_stdin(char *cmd, char **password, int mode);

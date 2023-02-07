@@ -61,7 +61,7 @@ bool		miller(uint64_t n, uint64_t a) {
 }
 
 // Return true if integer n is probably prime (n odd > 2, k > 0)
-bool		miller_rabin(uint64_t n, int k) {
+bool		miller_rabin(uint64_t n, int k, bool verbose) {
 	if (n == 2 || n == 3) {
 		return (true);
 	}
@@ -72,9 +72,10 @@ bool		miller_rabin(uint64_t n, int k) {
 
 	while (k-- > 0) {
 		a = rand_range(2, n - 2);
-		if (miller(n, a)) {
+		if (miller(n, a))
 			return (false);
-		}
+		if (verbose)
+			write(STDERR_FILENO, "+", 1);
 	}
 	return (true);
 }
@@ -124,7 +125,7 @@ unsigned __int128	pgcd_binary(unsigned __int128 a, unsigned __int128 b) {
 	return (pgcd_binary((a - b)/2, b));
 }
 
-bool		check_prime(uint64_t n, double proba) {
+bool		check_prime(uint64_t n, double proba, bool verbose) {
 	if (!(proba >= 0.0 && proba <= 1.0))
 		return (false);
 
@@ -134,7 +135,7 @@ bool		check_prime(uint64_t n, double proba) {
 		nb_round += 1;
 	}
 	/* Solovay-Strassen < Miller-Rabin speed */
-	return (miller_rabin(n, nb_round));
+	return (miller_rabin(n, nb_round, verbose));
 }
 
 char		*launch_std(char *cmd, char *query, size_t size, size_t *res_len, t_options *options) {
@@ -186,12 +187,12 @@ int		fill_std_options(t_options *options, t_ssl *ssl) {
 	if (options->out && !get_last_arg(ssl->opt_args, "i")) {
 		options->std_output = false;
 	}
+	options->verbose = get_last_arg(ssl->opt_args, "v") ? true : false;
 	options->inkey = get_last_content(ssl->opt_args, "inkey");
 	options->inform = get_last_content(ssl->opt_args, "inform");
 	options->outform = get_last_content(ssl->opt_args, "outform");
 	options->passin = get_last_content(ssl->opt_args, "passin");
 	options->passout = get_last_content(ssl->opt_args, "passout");
-	options->des = get_last_arg(ssl->opt_args, "des") ? true : false;
 	options->text = get_last_arg(ssl->opt_args, "text") ? true : false;
 	options->noout = get_last_arg(ssl->opt_args, "noout") ? true : false;
 	options->modulus = get_last_arg(ssl->opt_args, "modulus") ? true : false;

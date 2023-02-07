@@ -123,17 +123,34 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 
 	DPRINT("genrsa(\"%.*s\", %zu)\n", (int)size, query, size);
 
+	if (options->verbose)
+		dprintf(STDERR_FILENO, "Generating RSA private key, 128 bit long modulus (2 primes)\n");
+
 	// Unused variable but important for std fn format
 	(void)query;
 	(void)size;
 
 	/* 1. choose two large prime numbers p and q */
 	uint64_t p = custom_rand();
-	while (!check_prime(p, 1.0))
+	if (options->verbose)
+		write(STDERR_FILENO, ".", 1);
+	while (!check_prime(p, 0.999, options->verbose)) {
 		p = custom_rand();
+		if (options->verbose)
+			write(STDERR_FILENO, ".", 1);
+	}
+	if (options->verbose)
+		write(STDERR_FILENO, "\n", 1);
 	uint64_t q = custom_rand();
-	while (!check_prime(q, 1.0))
+	if (options->verbose)
+		write(STDERR_FILENO, ".", 1);
+	while (!check_prime(q, 0.999, options->verbose)) {
 		q = custom_rand();
+		if (options->verbose)
+			write(STDERR_FILENO, ".", 1);
+	}
+	if (options->verbose)
+		write(STDERR_FILENO, "\n", 1);
 
 	/* 2. compute n = pq */
 	unsigned __int128 n = (unsigned __int128)p * q;
@@ -145,6 +162,9 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	unsigned __int128 e = PUBLIC_EXPONENT;
 	while (pgcd_binary(phi, e) != 1)
 		e++;
+
+	if (options->verbose)
+		dprintf(STDERR_FILENO, "e is %d (%#x)\n", (uint32_t)e, (uint32_t)e);
 
 	/* 5. modular multiplicative inverse */
 	/* euclide au + bv = pgcd(a, b) | ed ≡ (1 mod phi)*/
