@@ -24,7 +24,7 @@ uint64_t	rand_range(uint64_t min, uint64_t max) {
 }
 
 /* Return x^n % p fast */
-uint64_t	power_mod(uint64_t x, uint64_t n, uint64_t p) {
+unsigned __int128	power_mod(unsigned __int128 x, unsigned __int128 n, unsigned __int128 p) {
 	uint64_t z = 1;
 
 	while (n) {
@@ -237,7 +237,7 @@ int		process_std_stdin(char *cmd, t_options *options) {
 
 	query = NULL;
 	size = 0;
-	if (!strcmp(cmd, "rsa")) {
+	if (!strcmp(cmd, "rsa") || !strcmp(cmd, "rsautl")) {
 		if (!(query = read_query(STDIN_FILENO, &size)))
 			return (1);
 	}

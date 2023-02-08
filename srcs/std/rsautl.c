@@ -9,6 +9,26 @@ void	*rsa_decrypt() {
 }
 */
 
+/* RSAEP - RSA Encryption Primitive - Encrypts a message using a public key */
+int		rsaep(unsigned __int128 *c, unsigned __int128 n, unsigned __int128 e, unsigned __int128 m) {
+	if (m >= n) {
+		dprintf(STDERR_FILENO, "message representative out of range\n");
+		return (1);
+	}
+	*c = power_mod(n, e, m);
+	return (0);
+}
+
+/* RSADP - RSA Decryption Primitive - Decrypts ciphertext using a private key */
+int		rsadp(unsigned __int128 *m, unsigned __int128 n, unsigned __int128 d, unsigned __int128 c) {
+	if (c >= n) {
+		dprintf(STDERR_FILENO, "ciphertext representative out of range\n");
+		return (1);
+	}
+	*m = power_mod(c, d, n);
+	return (0);
+}
+
 char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	DPRINT("rsautl(\"%.*s\", %zu)\n", (int)size, query, size);
 	(void)query;
@@ -53,5 +73,6 @@ char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		dprintf(STDERR_FILENO, "Could not read private key from %s\n", options->inkey);
 		return (NULL);
 	}
+	printf("size in bits: %zu\n", size * 8);
 	return (NULL);
 }
