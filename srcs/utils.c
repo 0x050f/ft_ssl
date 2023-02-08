@@ -177,7 +177,7 @@ int			isprintable(char *str)
 	return (1);
 }
 
-char		*read_query(int fd, size_t *size)
+void		*read_query(int fd, size_t *size)
 {
 	char	*query;
 	char	*tmp;

@@ -179,7 +179,7 @@ void		ft_toupper(char *str);
 int			isint(char *str);
 int			ishexa(char *str);
 int			isprintable(char *str);
-char		*read_query(int fd, size_t *size);
+void		*read_query(int fd, size_t *size);
 char		*first_nonchar(char *str, char c);
 
 /* process.c */
