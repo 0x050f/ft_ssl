@@ -132,7 +132,7 @@ char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	if (!options->inkey) {
 		dprintf(STDERR_FILENO, "no private key given (-inkey parameter)\n");
 		return (NULL);
-	} else if (options->pubin && options->mode == CMODE_ENCRYPT) {
+	} else if (options->pubin && options->mode == CMODE_DECRYPT) {
 		dprintf(STDERR_FILENO, "A private key is needed for this operation\n");
 		return (NULL);
 	}
