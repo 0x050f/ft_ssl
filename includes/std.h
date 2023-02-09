@@ -103,6 +103,7 @@ char	*generate_base64_public_rsa(unsigned __int128 n, unsigned __int128 e, t_opt
 char	*generate_base64_private_rsa(unsigned __int128 n, unsigned __int128 e, unsigned __int128 d, unsigned __int128 p, unsigned __int128 q, unsigned __int128 dp, unsigned __int128 dq, unsigned __int128 qinv, t_options *options, size_t *res_len);
 
 /* rsa.c */
+int		get_size_in_bits(unsigned __int128 n);
 int		get_rsa_key(struct rsa *rsa, uint8_t *query, size_t size, bool pubin, char *format, char *password);
 char	*rsa(unsigned char *query, size_t size, size_t *res_len, t_options *options);
 

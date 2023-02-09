@@ -37,7 +37,7 @@ char		*bytes2hex(uint8_t *bytes, size_t size) {
 		byte = bytes[i] & 0x0f;
 		hex[i * 2 + 1] = (byte > 9) ? byte - 10 + 'a' : byte + '0';
 	}
-	hex[size * 2 - 1] = '\0';
+	hex[size * 2] = '\0';
 	return (hex);
 }
 

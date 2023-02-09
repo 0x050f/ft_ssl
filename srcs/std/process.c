@@ -25,7 +25,7 @@ uint64_t	rand_range(uint64_t min, uint64_t max) {
 
 /* Return x^n % p fast */
 unsigned __int128	power_mod(unsigned __int128 x, unsigned __int128 n, unsigned __int128 p) {
-	uint64_t z = 1;
+	unsigned __int128 z = 1;
 
 	while (n) {
 		if (n % 2) {
