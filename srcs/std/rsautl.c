@@ -162,7 +162,7 @@ char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 	}
 	if (get_rsa_key(&rsa, key, key_len, options->pubin, NULL, NULL)) {
 		free(key);
-		dprintf(STDERR_FILENO, "Could not read private key from %s\n", options->inkey);
+		dprintf(STDERR_FILENO, "Could not read %s key from %s\n", (options->pubin) ? "public" : "private", options->inkey);
 		return (NULL);
 	}
 	free(key);
