@@ -170,15 +170,18 @@ char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		dprintf(STDERR_FILENO, "Can't compute > 64bits key\n");
 		return (NULL);
 	}
-	if ((int)size * 8 > get_size_in_bits(rsa.n)) {
+	size_t nb_bits;
+	if (get_size_in_bits(rsa.n) % 64)
+		nb_bits = get_size_in_bits(rsa.n) + 64 - get_size_in_bits(rsa.n) % 64;
+	else
+		nb_bits = get_size_in_bits(rsa.n);
+	if (options->mode == CMODE_ENCRYPT && size * 8 > nb_bits) {
 		dprintf(STDERR_FILENO, "data greater than mod len\n");
 		return (NULL);
 	}
 	unsigned __int128 m;
 	unsigned __int128 c;
-	size_t nb_bytes = get_size_in_bits(rsa.n) / 8;
-	if (nb_bytes % 8)
-		nb_bytes += 8 - (nb_bytes % 8); // round up to 8 bytes
+	size_t nb_bytes = nb_bits / 8;
 
 	result = malloc(nb_bytes);
 	if (!result)
