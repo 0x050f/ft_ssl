@@ -1,14 +1,6 @@
 #include "ft_ssl.h"
 #include "std.h"
 
-/*
-void	*rsa_encrypt() {
-}
-
-void	*rsa_decrypt() {
-}
-*/
-
 char	*to_printable(void *bytes, size_t size) {
 	char *result;
 
@@ -214,6 +206,5 @@ char	*rsautl(uint8_t *query, size_t size, size_t *res_len, t_options *options) {
 		*res_len = strlen(res);
 		return (res);
 	}
-//	printf("size in bits: %zu\n", size * 8);
 	return (result);
 }
