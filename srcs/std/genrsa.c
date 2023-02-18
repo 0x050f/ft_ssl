@@ -135,21 +135,21 @@ char		*genrsa(uint8_t *query, size_t size, size_t *res_len, t_options *options) 
 	(void)size;
 
 	/* 1. choose two large prime numbers p and q */
-	uint64_t p = rand_range(0, UINT_MAX);
+	uint64_t p = rand_range(INT_MAX, UINT_MAX);
 	if (options->verbose)
 		write(STDERR_FILENO, ".", 1);
 	while (!check_prime(p, 0.999, options->verbose)) {
-		p = rand_range(0, UINT_MAX);
+		p = rand_range(INT_MAX, UINT_MAX);
 		if (options->verbose)
 			write(STDERR_FILENO, ".", 1);
 	}
 	if (options->verbose)
 		write(STDERR_FILENO, "\n", 1);
-	uint64_t q = rand_range(0, UINT_MAX);
+	uint64_t q = rand_range(INT_MAX, UINT_MAX);
 	if (options->verbose)
 		write(STDERR_FILENO, ".", 1);
 	while (!check_prime(q, 0.999, options->verbose)) {
-		q = rand_range(0, UINT_MAX);
+		q = rand_range(INT_MAX, UINT_MAX);
 		if (options->verbose)
 			write(STDERR_FILENO, ".", 1);
 	}
